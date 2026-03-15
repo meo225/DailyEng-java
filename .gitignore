@@ -35,3 +35,22 @@ _docs/
 data/
 
 .agent/
+
+plan
+
+# ========================
+# Java / Spring Boot / Maven
+# ========================
+backend/target/
+*.class
+*.jar
+*.war
+*.log
+*.iml
+.idea/
+*.swp
+*~
+.settings/
+.classpath
+.project
+backend/.mvn/wrapper/maven-wrapper.jar
