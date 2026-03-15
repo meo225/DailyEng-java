@@ -1,9 +1,11 @@
 package com.dailyeng.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 /**
  * Centralized application properties mapped from {@code app.*} in application.yml.
@@ -20,6 +22,16 @@ public class AppProperties {
     private Gemini gemini = new Gemini();
     private Pexels pexels = new Pexels();
     private String frontendUrl = "http://localhost:3000";
+
+    @PostConstruct
+    public void validate() {
+        if (!StringUtils.hasText(jwt.getSecret())) {
+            throw new IllegalStateException("JWT_SECRET environment variable is not set. A secret is required for secure operation.");
+        }
+        if (jwt.getSecret().length() < 32) {
+             throw new IllegalStateException("JWT_SECRET must be at least 32 characters (256 bits) long for secure HS256 algorithm usage.");
+        }
+    }
 
     @Getter
     @Setter
