@@ -471,13 +471,34 @@ export default function HomePageClient({ featureTabs, reviews, partnerLogos }: H
                     articles, not isolated lists.
                   </p>
                 </div>
-                <div className="mt-6 h-32 relative rounded-xl overflow-hidden bg-secondary-50">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-4xl font-bold text-secondary-200 select-none">
-                      A+
-                    </span>
+                  <div className="mt-6 rounded-xl overflow-hidden bg-gradient-to-br from-secondary-50 to-purple-50 border border-secondary-100 p-3.5 space-y-2">
+                    {/* Article excerpt with highlighted word */}
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      The CEO delivered a{" "}
+                      <span className="inline font-bold text-secondary-600 bg-secondary-100 px-1 rounded">
+                        compelling
+                      </span>{" "}
+                      speech that inspired the whole team.
+                    </p>
+                    {/* Word card */}
+                    <div className="bg-white rounded-lg border border-secondary-100 p-2 flex items-start gap-2">
+                      <div className="flex-none w-7 h-7 bg-secondary-500 rounded-md flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">adj</span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-800">compelling</p>
+                        <p className="text-[10px] text-gray-500 leading-tight">evoking interest or admiration</p>
+                      </div>
+                    </div>
+                    {/* Reading progress */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1 rounded-full bg-secondary-100">
+                        <div className="h-1 rounded-full bg-secondary-400 w-[62%]" />
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-medium">62%</span>
+                    </div>
                   </div>
-                </div>
+
               </Card>
             </RevealOnScroll>
 
