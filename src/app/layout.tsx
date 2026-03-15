@@ -1,19 +1,21 @@
 import type React from "react";
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
-import { Dorara } from "@/components/layout/dorara";
-import { SearchCommand } from "@/components/layout/search-command";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { UserProfileProvider } from "@/contexts/UserProfileContext";
+import { LazyLayoutComponents } from "@/components/layout/lazy-layout-components";
 import "@/app/globals.css";
 import { Suspense } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 
+
 const nunito = Nunito({
   subsets: ["latin"],
-  weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
+  // Only load the 4 weights actually used in the UI (was 8 — cuts font payload ~50%)
+  weight: ["400", "600", "700", "800"],
   variable: "--font-nunito",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -48,8 +50,7 @@ export default function RootLayout({
                 <ConditionalLayout>
                   <main className="min-h-screen">{children}</main>
                 </ConditionalLayout>
-                <Dorara />
-                <SearchCommand />
+                <LazyLayoutComponents />
               </Suspense>
             </UserProfileProvider>
           </ThemeProvider>

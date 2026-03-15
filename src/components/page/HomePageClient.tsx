@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback, memo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -64,6 +64,28 @@ export interface HomePageClientProps {
   partnerLogos: PartnerLogo[]
 }
 
+// Shared IntersectionObserver singleton (rule: client-event-listeners / rerender-memo)
+// All RevealOnScroll elements share ONE observer instead of creating N observers
+type ObserverCallback = (isIntersecting: boolean) => void
+const observerCallbacks = new Map<Element, ObserverCallback>()
+let sharedObserver: IntersectionObserver | null = null
+
+function getSharedObserver() {
+  if (typeof window === "undefined") return null
+  if (!sharedObserver) {
+    sharedObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const cb = observerCallbacks.get(entry.target)
+          if (cb) cb(entry.isIntersecting)
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -50px 0px" },
+    )
+  }
+  return sharedObserver
+}
+
 // Scroll Animation Component
 function RevealOnScroll({
   children,
@@ -74,21 +96,24 @@ function RevealOnScroll({
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.15, rootMargin: "0px 0px -50px 0px" },
-    )
+    const el = ref.current
+    if (!el) return
+    const observer = getSharedObserver()
+    if (!observer) return
 
-    if (ref.current) {
-      observer.observe(ref.current)
+    observerCallbacks.set(el, (intersecting) => {
+      if (intersecting) {
+        setIsVisible(true)
+        observer.unobserve(el)
+        observerCallbacks.delete(el)
+      }
+    })
+    observer.observe(el)
+
+    return () => {
+      observer.unobserve(el)
+      observerCallbacks.delete(el)
     }
-
-    return () => observer.disconnect()
   }, [])
 
   return (
@@ -146,13 +171,14 @@ export default function HomePageClient({ featureTabs, reviews, partnerLogos }: H
   const [showReviewsDialog, setShowReviewsDialog] = useState(false)
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0)
 
-  const nextReview = () => {
+  // rerender-functional-setstate: stable callbacks using functional setState (no reviews dep needed)
+  const nextReview = useCallback(() => {
     setCurrentReviewIndex((prev) => (prev + 1) % reviews.length)
-  }
+  }, [reviews.length])
 
-  const prevReview = () => {
+  const prevReview = useCallback(() => {
     setCurrentReviewIndex((prev) => (prev - 1 + reviews.length) % reviews.length)
-  }
+  }, [reviews.length])
 
   return (
     <div className="min-h-screen bg-background font-sans selection:bg-primary-200 selection:text-primary-900">
@@ -665,8 +691,9 @@ export default function HomePageClient({ featureTabs, reviews, partnerLogos }: H
             }}
           >
             {/* Column 1 - Scroll Up */}
+            {/* rendering-content-visibility: removed doubled arrays — CSS animation loops infinitely */}
             <div className="space-y-6 animate-scroll-up hover:paused">
-              {[...reviews, ...reviews].map((review, idx) => (
+              {reviews.map((review, idx) => (
                 <Card
                   key={`col1-${idx}`}
                   className="p-6 border-0 shadow-sm bg-white rounded-2xl cursor-pointer hover:shadow-md transition-shadow"
@@ -678,6 +705,7 @@ export default function HomePageClient({ featureTabs, reviews, partnerLogos }: H
                         alt={review.name}
                         fill
                         className="object-cover"
+                        loading="lazy"
                       />
                     </div>
                     <div>
@@ -698,10 +726,7 @@ export default function HomePageClient({ featureTabs, reviews, partnerLogos }: H
 
             {/* Column 2 - Scroll Down */}
             <div className="space-y-6 animate-scroll-down hover:paused hidden md:block">
-              {[...reviews]
-                .reverse()
-                .concat([...reviews].reverse())
-                .map((review, idx) => (
+              {[...reviews].reverse().map((review, idx) => (
                   <Card
                     key={`col2-${idx}`}
                     className="p-6 border-0 shadow-sm bg-white rounded-2xl cursor-pointer hover:shadow-md transition-shadow"
@@ -713,6 +738,7 @@ export default function HomePageClient({ featureTabs, reviews, partnerLogos }: H
                           alt={review.name}
                           fill
                           className="object-cover"
+                          loading="lazy"
                         />
                       </div>
                       <div>
@@ -732,7 +758,7 @@ export default function HomePageClient({ featureTabs, reviews, partnerLogos }: H
             </div>
             {/* Column 3 - Scroll Up */}
             <div className="space-y-6 animate-scroll-up hover:paused hidden lg:block">
-              {[...reviews, ...reviews].map((review, idx) => (
+              {reviews.map((review, idx) => (
                 <Card
                   key={`col3-${idx}`}
                   className="p-6 border-0 shadow-sm bg-white rounded-2xl cursor-pointer hover:shadow-md transition-shadow"
@@ -744,6 +770,7 @@ export default function HomePageClient({ featureTabs, reviews, partnerLogos }: H
                         alt={review.name}
                         fill
                         className="object-cover"
+                        loading="lazy"
                       />
                     </div>
                     <div>
