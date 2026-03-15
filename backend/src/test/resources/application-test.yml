@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dailyeng_test
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+app:
+  jwt:
+    secret: test-secret-key-for-testing-only-must-be-long-enough-for-hmac
+    expiration-ms: 3600000
+    refresh-expiration-ms: 7200000
+  cors:
+    allowed-origins: http://localhost:3000
+  gemini:
+    api-key: test-key
+  frontend-url: http://localhost:3000
+
+logging:
+  level:
+    com.dailyeng: DEBUG
