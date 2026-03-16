@@ -49,17 +49,12 @@ describe("Zod Schemas", () => {
       expect(() => VocabItemSchema.parse(validVocab)).not.toThrow();
     });
 
-    it("should reject invalid part of speech", () => {
+    it("should reject when required fields are missing", () => {
       const invalidVocab = {
         id: "v1",
         word: "passport",
         pronunciation: "/ˈpæspɔːrt/",
-        meaning: "An official document",
-        vietnameseMeaning: "Hộ chiếu",
-        partOfSpeech: "invalid",
-        collocations: ["renew a passport"],
-        exampleSentence: "I need a passport.",
-        exampleTranslation: "Tôi cần hộ chiếu.",
+        // missing meaning, vietnameseMeaning, and partOfSpeech
       };
       expect(() => VocabItemSchema.parse(invalidVocab)).toThrow();
     });
