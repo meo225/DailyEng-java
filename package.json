@@ -60,6 +60,7 @@
     "happy-dom": "latest",
     "immer": "latest",
     "input-otp": "1.4.1",
+    "jose": "^6.2.1",
     "lucide-react": "^0.454.0",
     "msw": "latest",
     "next": "^15.4.0-canary.54",
