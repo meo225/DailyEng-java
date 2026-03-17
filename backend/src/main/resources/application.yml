@@ -92,6 +92,16 @@ app:
     refresh-expiration-ms: 604800000  # 7 days
 
   # ========================
+  # Cookie (httpOnly auth)
+  # ========================
+  cookie:
+    secure: ${COOKIE_SECURE:false}  # Set to true in production (HTTPS)
+    same-site: Lax
+    domain: ${COOKIE_DOMAIN:}
+    access-max-age: 86400     # 24 hours
+    refresh-max-age: 604800   # 7 days
+
+  # ========================
   # CORS
   # ========================
   cors:

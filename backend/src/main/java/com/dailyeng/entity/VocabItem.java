@@ -41,7 +41,8 @@ public class VocabItem extends BaseEntity {
     private String vietnameseMeaning;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
+    @Column(nullable = false, columnDefinition = "\"PartOfSpeech\"")
     private PartOfSpeech partOfSpeech;
 
     @Type(ListArrayType.class)

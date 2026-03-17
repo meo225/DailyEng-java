@@ -27,7 +27,12 @@ public final class SpeakingDtos {
             int pauseCount,
             Double pitchVariance,
             Double avgPitch,
-            Integer pitchSamplesCount
+            Integer pitchSamplesCount,
+            // Azure Pronunciation Assessment scores (override client heuristics when present)
+            Double azureAccuracyScore,
+            Double azureFluencyScore,
+            Double azureProsodyScore,
+            Double azureOverallScore
     ) {}
 
     // ============================== Responses ==============================
@@ -70,7 +75,8 @@ public final class SpeakingDtos {
 
     public record ConversationTurn(
             String role, String text, String turnId,
-            List<TurnErrorDto> userErrors
+            List<TurnErrorDto> userErrors,
+            Integer pronunciationScore, Integer fluencyScore
     ) {}
 
     public record TurnErrorDto(

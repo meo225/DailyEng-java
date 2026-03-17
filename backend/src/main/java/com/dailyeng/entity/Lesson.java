@@ -15,7 +15,7 @@ public class Lesson extends BaseEntity {
     @Column(nullable = false) private String title;
     private String description;
     private String duration;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private LessonType type;
+    @Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) @Column(nullable = false, columnDefinition = "\"LessonType\"") private LessonType type;
     @Builder.Default @Column(name = "\"order\"") private int order = 0;
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true) @Builder.Default
     private List<UserLessonProgress> userProgress = new ArrayList<>();

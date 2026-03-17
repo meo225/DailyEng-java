@@ -20,7 +20,7 @@ public class SpeakingTurn extends BaseEntity {
     @Column(nullable = false) private String sessionId;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "sessionId", insertable = false, updatable = false) private SpeakingSession session;
 
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private Role role;
+    @Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) @Column(nullable = false, columnDefinition = "\"Role\"") private Role role;
     @Column(nullable = false, columnDefinition = "TEXT") private String text;
     private String audioUrl;
 

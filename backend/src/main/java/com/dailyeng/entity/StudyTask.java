@@ -12,7 +12,7 @@ public class StudyTask extends BaseEntity {
     @Column(nullable = false) private String planId;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "planId", insertable = false, updatable = false) private StudyPlan plan;
     @Column(nullable = false) private LocalDateTime date;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private TaskType type;
+    @Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) @Column(nullable = false, columnDefinition = "\"TaskType\"") private TaskType type;
     @Builder.Default private boolean completed = false;
     private String title;
     private String startTime;

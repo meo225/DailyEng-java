@@ -21,7 +21,7 @@ public class SpeakingScenario extends BaseEntity {
     @Column(nullable = false) private String title;
     @Column(nullable = false) private String description;
     @Column(nullable = false) private String goal;
-    @Enumerated(EnumType.STRING) private Level difficulty;
+    @Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) @Column(columnDefinition = "\"Level\"") private Level difficulty;
     @Column(nullable = false, columnDefinition = "TEXT") private String context;
 
     private String category;
