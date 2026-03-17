@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@/contexts/AuthContext";
+import { signOut, useSession } from "next-auth/react";
 import { User, Settings, LogOut, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +14,7 @@ import {
 import { useUserProfile } from "@/contexts/UserProfileContext";
 
 export function ProfileDropdown() {
-  const { user, logout } = useAuth();
+  const { data: session } = useSession();
   const { profile } = useUserProfile();
 
   const handleSignOut = async () => {
@@ -22,19 +22,18 @@ export function ProfileDropdown() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("dorara-chat-history");
     }
-    await logout();
-    window.location.href = "/";
+    await signOut({ callbackUrl: "/" });
   };
 
   // Use profile data if available, fallback to session
-  const userName = profile?.name || user?.name || "Guest User";
-  const userImage = profile?.image || user?.image;
+  const userName = profile?.name || session?.user?.name || "Guest User";
+  const userImage = profile?.image || session?.user?.image;
   const userInitial = userName.charAt(0).toUpperCase();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" title="Profile" aria-label="Open user profile menu">
+        <Button variant="ghost" size="icon" title="Profile">
           {userImage ? (
             <img
               src={userImage}
