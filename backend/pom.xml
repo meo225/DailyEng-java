@@ -110,6 +110,15 @@
         </dependency>
 
         <!-- ======================== -->
+        <!-- Azure Speech SDK          -->
+        <!-- ======================== -->
+        <dependency>
+            <groupId>com.microsoft.cognitiveservices.speech</groupId>
+            <artifactId>client-sdk</artifactId>
+            <version>1.42.0</version>
+        </dependency>
+
+        <!-- ======================== -->
         <!-- Utilities                -->
         <!-- ======================== -->
         <dependency>

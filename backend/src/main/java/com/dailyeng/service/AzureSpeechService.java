@@ -3,11 +3,17 @@ package com.dailyeng.service;
 import com.dailyeng.config.AppProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.microsoft.cognitiveservices.speech.*;
+import com.microsoft.cognitiveservices.speech.audio.*;
+import com.microsoft.cognitiveservices.speech.PronunciationAssessmentConfig;
+import com.microsoft.cognitiveservices.speech.PronunciationAssessmentGradingSystem;
+import com.microsoft.cognitiveservices.speech.PronunciationAssessmentGranularity;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,13 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Azure Speech Service — REST API integration for STT and TTS.
+ * Azure Speech Service — REST API for STT/TTS + SDK for Pronunciation Assessment.
  * <p>
- * STT: Speech-to-Text via Azure Cognitive Services REST API (short audio ≤60s).
- * TTS: Text-to-Speech via Azure Cognitive Services REST API (SSML-based).
+ * STT: REST API (short audio ≤60s)
+ * TTS: REST API (SSML with OGG OPUS output)
+ * Pronunciation: Speech SDK with phoneme-level accuracy, prosody, and error types
  * <p>
- * Uses subscription key auth. Region: configured via app.azure-speech.region.
- * Reference: @azure-speech-to-text-rest-py and @voice-ai-engine-development skills.
+ * Region: configured via app.azure-speech.region (japaneast).
  */
 @Slf4j
 @Service
@@ -51,16 +57,9 @@ public class AzureSpeechService {
     }
 
     // ========================================================================
-    // STT — Speech-to-Text (short audio ≤60s)
+    // STT — Speech-to-Text (short audio ≤60s, REST API)
     // ========================================================================
 
-    /**
-     * Transcribe audio bytes to text using Azure STT REST API.
-     *
-     * @param audioBytes  Raw audio data (WAV PCM 16kHz mono recommended)
-     * @param contentType Content-Type header, e.g. "audio/wav; codecs=audio/pcm; samplerate=16000"
-     * @return TranscriptionResult with text, confidence, and per-word details
-     */
     public TranscriptionResult transcribe(byte[] audioBytes, String contentType) {
         if (!enabled) {
             log.warn("Azure Speech not enabled — returning empty transcription");
@@ -97,14 +96,12 @@ public class AzureSpeechService {
                 return TranscriptionResult.empty();
             }
 
-            // Extract best result
             var nBest = json.path("NBest");
             if (nBest.isArray() && !nBest.isEmpty()) {
                 var best = nBest.get(0);
                 var displayText = best.path("Display").asText("");
                 var confidence = best.path("Confidence").asDouble(0.0);
 
-                // Extract per-word confidence if available
                 List<WordResult> words = new ArrayList<>();
                 var wordsNode = best.path("Words");
                 if (wordsNode.isArray()) {
@@ -117,7 +114,7 @@ public class AzureSpeechService {
                     }
                 }
 
-                log.info("🎤 Azure STT: \"{}\" (confidence: {:.2f})", displayText, confidence);
+                log.info("🎤 Azure STT: \"{}\" (confidence: {})", displayText, confidence);
                 return new TranscriptionResult(displayText, confidence, words, status);
             }
 
@@ -129,32 +126,18 @@ public class AzureSpeechService {
         }
     }
 
-    /**
-     * Convenience: transcribe WAV PCM 16kHz mono audio.
-     */
     public TranscriptionResult transcribeWav(byte[] wavBytes) {
         return transcribe(wavBytes, "audio/wav; codecs=audio/pcm; samplerate=16000");
     }
 
-    /**
-     * Convenience: transcribe OGG OPUS audio.
-     */
     public TranscriptionResult transcribeOgg(byte[] oggBytes) {
         return transcribe(oggBytes, "audio/ogg; codecs=opus");
     }
 
     // ========================================================================
-    // TTS — Text-to-Speech
+    // TTS — Text-to-Speech (REST API)
     // ========================================================================
 
-    /**
-     * Synthesize speech from text using Azure TTS REST API.
-     * Returns audio bytes in OGG OPUS format (smaller size for web).
-     *
-     * @param text      Text to synthesize
-     * @param voiceName Optional voice override (null = use config default)
-     * @return Audio bytes (OGG OPUS), or empty array on failure
-     */
     public byte[] synthesize(String text, String voiceName) {
         if (!enabled) {
             log.warn("Azure Speech not enabled — returning empty audio");
@@ -167,7 +150,6 @@ public class AzureSpeechService {
                 "https://%s.tts.speech.microsoft.com/cognitiveservices/v1",
                 config.getRegion());
 
-        // Build SSML — Speech Synthesis Markup Language
         var ssml = String.format("""
                 <speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='%s'>
                     <voice name='%s'>
@@ -205,108 +187,263 @@ public class AzureSpeechService {
         }
     }
 
-    /**
-     * Synthesize with default voice from config.
-     */
     public byte[] synthesize(String text) {
         return synthesize(text, null);
     }
 
     // ========================================================================
-    // Pronunciation Assessment
+    // Pronunciation Assessment — Azure Speech SDK
     // ========================================================================
 
     /**
-     * Transcribe audio with pronunciation assessment scoring.
-     * Returns detailed per-word pronunciation scores.
+     * Scripted pronunciation assessment (reading mode).
+     * User reads a known reference text — gets per-word + per-phoneme accuracy.
+     * Includes: AccuracyScore, FluencyScore, CompletenessScore, ProsodyScore, per-word ErrorType.
      *
-     * @param audioBytes   Audio data (WAV PCM 16kHz mono)
-     * @param referenceText The expected text to compare against
-     * @return PronunciationResult with overall and per-word scores
+     * @param wavBytes      WAV PCM 16kHz mono audio data
+     * @param referenceText The text the user is supposed to read
+     * @return PronunciationResult with detailed per-word and per-phoneme scores
      */
-    public PronunciationResult assessPronunciation(byte[] audioBytes, String referenceText) {
-        if (!enabled) {
-            return PronunciationResult.empty();
-        }
+    public PronunciationResult assessPronunciation(byte[] wavBytes, String referenceText) {
+        if (!enabled) return PronunciationResult.empty();
 
         var config = appProperties.getAzureSpeech();
-        var url = String.format(
-                "https://%s.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1" +
-                "?language=%s&format=detailed",
-                config.getRegion(), config.getSttLanguage());
 
-        // Build pronunciation assessment config (Base64 encoded JSON)
-        var assessmentConfig = String.format("""
-                {"ReferenceText":"%s","GradingSystem":"HundredMark","Granularity":"Phoneme","Dimension":"Comprehensive"}
-                """, escapeJson(referenceText)).trim();
-        var assessmentHeader = java.util.Base64.getEncoder()
-                .encodeToString(assessmentConfig.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-
+        // Write audio to temp file (SDK requires file or stream input)
+        File tempFile = null;
         try {
-            var request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(30))
-                    .header("Ocp-Apim-Subscription-Key", config.getSubscriptionKey())
-                    .header("Content-Type", "audio/wav; codecs=audio/pcm; samplerate=16000")
-                    .header("Accept", "application/json")
-                    .header("Pronunciation-Assessment", assessmentHeader)
-                    .POST(HttpRequest.BodyPublishers.ofByteArray(audioBytes))
-                    .build();
+            tempFile = File.createTempFile("pron_assess_", ".wav");
+            try (var fos = new FileOutputStream(tempFile)) {
+                fos.write(wavBytes);
+            }
 
-            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            // Configure Speech SDK
+            var speechConfig = SpeechConfig.fromSubscription(
+                    config.getSubscriptionKey(), config.getRegion());
+            speechConfig.setSpeechRecognitionLanguage(config.getSttLanguage());
 
-            if (response.statusCode() != 200) {
-                log.error("Azure Pronunciation Assessment failed — status: {}", response.statusCode());
+            // Configure Pronunciation Assessment
+            var pronConfig = new PronunciationAssessmentConfig(
+                    referenceText,
+                    PronunciationAssessmentGradingSystem.HundredMark,
+                    PronunciationAssessmentGranularity.Phoneme,
+                    true  // enableMiscue: detect omissions and insertions
+            );
+            pronConfig.enableProsodyAssessment();
+            // Request IPA phoneme alphabet for detailed feedback
+            pronConfig.setPhonemeAlphabet("IPA");
+
+            // Configure audio input from file
+            var audioConfig = AudioConfig.fromWavFileInput(tempFile.getAbsolutePath());
+
+            // Create recognizer and apply pronunciation config
+            var recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+            pronConfig.applyTo(recognizer);
+
+            // Recognize
+            var result = recognizer.recognizeOnceAsync().get();
+
+            if (result.getReason() == ResultReason.RecognizedSpeech) {
+                // Get the full JSON result (JRE: phoneme/word details only via JSON)
+                var jsonStr = result.getProperties().getProperty(
+                        PropertyId.SpeechServiceResponse_JsonResult);
+                var json = objectMapper.readTree(jsonStr);
+
+                var pronResult = parsePronunciationJson(json);
+
+                log.info("📝 SDK Pronunciation: accuracy={}, fluency={}, completeness={}, prosody={}, overall={}",
+                        pronResult.accuracyScore(), pronResult.fluencyScore(),
+                        pronResult.completenessScore(), pronResult.prosodyScore(),
+                        pronResult.overallScore());
+
+                // Cleanup SDK resources
+                recognizer.close();
+                audioConfig.close();
+                speechConfig.close();
+
+                return pronResult;
+
+            } else if (result.getReason() == ResultReason.NoMatch) {
+                log.warn("Azure Pronunciation Assessment: no speech recognized");
+                recognizer.close();
+                audioConfig.close();
+                speechConfig.close();
+                return PronunciationResult.empty();
+            } else {
+                log.error("Azure Pronunciation Assessment failed: reason={}, errorDetails={}",
+                        result.getReason(), result.getProperties().getProperty(
+                                PropertyId.CancellationDetails_ReasonDetailedText));
+                recognizer.close();
+                audioConfig.close();
+                speechConfig.close();
                 return PronunciationResult.empty();
             }
-
-            var json = objectMapper.readTree(response.body());
-            var nBest = json.path("NBest");
-            if (!nBest.isArray() || nBest.isEmpty()) {
-                return PronunciationResult.empty();
-            }
-
-            var best = nBest.get(0);
-            var assessment = best.path("PronunciationAssessment");
-
-            double accuracyScore = assessment.path("AccuracyScore").asDouble(0);
-            double fluencyScore = assessment.path("FluencyScore").asDouble(0);
-            double completenessScore = assessment.path("CompletenessScore").asDouble(0);
-            double pronScore = assessment.path("PronScore").asDouble(0);
-
-            // Per-word scores
-            List<WordPronunciation> wordScores = new ArrayList<>();
-            var wordsNode = best.path("Words");
-            if (wordsNode.isArray()) {
-                for (var w : wordsNode) {
-                    var wa = w.path("PronunciationAssessment");
-                    wordScores.add(new WordPronunciation(
-                            w.path("Word").asText(),
-                            wa.path("AccuracyScore").asDouble(0),
-                            wa.path("ErrorType").asText("None")));
-                }
-            }
-
-            log.info("📝 Pronunciation: accuracy={}, fluency={}, completeness={}, overall={}",
-                    accuracyScore, fluencyScore, completenessScore, pronScore);
-
-            return new PronunciationResult(
-                    accuracyScore, fluencyScore, completenessScore, pronScore,
-                    best.path("Display").asText(""), wordScores);
 
         } catch (Exception e) {
-            log.error("Azure Pronunciation Assessment error: {}", e.getMessage(), e);
+            log.error("Azure Pronunciation Assessment SDK error: {}", e.getMessage(), e);
             return PronunciationResult.empty();
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
         }
     }
 
-    // ========================================================================
-    // Voice Listing
-    // ========================================================================
+    /**
+     * Unscripted pronunciation assessment (free speaking mode).
+     * User speaks freely — no reference text required.
+     * Includes: AccuracyScore, FluencyScore, ProsodyScore (no CompletenessScore).
+     *
+     * @param wavBytes WAV PCM 16kHz mono audio data
+     * @return PronunciationResult with per-word scores (no completeness)
+     */
+    public PronunciationResult assessPronunciationUnscripted(byte[] wavBytes) {
+        if (!enabled) return PronunciationResult.empty();
+
+        var config = appProperties.getAzureSpeech();
+
+        File tempFile = null;
+        try {
+            tempFile = File.createTempFile("pron_assess_unscripted_", ".wav");
+            try (var fos = new FileOutputStream(tempFile)) {
+                fos.write(wavBytes);
+            }
+
+            var speechConfig = SpeechConfig.fromSubscription(
+                    config.getSubscriptionKey(), config.getRegion());
+            speechConfig.setSpeechRecognitionLanguage(config.getSttLanguage());
+
+            // Unscripted: empty reference text
+            var pronConfig = new PronunciationAssessmentConfig(
+                    "",
+                    PronunciationAssessmentGradingSystem.HundredMark,
+                    PronunciationAssessmentGranularity.Phoneme,
+                    false  // no miscue for unscripted
+            );
+            pronConfig.enableProsodyAssessment();
+            pronConfig.setPhonemeAlphabet("IPA");
+
+            var audioConfig = AudioConfig.fromWavFileInput(tempFile.getAbsolutePath());
+            var recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+            pronConfig.applyTo(recognizer);
+
+            var result = recognizer.recognizeOnceAsync().get();
+
+            if (result.getReason() == ResultReason.RecognizedSpeech) {
+                var jsonStr = result.getProperties().getProperty(
+                        PropertyId.SpeechServiceResponse_JsonResult);
+                var json = objectMapper.readTree(jsonStr);
+                var pronResult = parsePronunciationJson(json);
+
+                log.info("📝 SDK Unscripted Pronunciation: accuracy={}, fluency={}, prosody={}, overall={}",
+                        pronResult.accuracyScore(), pronResult.fluencyScore(),
+                        pronResult.prosodyScore(), pronResult.overallScore());
+
+                recognizer.close();
+                audioConfig.close();
+                speechConfig.close();
+
+                return pronResult;
+            } else {
+                log.warn("Azure Unscripted Assessment: reason={}", result.getReason());
+                recognizer.close();
+                audioConfig.close();
+                speechConfig.close();
+                return PronunciationResult.empty();
+            }
+
+        } catch (Exception e) {
+            log.error("Azure Unscripted Assessment error: {}", e.getMessage(), e);
+            return PronunciationResult.empty();
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+    }
 
     /**
-     * List available TTS voices for the configured region.
+     * Parse the SDK JSON result into PronunciationResult with per-word and per-phoneme detail.
      */
+    private PronunciationResult parsePronunciationJson(JsonNode json) {
+        var nBest = json.path("NBest");
+        if (!nBest.isArray() || nBest.isEmpty()) return PronunciationResult.empty();
+
+        var best = nBest.get(0);
+        var assessment = best.path("PronunciationAssessment");
+
+        double accuracyScore = assessment.path("AccuracyScore").asDouble(0);
+        double fluencyScore = assessment.path("FluencyScore").asDouble(0);
+        double completenessScore = assessment.path("CompletenessScore").asDouble(0);
+        double prosodyScore = assessment.path("ProsodyScore").asDouble(0);
+        double pronScore = assessment.path("PronScore").asDouble(0);
+
+        // Per-word scores with phoneme details
+        List<WordPronunciation> wordScores = new ArrayList<>();
+        var wordsNode = best.path("Words");
+        if (wordsNode.isArray()) {
+            for (var w : wordsNode) {
+                var wa = w.path("PronunciationAssessment");
+
+                // Per-phoneme scores within each word
+                List<PhonemePronunciation> phonemes = new ArrayList<>();
+                var phonemesNode = w.path("Phonemes");
+                if (phonemesNode.isArray()) {
+                    for (var p : phonemesNode) {
+                        var pa = p.path("PronunciationAssessment");
+                        phonemes.add(new PhonemePronunciation(
+                                p.path("Phoneme").asText(),
+                                pa.path("AccuracyScore").asDouble(0),
+                                pa.path("NBestPhonemes").isArray()
+                                        ? parseNBestPhonemes(pa.path("NBestPhonemes"))
+                                        : List.of()
+                        ));
+                    }
+                }
+
+                // Per-syllable info
+                List<SyllablePronunciation> syllables = new ArrayList<>();
+                var syllablesNode = w.path("Syllables");
+                if (syllablesNode.isArray()) {
+                    for (var s : syllablesNode) {
+                        var sa = s.path("PronunciationAssessment");
+                        syllables.add(new SyllablePronunciation(
+                                s.path("Syllable").asText(),
+                                sa.path("AccuracyScore").asDouble(0)
+                        ));
+                    }
+                }
+
+                wordScores.add(new WordPronunciation(
+                        w.path("Word").asText(),
+                        wa.path("AccuracyScore").asDouble(0),
+                        wa.path("ErrorType").asText("None"),
+                        phonemes,
+                        syllables
+                ));
+            }
+        }
+
+        return new PronunciationResult(
+                accuracyScore, fluencyScore, completenessScore, prosodyScore, pronScore,
+                best.path("Display").asText(""), wordScores);
+    }
+
+    private List<NBestPhoneme> parseNBestPhonemes(JsonNode nBestNode) {
+        List<NBestPhoneme> result = new ArrayList<>();
+        for (var p : nBestNode) {
+            result.add(new NBestPhoneme(
+                    p.path("Phoneme").asText(),
+                    p.path("Score").asDouble(0)
+            ));
+        }
+        return result;
+    }
+
+    // ========================================================================
+    // Voice Listing (REST API)
+    // ========================================================================
+
     public JsonNode listVoices() {
         if (!enabled) return objectMapper.createArrayNode();
 
@@ -333,10 +470,7 @@ public class AzureSpeechService {
     // ========================================================================
 
     public record TranscriptionResult(
-            String text,
-            double confidence,
-            List<WordResult> words,
-            String status
+            String text, double confidence, List<WordResult> words, String status
     ) {
         public static TranscriptionResult empty() {
             return new TranscriptionResult("", 0.0, List.of(), "NoResult");
@@ -345,20 +479,48 @@ public class AzureSpeechService {
 
     public record WordResult(String word, double confidence, long offset, long duration) {}
 
+    /**
+     * Full pronunciation assessment result with phoneme-level detail.
+     */
     public record PronunciationResult(
             double accuracyScore,
             double fluencyScore,
             double completenessScore,
+            double prosodyScore,
             double overallScore,
             String recognizedText,
             List<WordPronunciation> words
     ) {
         public static PronunciationResult empty() {
-            return new PronunciationResult(0, 0, 0, 0, "", List.of());
+            return new PronunciationResult(0, 0, 0, 0, 0, "", List.of());
         }
     }
 
-    public record WordPronunciation(String word, double accuracyScore, String errorType) {}
+    /**
+     * Per-word pronunciation detail with phonemes and syllables.
+     */
+    public record WordPronunciation(
+            String word,
+            double accuracyScore,
+            String errorType,      // None, Mispronunciation, Omission, Insertion, UnexpectedBreak, MissingBreak, Monotone
+            List<PhonemePronunciation> phonemes,
+            List<SyllablePronunciation> syllables
+    ) {}
+
+    /**
+     * Per-phoneme accuracy with alternative phoneme suggestions (IPA).
+     */
+    public record PhonemePronunciation(
+            String phoneme,         // IPA symbol, e.g. "θ", "ɛ", "l"
+            double accuracyScore,
+            List<NBestPhoneme> nBestPhonemes  // What the user actually said vs expected
+    ) {}
+
+    /** Alternative phoneme candidates with confidence scores. */
+    public record NBestPhoneme(String phoneme, double score) {}
+
+    /** Per-syllable accuracy. */
+    public record SyllablePronunciation(String syllable, double accuracyScore) {}
 
     // ========================================================================
     // Helpers
@@ -370,11 +532,5 @@ public class AzureSpeechService {
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
                 .replace("'", "&apos;");
-    }
-
-    private String escapeJson(String text) {
-        return text.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n");
     }
 }

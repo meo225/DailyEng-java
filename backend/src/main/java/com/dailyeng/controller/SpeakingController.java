@@ -203,16 +203,22 @@ public class SpeakingController {
                 .body(audioBytes);
     }
 
-    /** POST /speaking/speech/pronunciation — Pronunciation assessment */
+    /** POST /speaking/speech/pronunciation — Pronunciation assessment (SDK)
+     *  With referenceText → scripted (reading), without → unscripted (free speaking) */
     @PostMapping("/speech/pronunciation")
     public ResponseEntity<AzureSpeechService.PronunciationResult> assessPronunciation(
             @RequestParam("audio") MultipartFile audioFile,
-            @RequestParam("referenceText") String referenceText,
+            @RequestParam(value = "referenceText", required = false) String referenceText,
             HttpServletRequest request
     ) {
         requireUserId(request);
         try {
-            var result = azureSpeechService.assessPronunciation(audioFile.getBytes(), referenceText);
+            AzureSpeechService.PronunciationResult result;
+            if (referenceText != null && !referenceText.isBlank()) {
+                result = azureSpeechService.assessPronunciation(audioFile.getBytes(), referenceText);
+            } else {
+                result = azureSpeechService.assessPronunciationUnscripted(audioFile.getBytes());
+            }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
