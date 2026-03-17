@@ -29,7 +29,8 @@ public class TopicGroup extends BaseEntity {
     private int order = 0;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
+    @Column(nullable = false, columnDefinition = "\"HubType\"")
     private HubType hubType;
 
     @Type(ListArrayType.class)

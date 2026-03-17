@@ -1,147 +1,68 @@
-import NextAuth from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+/**
+ * Server-side auth utility for Next.js Server Components and Server Actions.
+ *
+ * Uses the `jose` library to verify the JWT signature against the shared
+ * JWT_SECRET (same key the Spring Boot backend uses to sign tokens).
+ *
+ * CROSS-ORIGIN NOTE:
+ * In dev mode (Next.js :3000, Spring Boot :8080), httpOnly cookies are stored
+ * for the backend origin and are NOT available to Next.js server-side code.
+ * This function will only work when both share the same origin (production
+ * behind a reverse proxy) or cookies are set with a shared domain.
+ *
+ * For client-side auth, use the AuthContext/useAuth() hook instead.
+ */
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
-  trustHost: true, // Trust host for production builds (fixes UntrustedHost error)
-  providers: [
-    // Google OAuth Provider
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
 
-    // Credentials Provider (Email/Password)
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || ""
+);
+
+interface AuthSession {
+  user: {
+    id: string;
+    name?: string;
+    email?: string;
+    image?: string;
+  };
+}
+
+/**
+ * Get the current auth session from a verified JWT cookie.
+ * Returns null if no valid token is found or signature verification fails.
+ *
+ * NOTE: In cross-origin dev mode, this will almost always return null
+ * because the httpOnly cookie is not available to the Next.js server.
+ * Use AuthContext/useAuth() for client-side auth checks.
+ */
+export async function auth(): Promise<AuthSession | null> {
+  try {
+    if (!process.env.JWT_SECRET) {
+      // No secret configured — cannot verify tokens server-side
+      return null;
+    }
+
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+
+    if (!token) return null;
+
+    // Verify JWT signature + expiration using jose
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+
+    const userId = payload.sub;
+    if (!userId) return null;
+
+    return {
+      user: {
+        id: userId,
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email và mật khẩu là bắt buộc");
-        }
+    };
+  } catch {
+    // Verification failed (invalid signature, expired, malformed, etc.)
+    return null;
+  }
+}
 
-        const email = credentials.email as string;
-        const password = credentials.password as string;
-
-        // Tìm user trong database
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
-
-        if (!user || !user.password) {
-          throw new Error("Email hoặc mật khẩu không chính xác");
-        }
-
-        // Verify password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-
-        if (!isPasswordValid) {
-          throw new Error("Email hoặc mật khẩu không chính xác");
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-        };
-      },
-    }),
-  ],
-
-  // Session configuration
-  session: {
-    strategy: "jwt", // Required when using Credentials provider
-  },
-
-  // Custom pages
-  pages: {
-    signIn: "/auth/signin",
-    // signUp is not a standard NextAuth page, handle via custom logic
-    error: "/auth/error",
-  },
-
-  // Callbacks
-  callbacks: {
-    // Authorized callback for middleware - handles authentication logic
-    authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
-      const pathname = nextUrl.pathname;
-
-      // Routes that require authentication
-      const isProtectedRoute = pathname.startsWith("/user");
-
-      // Auth routes - users already logged in should be redirected away
-      const isAuthRoute =
-        pathname.startsWith("/auth/signin") ||
-        pathname.startsWith("/auth/signup");
-
-      // If user is on auth page and already logged in, redirect to home
-      if (isAuthRoute && isLoggedIn) {
-        return Response.redirect(new URL("/", nextUrl));
-      }
-
-      // If route is protected and user is not logged in, redirect to signin
-      if (isProtectedRoute && !isLoggedIn) {
-        const callbackUrl = encodeURIComponent(pathname + nextUrl.search);
-        return Response.redirect(
-          new URL(`/auth/signin?callbackUrl=${callbackUrl}`, nextUrl)
-        );
-      }
-
-      // Allow the request to continue
-      return true;
-    },
-
-    async jwt({ token, user, account }) {
-      // Lưu user id vào token khi đăng nhập lần đầu
-      if (user) {
-        token.id = user.id;
-      }
-      // Lưu provider info nếu cần
-      if (account) {
-        token.provider = account.provider;
-      }
-      return token;
-    },
-
-    async session({ session, token }) {
-      // Thêm user id vào session
-      if (session.user && token.id) {
-        session.user.id = token.id as string;
-      }
-      return session;
-    },
-
-    async signIn({ user, account }) {
-      // Cho phép tất cả OAuth sign-ins
-      if (account?.provider !== "credentials") {
-        return true;
-      }
-
-      // Với credentials, kiểm tra user tồn tại
-      if (!user?.id) {
-        return false;
-      }
-
-      return true;
-    },
-  },
-
-  // Events (optional - for logging/analytics)
-  events: {
-    async signIn({ user, account }) {
-      console.log(`User ${user.email} signed in via ${account?.provider}`);
-    },
-  },
-
-  // Enable debug in development
-  debug: process.env.NODE_ENV === "development",
-});

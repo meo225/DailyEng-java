@@ -6,9 +6,7 @@ import type {
 } from "@/components/page/SpeakingSessionClient";
 import {
   getScenarioById,
-  getLearningRecordsForScenario,
 } from "@/actions/speaking";
-import { auth } from "@/lib/auth";
 
 // Mock data for fallback or initial props
 const mockDetailedFeedback: DetailedFeedbackData = {
@@ -32,41 +30,20 @@ interface PageProps {
 export default async function SpeakingSessionPage({ params }: PageProps) {
   const { id } = await params;
 
-  // Get authenticated user
-  const session = await auth();
-  const userId = session?.user?.id || "user-1"; // Fallback for dev
-
-  // Fetch real scenario from database
+  // Fetch real scenario from database (public data, no auth needed)
   const scenario = await getScenarioById(id);
   const initialTurns: InitialTurn[] = [];
 
-  // Fetch learning records (past completed sessions) for this scenario
-  let learningRecords: LearningRecord[] = [];
-  if (scenario) {
-    const records = await getLearningRecordsForScenario(userId, id);
-    learningRecords = records.map((r) => ({
-      id: r.id,
-      overallScore: r.overallScore,
-      grammarScore: r.grammarScore,
-      relevanceScore: r.relevanceScore,
-      fluencyScore: r.fluencyScore,
-      pronunciationScore: r.pronunciationScore,
-      intonationScore: r.intonationScore,
-      date: r.date,
-    }));
-  }
-
-  // If scenario not found, the client will handle the null case
+  // Learning records will be fetched client-side using userId from useAuth()
+  // Server-side auth() can't read cross-origin httpOnly cookies
 
   return (
     <SpeakingSessionClient
-      // Pass the resolved scenario.id as the "scenarioId" prop to client
       scenario={scenario}
       initialTurns={initialTurns}
-      learningRecords={learningRecords}
+      learningRecords={[]}
       detailedFeedback={mockDetailedFeedback}
       scenarioId={scenario ? scenario.id : id}
     />
   );
 }
-

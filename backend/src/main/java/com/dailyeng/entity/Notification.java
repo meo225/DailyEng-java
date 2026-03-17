@@ -15,7 +15,7 @@ public class Notification extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "userId", insertable = false, updatable = false) private User user;
     @Column(nullable = false) private String title;
     @Column(nullable = false) private String message;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private NotificationType type;
+    @Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) @Column(nullable = false, columnDefinition = "\"NotificationType\"") private NotificationType type;
     @Builder.Default private boolean isRead = false;
     @CreationTimestamp @Column(updatable = false) private LocalDateTime createdAt;
 }

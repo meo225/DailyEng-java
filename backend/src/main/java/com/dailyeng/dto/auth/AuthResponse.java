@@ -15,4 +15,11 @@ public record AuthResponse(
     public static AuthResponse error() {
         return new AuthResponse(false, null, null, null);
     }
+
+    /**
+     * Return a response with tokens stripped — used when tokens are sent via httpOnly cookies.
+     */
+    public AuthResponse withoutTokens() {
+        return new AuthResponse(this.success, null, null, this.user);
+    }
 }

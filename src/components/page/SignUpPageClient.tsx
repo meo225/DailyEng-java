@@ -6,11 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  registerUser,
-  signInWithCredentials,
-  signInWithGoogle,
-} from "@/actions/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   AlertCircle,
   BookOpen,
@@ -99,6 +95,7 @@ const getPasswordStrength = (password: string): PasswordStrength => {
 
 export default function SignUpPageClient({ benefits }: SignUpPageClientProps) {
   const router = useRouter();
+  const { register } = useAuth();
   const [isPending, startTransition] = useTransition();
   const [isGooglePending, startGoogleTransition] = useTransition();
   const [name, setName] = useState("");
@@ -138,31 +135,22 @@ export default function SignUpPageClient({ benefits }: SignUpPageClientProps) {
     }
 
     startTransition(async () => {
-      // First, register the user
-      const registerResult = await registerUser(trimmedName, email, password);
+      // Register auto-sets httpOnly cookies (auto-login)
+      const result = await register(trimmedName, email, password);
 
-      if (!registerResult.success) {
-        setError(registerResult.error || "Đăng ký thất bại");
-        return;
-      }
-
-      // Then, sign them in automatically
-      const signInResult = await signInWithCredentials(email, password);
-
-      if (signInResult.success) {
-        // Use window.location for full page reload to ensure session is properly loaded
+      if (result.success) {
+        // Full page reload to hydrate auth state everywhere
         window.location.href = "/";
       } else {
-        // Registration succeeded but sign-in failed - redirect to sign-in page
-        window.location.href = "/auth/signin";
+        setError(result.error || "Đăng ký thất bại");
       }
     });
   };
 
   const handleGoogleSignUp = () => {
-    startGoogleTransition(async () => {
-      await signInWithGoogle();
-    });
+    // TODO: Integrate Google Identity Services (@react-oauth/google)
+    // to get the idToken and pass it to signInWithGoogle(idToken).
+    setError("Google sign-up is being updated. Please use email/password for now.");
   };
 
   const isLoading = isPending || isGooglePending;

@@ -1,5 +1,4 @@
 
-import { auth } from "@/lib/auth";
 import VocabTopicPageClient from "@/components/page/VocabTopicPageClient";
 import { getVocabTopicById } from "@/actions/vocab";
 import { notFound } from "next/navigation";
@@ -10,10 +9,10 @@ interface PageProps {
 
 export default async function TopicDetailPage({ params }: PageProps) {
   const { topicId } = await params;
-  const session = await auth();
-  const userId = session?.user?.id;
 
-  const data = await getVocabTopicById(topicId, userId);
+  // Fetch topic data without userId (cross-origin cookies not available server-side)
+  // User-specific progress will be loaded client-side
+  const data = await getVocabTopicById(topicId, undefined);
 
   if (!data) {
     notFound();

@@ -138,7 +138,7 @@ export default function FlashcardReviewClient({ notebookItems }: FlashcardReview
         </div>
 
         {/* Flashcard with Stats on sides */}
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-6 mb-8">
             {/* Learning stat - Left side */}
             <div className="flex items-center justify-center px-6 py-3 rounded-r-full bg-warning-50 border-2 border-warning-200">

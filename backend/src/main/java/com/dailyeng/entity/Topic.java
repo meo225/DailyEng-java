@@ -16,7 +16,7 @@ public class Topic extends BaseEntity {
     @Column(nullable = false) private String title;
     private String subtitle;
     @Column(nullable = false) private String description;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private Level level;
+    @Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) @Column(nullable = false, columnDefinition = "\"Level\"") private Level level;
     private int wordCount;
     private int estimatedTime;
     private String thumbnail;

@@ -20,8 +20,8 @@ import java.util.List;
 public class StudyPlan extends BaseEntity {
     @Column(nullable = false, unique = true) private String userId;
     @OneToOne(fetch = FetchType.LAZY) @JoinColumn(name = "userId", insertable = false, updatable = false) private User user;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private StudyGoal goal;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private Level level;
+    @Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) @Column(nullable = false, columnDefinition = "\"StudyGoal\"") private StudyGoal goal;
+    @Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) @Column(nullable = false, columnDefinition = "\"Level\"") private Level level;
     private int minutesPerDay;
     @Builder.Default private int wordsPerDay = 10;
     @Type(ListArrayType.class) @Column(columnDefinition = "text[]") @Builder.Default private List<String> interests = new ArrayList<>();

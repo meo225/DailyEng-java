@@ -1,8 +1,8 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
-import { useSession } from "next-auth/react"
+import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import {
@@ -60,8 +60,17 @@ export function ProtectedRoute({
   pageDescription = "Sign in to access all features and track your learning progress.",
   pageIcon,
 }: ProtectedRouteProps) {
-  const { data: session, status } = useSession()
-  const isAuthenticated = status === "authenticated" && !!session?.user
+  const { user, status } = useAuth()
+  const isAuthenticated = status === "authenticated" && !!user
+
+  // Show spinner only while AuthContext is still hydrating auth state
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="h-10 w-10 rounded-full border-4 border-primary-200 border-t-primary-500 animate-spin" />
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return (

@@ -15,7 +15,7 @@ public class PlacementTestResult extends BaseEntity {
     @Column(nullable = false) private String userId;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "userId", insertable = false, updatable = false) private User user;
     private int score;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private Level level;
+    @Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) @Column(nullable = false, columnDefinition = "\"Level\"") private Level level;
     @Type(JsonType.class) @Column(columnDefinition = "jsonb") private Object breakdown;
     @CreationTimestamp @Column(updatable = false) private LocalDateTime createdAt;
 }

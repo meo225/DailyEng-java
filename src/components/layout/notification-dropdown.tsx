@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useTransition } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Bell,
   BookOpen,
@@ -67,7 +67,7 @@ function formatRelativeTime(createdAt: Date): string {
 }
 
 export function NotificationDropdown() {
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [isPending, startTransition] = useTransition();
 
   // Cache notifications in state
@@ -88,10 +88,10 @@ export function NotificationDropdown() {
   const handleOpenChange = async (open: boolean) => {
     setIsOpen(open);
 
-    if (open && notifications === null && session?.user?.id) {
+    if (open && notifications === null && user?.id) {
       setIsLoading(true);
       try {
-        const result = await getNotifications(session.user.id, {
+        const result = await getNotifications(user.id, {
           page: 1,
           limit: 10,
           sortOrder: "newest",

@@ -26,7 +26,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useState, useEffect, useTransition, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute, PageIcons } from "@/components/auth/protected-route";
 import {
   HubHero,
@@ -144,7 +144,9 @@ export default function SpeakingPageClient({
   initialBookmarkIds = [],
 }: SpeakingPageClientProps) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user } = useAuth();
+  // Resolve userId: prefer prop, fall back to useAuth() (cross-origin cookie mode)
+  const effectiveUserId = userId || user?.id || "";
   const [isPending, startTransition] = useTransition();
 
   // Topic Groups state (client-side fetching)
@@ -235,43 +237,62 @@ export default function SpeakingPageClient({
   );
   const historyFetched = useRef(false);
 
-  // Fetch topic groups client-side (for skeleton loading experience)
+  // Parallel initial data fetch: topic groups + scenarios + bookmark IDs
+  // Fires once when user becomes available, replacing 3 sequential effects
+  const initialFetchDone = useRef(false);
   useEffect(() => {
-    // Prevent re-fetching after initial load
-    if (topicGroupsFetched.current) return;
+    if (initialFetchDone.current) return;
 
-    // If we have initial data, mark as fetched and skip
+    // If we have initial topic group data, just mark as loaded
     if (initialTopicGroups.length > 0) {
       topicGroupsFetched.current = true;
       setTopicGroupsLoading(false);
-      return;
     }
 
-    // Mark as fetching to prevent duplicate calls
+    // Need user for scenarios + bookmarks
+    if (!user?.id) return;
+
+    initialFetchDone.current = true;
     topicGroupsFetched.current = true;
 
-    getSpeakingTopicGroups()
-      .then((groups) => {
-        setTopicGroups(groups);
-        // Set selected group to first group if available and current selection doesn't exist
-        if (
-          groups.length > 0 &&
-          !groups.find((g) => g.name === selectedGroup)
-        ) {
-          setSelectedGroup(groups[0].name);
-        }
-      })
-      .finally(() => setTopicGroupsLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on mount
+    const groupsPromise = initialTopicGroups.length > 0
+      ? Promise.resolve(initialTopicGroups)
+      : getSpeakingTopicGroups();
 
-  // Fetch scenarios for Available Topics tab with pagination
+    Promise.all([
+      groupsPromise,
+      getSpeakingScenariosWithProgress(user.id, {
+        page: 1,
+        limit: SCENARIOS_PER_PAGE,
+        category: selectedGroup,
+        subcategory: "All",
+      }),
+      getSpeakingBookmarkIds(user.id),
+    ]).then(([groups, scenarioResult, bookmarkIds]) => {
+      setTopicGroups(groups);
+      if (
+        groups.length > 0 &&
+        !groups.find((g) => g.name === selectedGroup)
+      ) {
+        setSelectedGroup(groups[0].name);
+      }
+      setScenarios(scenarioResult.scenarios as Scenario[]);
+      setScenarioTotalPages(scenarioResult.totalPages);
+      setBookmarkedTopics(bookmarkIds);
+    }).finally(() => {
+      setTopicGroupsLoading(false);
+      setScenariosLoading(false);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Fetch scenarios when filters/pagination change (after initial load)
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!user?.id || !initialFetchDone.current) return;
     if (activeTab !== "available" || searchQuery.trim().length > 0) return;
 
     setScenariosLoading(true);
-    getSpeakingScenariosWithProgress(session.user.id, {
+    getSpeakingScenariosWithProgress(user.id, {
       page: scenarioPage,
       limit: SCENARIOS_PER_PAGE,
       category: selectedGroup,
@@ -284,7 +305,7 @@ export default function SpeakingPageClient({
       })
       .finally(() => setScenariosLoading(false));
   }, [
-    session?.user?.id,
+    user?.id,
     activeTab,
     scenarioPage,
     selectedGroup,
@@ -298,18 +319,11 @@ export default function SpeakingPageClient({
     setScenarioPage(1);
   }, [selectedGroup, selectedSubcategory, selectedLevels]);
 
-  // Fetch bookmark IDs on mount
-  useEffect(() => {
-    if (session?.user?.id) {
-      getSpeakingBookmarkIds(session.user.id).then(setBookmarkedTopics);
-    }
-  }, [session?.user?.id]);
-
   // Fetch bookmarked topics for Bookmarks tab
   useEffect(() => {
-    if (session?.user?.id && activeTab === "bookmarks") {
+    if (user?.id && activeTab === "bookmarks") {
       setBookmarkLoading(true);
-      getSpeakingBookmarks(session.user.id, bookmarkPage, bookmarksPerPage)
+      getSpeakingBookmarks(user.id, bookmarkPage, bookmarksPerPage)
         .then((result) => {
           setBookmarkedTopicsList(
             result.bookmarks.map(mapDbScenarioToScenario)
@@ -318,7 +332,7 @@ export default function SpeakingPageClient({
         })
         .finally(() => setBookmarkLoading(false));
     }
-  }, [session?.user?.id, activeTab, bookmarkPage]);
+  }, [user?.id, activeTab, bookmarkPage]);
 
   // Fetch search results when search query changes (debounced)
   useEffect(() => {
@@ -329,21 +343,21 @@ export default function SpeakingPageClient({
 
     const timer = setTimeout(() => {
       setSearchLoading(true);
-      searchSpeakingScenarios(searchQuery, session?.user?.id)
+      searchSpeakingScenarios(searchQuery, user?.id)
         .then((results) => setSearchResults(results as Scenario[]))
         .finally(() => setSearchLoading(false));
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timer);
-  }, [searchQuery, session?.user?.id]);
+  }, [searchQuery, user?.id]);
 
   // Fetch custom topics
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!user?.id) return;
     if (activeTab !== "custom") return;
 
     setCustomScenariosLoading(true);
-    getCustomTopics(session.user.id)
+    getCustomTopics(user.id)
       .then((customTopics) => {
         setCustomScenarios(
           customTopics.map((s) => ({
@@ -351,7 +365,7 @@ export default function SpeakingPageClient({
             title: s.title,
             description: s.description,
             category: s.category || "Custom",
-            level: s.difficulty || "B1",
+            level: s.level || "B1",
             image: s.image || "/learning.png",
             sessionsCompleted: 0,
             totalSessions: 10,
@@ -361,28 +375,28 @@ export default function SpeakingPageClient({
         );
       })
       .finally(() => setCustomScenariosLoading(false));
-  }, [session?.user?.id, activeTab]);
+  }, [user?.id, activeTab]);
 
   // Lazy load history stats when History tab is first opened
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!user?.id) return;
     if (activeTab !== "history") return;
     if (historyFetched.current) return;
 
     historyFetched.current = true;
     setHistoryStatsLoading(true);
-    getSpeakingHistoryStats(session.user.id)
+    getSpeakingHistoryStats(user.id)
       .then((stats) => setHistoryStats(stats))
       .finally(() => setHistoryStatsLoading(false));
-  }, [session?.user?.id, activeTab]);
+  }, [user?.id, activeTab]);
 
   // Fetch history sessions when filter or page changes
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!user?.id) return;
     if (activeTab !== "history") return;
 
     setHistoryLoading(true);
-    getSpeakingHistorySessions(session.user.id, {
+    getSpeakingHistorySessions(user.id, {
       page: historyPage,
       limit: 10,
       rating: historyRatingFilter || undefined,
@@ -397,7 +411,7 @@ export default function SpeakingPageClient({
         setHistoryTotalPages(result.totalPages);
       })
       .finally(() => setHistoryLoading(false));
-  }, [session?.user?.id, activeTab, historyPage, historyRatingFilter]);
+  }, [user?.id, activeTab, historyPage, historyRatingFilter]);
 
   // Check if we're in search mode
   const isSearchMode = searchQuery.trim().length > 0;
@@ -419,7 +433,7 @@ export default function SpeakingPageClient({
   ];
 
   const handleBookmarkToggle = (topicId: string) => {
-    if (!session?.user?.id) return;
+    if (!user?.id) return;
 
     const wasBookmarked = bookmarkedTopics.includes(topicId);
 
@@ -438,11 +452,11 @@ export default function SpeakingPageClient({
     }
 
     startTransition(async () => {
-      await toggleSpeakingBookmark(session.user.id, topicId);
+      await toggleSpeakingBookmark(user.id, topicId);
       // Refresh bookmarked topics list if on bookmarks tab to sync with server
       if (activeTab === "bookmarks") {
         const result = await getSpeakingBookmarks(
-          session.user.id,
+          user.id,
           bookmarkPage,
           bookmarksPerPage
         );
@@ -460,7 +474,7 @@ export default function SpeakingPageClient({
     setGeneratingMessage("Creating your custom scenario...");
 
     try {
-      const result = await createCustomScenario(userId, topicPrompt);
+      const result = await createCustomScenario(effectiveUserId, topicPrompt);
       setTopicPrompt("");
       // Redirect to the new session (use sessionId from result)
       router.push(
@@ -478,7 +492,7 @@ export default function SpeakingPageClient({
     setGeneratingMessage("Generating a surprise scenario...");
 
     try {
-      const result = await createRandomScenario(userId);
+      const result = await createRandomScenario(effectiveUserId);
       // Redirect to the new session
       router.push(
         `/speaking/session/${result.scenario.id}?session=${result.sessionId}`

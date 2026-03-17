@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 public class AppProperties {
 
     private Jwt jwt = new Jwt();
+    private Cookie cookie = new Cookie();
     private Cors cors = new Cors();
     private Openai openai = new Openai();
     private AzureSpeech azureSpeech = new AzureSpeech();
@@ -44,6 +45,16 @@ public class AppProperties {
         private String secret;
         private long expirationMs = 86400000; // 24 hours
         private long refreshExpirationMs = 604800000; // 7 days
+    }
+
+    @Getter
+    @Setter
+    public static class Cookie {
+        private boolean secure = false; // true in production (HTTPS)
+        private String sameSite = "Lax";
+        private String domain = ""; // empty = current domain
+        private int accessMaxAge = 86400; // 24 hours in seconds
+        private int refreshMaxAge = 604800; // 7 days in seconds
     }
 
     @Getter

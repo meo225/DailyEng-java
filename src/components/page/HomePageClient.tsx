@@ -1007,7 +1007,7 @@ export default function HomePageClient({ featureTabs, reviews, partnerLogos }: H
 
       {/* Test Your English Level Section */}
       <section className="py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <RevealOnScroll>
             <Card className="relative overflow-hidden border-0 shadow-xl rounded-3xl bg-linear-to-r from-secondary-50 to-white cursor-pointer">
               <div className="grid md:grid-cols-2 gap-0">

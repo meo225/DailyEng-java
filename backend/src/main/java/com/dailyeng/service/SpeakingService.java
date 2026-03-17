@@ -245,19 +245,36 @@ public class SpeakingService {
                 scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null);
         var aiResult = openAiService.generateSpeakingResponse(config, history, req.userText());
 
-        // Calculate speech metrics
+        // Calculate speech metrics — prefer Azure SDK scores when available
         Integer pronunciationScore = null;
         Integer fluencyScore = null;
         var metrics = req.speechMetrics();
         if (metrics != null && metrics.wordCount() > 0) {
-            fluencyScore = metricsCalculator.calculateFluencyScore(
-                    metrics.wordCount(), metrics.speakingDurationMs(), metrics.pauseCount());
-            pronunciationScore = metricsCalculator.calculatePronunciationScore(
-                    metrics.confidenceScores(), fluencyScore,
-                    metrics.wordCount(), metrics.speakingDurationMs());
+            if (metrics.azureAccuracyScore() != null && metrics.azureAccuracyScore() > 0) {
+                // Use Azure Pronunciation Assessment scores (real, not heuristic)
+                pronunciationScore = (int) Math.round(metrics.azureAccuracyScore());
+                fluencyScore = (int) Math.round(metrics.azureFluencyScore() != null
+                        ? metrics.azureFluencyScore() : 0);
+                log.info("📊 Using Azure pronunciation scores: accuracy={}, fluency={}, prosody={}, overall={}",
+                        metrics.azureAccuracyScore(), metrics.azureFluencyScore(),
+                        metrics.azureProsodyScore(), metrics.azureOverallScore());
+            } else {
+                // Fallback to client-side heuristics
+                fluencyScore = metricsCalculator.calculateFluencyScore(
+                        metrics.wordCount(), metrics.speakingDurationMs(), metrics.pauseCount());
+                pronunciationScore = metricsCalculator.calculatePronunciationScore(
+                        metrics.confidenceScores(), fluencyScore,
+                        metrics.wordCount(), metrics.speakingDurationMs());
+                log.info("📊 Using heuristic scores: pronunciation={}, fluency={}", pronunciationScore, fluencyScore);
+            }
         }
 
-        // Save user turn
+        // Save user turn — store Azure prosody as pitchVariance for session-end intonation
+        Double storedPitchVariance = metrics != null ? metrics.pitchVariance() : null;
+        if (metrics != null && metrics.azureProsodyScore() != null && metrics.azureProsodyScore() > 0) {
+            storedPitchVariance = metrics.azureProsodyScore(); // 0-100 scale (vs raw Hz variance)
+        }
+
         var userTurn = SpeakingTurn.builder()
                 .sessionId(sessionId).role(Role.user).text(req.userText())
                 .audioUrl(req.audioUrl())
@@ -266,7 +283,7 @@ public class SpeakingService {
                 .wordCount(metrics != null ? metrics.wordCount() : null)
                 .speakingDurationMs(metrics != null ? (int) metrics.speakingDurationMs() : null)
                 .pauseCount(metrics != null ? metrics.pauseCount() : null)
-                .pitchVariance(metrics != null ? metrics.pitchVariance() : null)
+                .pitchVariance(storedPitchVariance)
                 .avgPitch(metrics != null ? metrics.avgPitch() : null)
                 .pitchSamplesCount(metrics != null ? metrics.pitchSamplesCount() : null)
                 .build();
@@ -278,6 +295,29 @@ public class SpeakingService {
         turnRepo.save(aiTurn);
 
         return new SubmitTurnResponse(aiResult.response(), userTurn.getId(), aiTurn.getId());
+    }
+
+    // ========================================================================
+    // 8b. generateHint — Suggest what user could say
+    // ========================================================================
+
+    @Transactional(readOnly = true)
+    public String generateHint(String sessionId) {
+        var session = sessionRepo.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found: " + sessionId));
+        var scenario = scenarioRepo.findById(session.getScenarioId())
+                .orElseThrow(() -> new ResourceNotFoundException("Scenario not found"));
+        var turns = turnRepo.findBySessionIdOrderByTimestampAsc(sessionId);
+
+        var history = turns.stream()
+                .map(t -> Map.of("role", t.getRole() == Role.user ? "user" : "assistant", "text", t.getText()))
+                .collect(Collectors.toList());
+
+        var config = new OpenAiService.ScenarioConfig(
+                scenario.getContext(), scenario.getUserRole(), scenario.getBotRole(),
+                scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null);
+
+        return openAiService.generateSpeakingHint(config, history).hint();
     }
 
     // ========================================================================
@@ -325,13 +365,39 @@ public class SpeakingService {
         int fluScore = turnsWithScores.isEmpty() ? 70
                 : (int) Math.round(turnsWithScores.stream().mapToInt(t -> t.getFluencyScore() != null ? t.getFluencyScore() : 0).average().orElse(70));
 
-        // Intonation from pitch variance
-        var pitchTurns = turns.stream()
-                .filter(t -> t.getRole() == Role.user && t.getPitchVariance() != null && t.getPitchVariance() > 0)
-                .toList();
-        double avgPitchVar = pitchTurns.isEmpty() ? 0
-                : pitchTurns.stream().mapToDouble(SpeakingTurn::getPitchVariance).average().orElse(0);
-        int intoScore = metricsCalculator.calculateIntonationScore(pitchTurns.isEmpty() ? null : avgPitchVar);
+        // Intonation: prefer Azure prosody scores, fall back to pitch variance heuristic
+        int intoScore;
+        // Check if turns have Azure-derived pronunciation scores (> 0 and reasonable)
+        boolean hasAzureScores = turnsWithScores.stream()
+                .anyMatch(t -> t.getPronunciationScore() != null && t.getPronunciationScore() > 0
+                        && t.getFluencyScore() != null && t.getFluencyScore() > 0);
+
+        if (hasAzureScores) {
+            // Average the pronunciation and fluency scores as a proxy for intonation/prosody
+            // since Azure prosody data might be stored as pitchVariance
+            var pitchTurns = turns.stream()
+                    .filter(t -> t.getRole() == Role.user && t.getPitchVariance() != null && t.getPitchVariance() > 0)
+                    .toList();
+
+            if (!pitchTurns.isEmpty() && pitchTurns.get(0).getPitchVariance() > 10) {
+                // pitchVariance > 10 likely means it's Azure prosody score (0-100), not raw Hz variance
+                double avgProsody = pitchTurns.stream().mapToDouble(SpeakingTurn::getPitchVariance).average().orElse(70);
+                intoScore = (int) Math.round(Math.min(100, avgProsody));
+                log.info("📊 Session intonation from Azure prosody: {}", intoScore);
+            } else {
+                // Use average of pronunciation and fluency as intonation estimate
+                intoScore = (int) Math.round((pronScore + fluScore) / 2.0);
+                log.info("📊 Session intonation from Azure avg: {}", intoScore);
+            }
+        } else {
+            // Fallback: heuristic from pitch variance
+            var pitchTurns = turns.stream()
+                    .filter(t -> t.getRole() == Role.user && t.getPitchVariance() != null && t.getPitchVariance() > 0)
+                    .toList();
+            double avgPitchVar = pitchTurns.isEmpty() ? 0
+                    : pitchTurns.stream().mapToDouble(SpeakingTurn::getPitchVariance).average().orElse(0);
+            intoScore = metricsCalculator.calculateIntonationScore(pitchTurns.isEmpty() ? null : avgPitchVar);
+        }
 
         int overallScore = metricsCalculator.calculateOverallScore(
                 analysis.grammarScore(), analysis.relevanceScore(), fluScore, pronScore, intoScore);
@@ -371,7 +437,9 @@ public class SpeakingService {
                     .map(e -> new TurnErrorDto(e.word(), e.correction(), e.errorType(), e.startIndex(), e.endIndex()))
                     .toList();
             return new ConversationTurn(t.getRole().name(), t.getText(), t.getId(),
-                    turnErrors.isEmpty() ? null : turnErrors);
+                    turnErrors.isEmpty() ? null : turnErrors,
+                    t.getRole() == Role.user ? t.getPronunciationScore() : null,
+                    t.getRole() == Role.user ? t.getFluencyScore() : null);
         }).toList();
 
         var scores = new SessionScores(analysis.grammarScore(), analysis.relevanceScore(),
@@ -404,7 +472,9 @@ public class SpeakingService {
                         }).toList();
             }
             return new ConversationTurn(t.getRole().name(), t.getText(), t.getId(),
-                    errors.isEmpty() ? null : errors);
+                    errors.isEmpty() ? null : errors,
+                    t.getRole() == Role.user ? t.getPronunciationScore() : null,
+                    t.getRole() == Role.user ? t.getFluencyScore() : null);
         }).toList();
 
         var errorCategories = errorMap.entrySet().stream()

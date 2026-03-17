@@ -19,9 +19,10 @@ interface LearningRecord {
 interface LearningHistoryProps {
   records: LearningRecord[];
   onBack: () => void;
+  onSelectRecord?: (recordId: string) => void;
 }
 
-export function LearningHistory({ records, onBack }: LearningHistoryProps) {
+export function LearningHistory({ records, onBack, onSelectRecord }: LearningHistoryProps) {
   // Calculate statistics
   const totalSessions = records.length;
   const averageScore =
@@ -122,16 +123,29 @@ export function LearningHistory({ records, onBack }: LearningHistoryProps) {
       <div className="space-y-3 max-h-[400px] overflow-y-auto overflow-x-visible px-1 -mx-1 pr-3">
         {records.length > 0 ? (
           records.map((record) => (
-            <LearningRecordCard
+            <div
               key={record.id}
-              overallScore={record.overallScore}
-              grammarScore={record.grammarScore}
-              relevanceScore={record.relevanceScore}
-              fluencyScore={record.fluencyScore}
-              pronunciationScore={record.pronunciationScore}
-              intonationScore={record.intonationScore}
-              date={record.date}
-            />
+              onClick={() => onSelectRecord?.(record.id)}
+              className={onSelectRecord ? "cursor-pointer transition-transform duration-150 hover:scale-[1.01] active:scale-[0.99]" : ""}
+              role={onSelectRecord ? "button" : undefined}
+              tabIndex={onSelectRecord ? 0 : undefined}
+              onKeyDown={(e) => {
+                if (onSelectRecord && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  onSelectRecord(record.id);
+                }
+              }}
+            >
+              <LearningRecordCard
+                overallScore={record.overallScore}
+                grammarScore={record.grammarScore}
+                relevanceScore={record.relevanceScore}
+                fluencyScore={record.fluencyScore}
+                pronunciationScore={record.pronunciationScore}
+                intonationScore={record.intonationScore}
+                date={record.date}
+              />
+            </div>
           ))
         ) : (
           <div className="text-center py-16 rounded-xl border border-dashed border-primary-200 bg-primary-50/50">
