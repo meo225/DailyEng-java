@@ -1,3 +1,3 @@
-## 2024-03-17 - React Performance and Mind Map Components
-**Learning:** `useMemo` is crucial when rendering complex component trees with interactive elements (like SVG mind maps). Re-evaluating large layout calculations and doing O(n) traversals on every render leads to janky interactions (like dragging/panning).
-**Action:** Always memoize expensive data generations (e.g. `generateMindMap` in `src/components/vocab/mind-map.tsx`) using `useMemo`. However, wrapping interaction event handlers in `useCallback` when they are passed to native DOM elements is a placebo micro-optimization and should be avoided.
+## 2026-03-17 - Hooks placement in React Components
+**Learning:** React Hooks (`useMemo`, `useState`, etc.) must always be called at the top level of the component before any early returns. Calling them conditionally or after an early return violates the Rules of Hooks and causes a crash.
+**Action:** When refactoring to add hooks like `useMemo`, ensure they are placed above early returns, even if the data they compute is only used in a specific conditional branch.
