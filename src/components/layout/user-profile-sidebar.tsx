@@ -5,7 +5,7 @@ import { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   UserIcon,
   Bell,
@@ -58,13 +58,15 @@ function NavButton({
 }
 
 function SignOutButton() {
+  const { logout } = useAuth();
+
   const handleSignOut = async () => {
     // Clear Dorara chat history from localStorage to prevent seeing old messages
     if (typeof window !== "undefined") {
       localStorage.removeItem("dorara-chat-history");
     }
-    // Use callbackUrl to redirect to homepage after sign out
-    await signOut({ callbackUrl: "/" });
+    await logout();
+    window.location.href = "/";
   };
 
   return (

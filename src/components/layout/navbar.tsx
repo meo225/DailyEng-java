@@ -3,17 +3,33 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import dynamic from "next/dynamic"
 import { Menu, X, ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useSession } from "next-auth/react"
-import { NotificationDropdown } from "./notification-dropdown"
-import { ProfileDropdown } from "./profile-dropdown"
+
+// Dynamic import with ssr:false — this component uses useAuth() and renders
+// different content based on auth state. Excluding it from SSR prevents
+// hydration mismatches since the server can't know the auth state.
+const NavbarAuthSection = dynamic(
+  () =>
+    import("./navbar-auth-section").then((m) => ({
+      default: m.NavbarAuthSection,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center gap-2">
+        <div className="h-8 w-16 rounded-xl bg-gray-100 animate-pulse hidden sm:block" />
+        <div className="h-8 w-20 rounded-xl bg-gray-100 animate-pulse" />
+      </div>
+    ),
+  }
+)
 
 type NavItem = {
   href: string
@@ -33,9 +49,6 @@ const navItems: NavItem[] = [
 export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { data: session, status } = useSession()
-
-  const isAuthenticated = status === "authenticated" && !!session?.user
 
   const isImmersivePage =
     pathname?.startsWith("/speaking/session/") ||
@@ -78,15 +91,10 @@ export function Navbar() {
                       {item.label}
                       <ChevronDown className="h-3.5 w-3.5" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
+                    <DropdownMenuContent align="start" className="bg-white border-gray-200 shadow-lg">
                       {item.dropdown.map((subItem) => (
                         <DropdownMenuItem key={subItem.href} asChild>
-                          <Link
-                            href={subItem.href}
-                            className={`w-full cursor-pointer ${
-                              pathname.startsWith(subItem.href) ? "bg-secondary" : ""
-                            }`}
-                          >
+                          <Link href={subItem.href} className="cursor-pointer">
                             {subItem.label}
                           </Link>
                         </DropdownMenuItem>
@@ -113,34 +121,9 @@ export function Navbar() {
             })}
           </div>
 
-          {/* Right Section */}
+          {/* Right Section — dynamic import, never SSR'd */}
           <div className="flex items-center gap-2">
-            {isAuthenticated ? (
-              <>
-                <NotificationDropdown />
-                <ProfileDropdown />
-              </>
-            ) : (
-              <>
-                <Link href="/auth/signin">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="hidden sm:flex text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-8 cursor-pointer"
-                  >
-                    Sign in
-                  </Button>
-                </Link>
-                <Link href="/auth/signup">
-                  <Button
-                    size="sm"
-                    className="h-8 px-4 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-semibold shadow-sm cursor-pointer"
-                  >
-                    Register
-                  </Button>
-                </Link>
-              </>
-            )}
+            <NavbarAuthSection />
 
             {/* Mobile toggle — min 44x44 touch target per ux skill */}
             <button

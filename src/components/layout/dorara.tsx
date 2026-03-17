@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useTransition } from "react";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import {
   X,
@@ -28,7 +28,7 @@ const INITIAL_MESSAGE: DoraraChatMessage = {
 };
 
 export function Dorara() {
-  const { data: session, status } = useSession();
+  const { user, status } = useAuth();
   const { doraraOpen, setDoraraOpen } = useAppStore();
   const pathname = usePathname();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -41,7 +41,7 @@ export function Dorara() {
   const [showLimitWarning, setShowLimitWarning] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const isAuthenticated = status === "authenticated" && !!session?.user;
+  const isAuthenticated = status === "authenticated" && !!user;
 
   // Load messages from localStorage on mount
   useEffect(() => {

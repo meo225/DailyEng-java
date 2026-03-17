@@ -6,8 +6,9 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { getUserProfile } from "@/actions/user";
 
 interface UserProfileData {
@@ -31,15 +32,23 @@ export function UserProfileProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session, status } = useSession();
+  const { user, status } = useAuth();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const lastFetchedUserId = useRef<string | null>(null);
 
   const fetchProfile = useCallback(async () => {
     if (status === "loading") return;
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
       setProfile(null);
+      setIsLoading(false);
+      lastFetchedUserId.current = null;
+      return;
+    }
+
+    // Skip if already fetched for this user
+    if (lastFetchedUserId.current === user.id) {
       setIsLoading(false);
       return;
     }
@@ -52,13 +61,14 @@ export function UserProfileProvider({
           email: result.user.email,
           image: result.user.image,
         });
+        lastFetchedUserId.current = user.id;
       }
     } catch (error) {
       console.error("Error fetching user profile:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [session?.user?.id, status]);
+  }, [user?.id, status]);
 
   // Fetch profile on mount and when session changes
   useEffect(() => {

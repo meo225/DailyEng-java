@@ -1,16 +1,25 @@
 "use server";
 
-import { signIn, signOut, auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
-import { AuthError } from "next-auth";
-import crypto from "crypto";
-import { sendPasswordResetEmail } from "@/lib/email";
+/**
+ * Auth server actions — thin wrappers around the auth-api layer.
+ *
+ * These are kept as Server Actions so existing frontend components
+ * can continue to import from '@/actions/auth' without changes.
+ * Under the hood, they now call the Spring Boot backend via API.
+ */
 
-export type AuthResult = {
-  success: boolean;
-  error?: string;
-};
+import {
+  loginWithCredentials,
+  registerUser as apiRegisterUser,
+  loginWithGoogle,
+  logout as apiLogout,
+  requestPasswordReset as apiRequestPasswordReset,
+  resetPassword as apiResetPassword,
+  changePassword as apiChangePassword,
+  type AuthResult,
+} from "@/lib/auth-api";
+
+export type { AuthResult };
 
 /**
  * Register a new user with email and password
@@ -20,71 +29,7 @@ export async function registerUser(
   email: string,
   password: string
 ): Promise<AuthResult> {
-  try {
-    // Validate input - basic presence check
-    if (!name || !email || !password) {
-      return { success: false, error: "Please fill in all fields" };
-    }
-
-    // Validate name
-    const trimmedName = name.trim();
-    if (trimmedName.length < 2) {
-      return { success: false, error: "Name must be at least 2 characters" };
-    }
-    if (trimmedName.length > 50) {
-      return { success: false, error: "Name must be less than 50 characters" };
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return { success: false, error: "Please enter a valid email address" };
-    }
-
-    // Validate password length
-    if (password.length < 8) {
-      return {
-        success: false,
-        error: "Password must be at least 8 characters",
-      };
-    }
-
-    // Validate password strength (must contain letters and numbers)
-    const hasLetter = /[a-zA-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    if (!hasLetter || !hasNumber) {
-      return {
-        success: false,
-        error: "Password must contain both letters and numbers",
-      };
-    }
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return { success: false, error: "Email is already in use" };
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create user
-    await prisma.user.create({
-      data: {
-        name: trimmedName,
-        email,
-        password: hashedPassword,
-      },
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error("Register error:", error);
-    return { success: false, error: "Đã có lỗi xảy ra. Vui lòng thử lại." };
-  }
+  return apiRegisterUser(name, email, password);
 }
 
 /**
@@ -94,98 +39,30 @@ export async function signInWithCredentials(
   email: string,
   password: string
 ): Promise<AuthResult> {
-  try {
-    await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-
-    return { success: true };
-  } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case "CredentialsSignin":
-          return {
-            success: false,
-            error: "Email hoặc mật khẩu không chính xác",
-          };
-        default:
-          return { success: false, error: "Đã có lỗi xảy ra khi đăng nhập" };
-      }
-    }
-    throw error;
-  }
+  return loginWithCredentials(email, password);
 }
 
 /**
  * Sign in with Google OAuth
+ * Note: The frontend now needs to get the Google ID token first
+ * and pass it to this function, instead of using NextAuth's redirect flow.
  */
-export async function signInWithGoogle() {
-  await signIn("google", { redirectTo: "/" });
+export async function signInWithGoogle(idToken: string): Promise<AuthResult> {
+  return loginWithGoogle(idToken);
 }
 
 /**
  * Sign out the current user
  */
 export async function signOutUser() {
-  await signOut({ redirectTo: "/auth/signin" });
+  await apiLogout();
 }
 
 /**
  * Request password reset - sends email with reset link
- * Works only for users with password (not Google-only users)
  */
 export async function requestPasswordReset(email: string): Promise<AuthResult> {
-  try {
-    if (!email) {
-      return { success: false, error: "Email is required" };
-    }
-
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true, password: true },
-    });
-
-    // For security, always return success even if user not found
-    // This prevents user enumeration attacks
-    if (!user || !user.password) {
-      // User doesn't exist or is Google-only user
-      // Still return success to not reveal account existence
-      return { success: true };
-    }
-
-    // Generate reset token
-    const token = crypto.randomBytes(32).toString("hex");
-    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
-
-    // Delete any existing tokens for this email
-    await prisma.verificationToken.deleteMany({
-      where: { identifier: email },
-    });
-
-    // Create new verification token
-    await prisma.verificationToken.create({
-      data: {
-        identifier: email,
-        token,
-        expires,
-      },
-    });
-
-    // Send reset email
-    const emailResult = await sendPasswordResetEmail(email, token);
-    if (!emailResult.success) {
-      console.error("Failed to send reset email:", emailResult.error);
-      // Still return success to not reveal if email was sent
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Request password reset error:", error);
-    return { success: false, error: "An error occurred. Please try again." };
-  }
+  return apiRequestPasswordReset(email);
 }
 
 /**
@@ -195,124 +72,15 @@ export async function resetPassword(
   token: string,
   newPassword: string
 ): Promise<AuthResult> {
-  try {
-    if (!token || !newPassword) {
-      return { success: false, error: "Token and password are required" };
-    }
-
-    if (newPassword.length < 8) {
-      return {
-        success: false,
-        error: "Password must be at least 8 characters",
-      };
-    }
-
-    // Find valid token
-    const verificationToken = await prisma.verificationToken.findFirst({
-      where: {
-        token,
-        expires: { gt: new Date() }, // Token not expired
-      },
-    });
-
-    if (!verificationToken) {
-      return { success: false, error: "Invalid or expired reset link" };
-    }
-
-    // Find user by email (identifier)
-    const user = await prisma.user.findUnique({
-      where: { email: verificationToken.identifier },
-    });
-
-    if (!user) {
-      return { success: false, error: "User not found" };
-    }
-
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-
-    // Update user password
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { password: hashedPassword },
-    });
-
-    // Delete used token
-    await prisma.verificationToken.delete({
-      where: {
-        identifier_token: {
-          identifier: verificationToken.identifier,
-          token: verificationToken.token,
-        },
-      },
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error("Reset password error:", error);
-    return { success: false, error: "An error occurred. Please try again." };
-  }
+  return apiResetPassword(token, newPassword);
 }
 
 /**
- * Change password for logged-in user (non-Google users only)
+ * Change password for logged-in user
  */
 export async function changePassword(
   currentPassword: string,
   newPassword: string
 ): Promise<AuthResult> {
-  try {
-    // Get current session
-    const session = await auth();
-    if (!session?.user?.id) {
-      return { success: false, error: "Not authenticated" };
-    }
-
-    if (!currentPassword || !newPassword) {
-      return { success: false, error: "All fields are required" };
-    }
-
-    if (newPassword.length < 8) {
-      return {
-        success: false,
-        error: "New password must be at least 8 characters",
-      };
-    }
-
-    // Get user with password
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { password: true },
-    });
-
-    if (!user || !user.password) {
-      return {
-        success: false,
-        error: "Password change is not available for Google accounts",
-      };
-    }
-
-    // Verify current password
-    const isPasswordValid = await bcrypt.compare(
-      currentPassword,
-      user.password
-    );
-    if (!isPasswordValid) {
-      return { success: false, error: "Current password is incorrect" };
-    }
-
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-
-    // Update password
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { password: hashedPassword },
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error("Change password error:", error);
-    return { success: false, error: "An error occurred. Please try again." };
-  }
+  return apiChangePassword(currentPassword, newPassword);
 }

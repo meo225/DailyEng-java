@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { signInWithCredentials, signInWithGoogle } from "@/actions/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   AlertCircle,
   BookOpen,
@@ -28,6 +28,7 @@ export interface SignInPageClientProps {
 
 export default function SignInPageClient({ stats }: SignInPageClientProps) {
   const router = useRouter();
+  const { login } = useAuth();
   const [isPending, startTransition] = useTransition();
   const [isGooglePending, startGoogleTransition] = useTransition();
   const [email, setEmail] = useState("");
@@ -39,10 +40,10 @@ export default function SignInPageClient({ stats }: SignInPageClientProps) {
     setError(null);
 
     startTransition(async () => {
-      const result = await signInWithCredentials(email, password);
+      const result = await login(email, password);
 
       if (result.success) {
-        // Use window.location for full page reload to ensure session is properly loaded
+        // Full page reload to hydrate auth state everywhere
         window.location.href = "/";
       } else {
         setError(result.error || "Đăng nhập thất bại");
@@ -51,9 +52,10 @@ export default function SignInPageClient({ stats }: SignInPageClientProps) {
   };
 
   const handleGoogleSignIn = () => {
-    startGoogleTransition(async () => {
-      await signInWithGoogle();
-    });
+    // TODO: Integrate Google Identity Services (@react-oauth/google)
+    // to get the idToken and pass it to signInWithGoogle(idToken).
+    // For now, show a message to the user.
+    setError("Google sign-in is being updated. Please use email/password for now.");
   };
 
   const isLoading = isPending || isGooglePending;

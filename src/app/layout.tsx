@@ -1,6 +1,6 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Nunito } from "next/font/google";
+import { Inter } from "next/font/google";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { UserProfileProvider } from "@/contexts/UserProfileContext";
@@ -10,11 +10,9 @@ import { Suspense } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 
 
-const nunito = Nunito({
+const inter = Inter({
   subsets: ["latin"],
-  // Only load the 4 weights actually used in the UI (was 8 — cuts font payload ~50%)
-  weight: ["400", "600", "700", "800"],
-  variable: "--font-nunito",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -35,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${nunito.className} bg-background text-foreground`}
+        className={`${inter.className} bg-background text-foreground`}
         suppressHydrationWarning
       >
         <SessionProvider>
