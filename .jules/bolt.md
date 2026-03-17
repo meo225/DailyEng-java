@@ -1,0 +1,3 @@
+## 2024-03-17 - React Performance and Mind Map Components
+**Learning:** `useMemo` is crucial when rendering complex component trees with interactive elements (like SVG mind maps). Re-evaluating large layout calculations and doing O(n) traversals on every render leads to janky interactions (like dragging/panning).
+**Action:** Always memoize expensive data generations (e.g. `generateMindMap` in `src/components/vocab/mind-map.tsx`) using `useMemo`. However, wrapping interaction event handlers in `useCallback` when they are passed to native DOM elements is a placebo micro-optimization and should be avoided.
