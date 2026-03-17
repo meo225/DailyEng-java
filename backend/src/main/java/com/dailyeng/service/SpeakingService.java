@@ -47,7 +47,7 @@ public class SpeakingService {
 
     @Transactional(readOnly = true)
     public List<TopicGroupResponse> getTopicGroups() {
-        var groups = topicGroupRepo.findByHubTypeOrderByOrderAsc(HubType.speaking);
+        var groups = topicGroupRepo.findByHubTypeOrderByOrderAsc("speaking");
         return groups.stream()
                 .map(g -> new TopicGroupResponse(
                         g.getId(),
@@ -535,7 +535,7 @@ public class SpeakingService {
 
     @Transactional(readOnly = true)
     public List<ScenarioListItem> getCustomTopics(String userId) {
-        var scenarios = scenarioRepo.findByCreatedByIdAndIsCustomTrueOrderByCreatedAtDesc(userId);
+        var scenarios = scenarioRepo.findByCreatedByIdAndIsCustomTrue(userId);
         return scenarios.stream().map(s -> new ScenarioListItem(
                 s.getId(), s.getTitle(), s.getDescription(),
                 s.getCategory() != null ? toTitleCase(s.getCategory()) : "Custom",

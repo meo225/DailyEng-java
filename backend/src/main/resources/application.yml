@@ -18,13 +18,17 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # Validate against existing schema, don't modify
+      ddl-auto: none  # Skip validation — Prisma manages the schema
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
     show-sql: false
     open-in-view: false   # Disable OSIV for performance
     properties:
       hibernate:
         format_sql: true
         default_schema: public
+        globally_quoted_identifiers: true
         jdbc:
           time_zone: UTC
         types:

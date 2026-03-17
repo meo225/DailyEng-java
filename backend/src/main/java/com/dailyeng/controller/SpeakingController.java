@@ -15,7 +15,7 @@ import java.util.List;
  * Maps from speaking.ts Server Actions to REST API.
  */
 @RestController
-@RequestMapping("/api/speaking")
+@RequestMapping("/speaking")
 @RequiredArgsConstructor
 public class SpeakingController {
 

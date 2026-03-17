@@ -16,7 +16,7 @@ public interface SpeakingScenarioRepository extends JpaRepository<SpeakingScenar
     List<SpeakingScenario> findByTopicGroupId(String topicGroupId);
     Page<SpeakingScenario> findByIsCustomFalse(Pageable pageable);
     Page<SpeakingScenario> findByDifficulty(Level difficulty, Pageable pageable);
-    List<SpeakingScenario> findByCreatedByIdAndIsCustomTrueOrderByCreatedAtDesc(String userId);
+    List<SpeakingScenario> findByCreatedByIdAndIsCustomTrue(String userId);
 
     @Query("SELECT s FROM SpeakingScenario s WHERE s.topicGroupId IS NOT NULL " +
             "AND (LOWER(s.title) LIKE LOWER(CONCAT('%', :q, '%')) " +
