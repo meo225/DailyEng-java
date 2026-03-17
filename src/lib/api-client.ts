@@ -63,6 +63,10 @@ class ApiClient {
         if (!retryResponse.ok) {
           throw new ApiError(retryResponse.status, await retryResponse.text());
         }
+        const retryContentType = retryResponse.headers.get('content-type');
+        if (!retryContentType || !retryContentType.includes('application/json')) {
+          return {} as T;
+        }
         return retryResponse.json();
       }
 
