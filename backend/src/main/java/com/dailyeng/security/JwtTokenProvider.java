@@ -1,7 +1,6 @@
 package com.dailyeng.security;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import com.dailyeng.config.AppProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -25,12 +24,8 @@ public class JwtTokenProvider {
     private final long refreshExpirationMs;
 
     public JwtTokenProvider(AppProperties appProperties) {
-        byte[] keyBytes = Decoders.BASE64.decode(
-                java.util.Base64.getEncoder().encodeToString(
-                        appProperties.getJwt().getSecret().getBytes()
-                )
-        );
-        this.key = Keys.hmacShaKeyFor(keyBytes);
+        var secret = appProperties.getJwt().getSecret();
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         this.jwtExpirationMs = appProperties.getJwt().getExpirationMs();
         this.refreshExpirationMs = appProperties.getJwt().getRefreshExpirationMs();
     }
