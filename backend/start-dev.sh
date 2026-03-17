@@ -17,13 +17,9 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 
-# Export all variables from .env (skip comments and empty lines)
+# Export all variables from .env
 set -a
-while IFS= read -r line || [[ -n "$line" ]]; do
-  # Skip comments and empty lines
-  [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
-  eval "export $line"
-done < "$ENV_FILE"
+. "$ENV_FILE"
 set +a
 
 echo "✅ Loaded environment from $ENV_FILE"
