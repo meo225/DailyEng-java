@@ -1,13 +1,7 @@
 import VocabPageClient from "@/components/page/VocabPageClient";
-import { auth } from "@/lib/auth";
 
-export default async function VocabPage() {
-  // Get user from auth session
-  const session = await auth();
-  const userId = session?.user?.id;
-
-  // Client handles all data fetching with skeleton loading
-  // Unauthenticated users will see block UI from ProtectedRoute
-  return <VocabPageClient userId={userId || ""} />;
+export default function VocabPage() {
+  // userId is resolved client-side via useAuth() inside VocabPageClient
+  // Server-side auth() can't read cross-origin httpOnly cookies
+  return <VocabPageClient userId="" />;
 }
-

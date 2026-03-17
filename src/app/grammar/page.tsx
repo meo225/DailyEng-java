@@ -1,14 +1,11 @@
 import { Suspense } from "react";
 import { ProtectedRoute, PageIcons } from "@/components/auth/protected-route";
 import { HubHero } from "@/components/hub";
-import { auth } from "@/lib/auth";
 import { GrammarContent, GrammarContentSkeleton } from "./grammar-content";
 
-export default async function GrammarPage() {
-  // Get user session first (fast operation)
-  const session = await auth();
-  const userId = session?.user?.id;
-
+export default function GrammarPage() {
+  // userId is resolved client-side via useAuth() inside GrammarContent
+  // Server-side auth() can't read cross-origin httpOnly cookies
   return (
     <ProtectedRoute
       pageName="Grammar Hub"
@@ -32,7 +29,7 @@ export default async function GrammarPage() {
 
         {/* Dynamic Content - streamed with Suspense */}
         <Suspense fallback={<GrammarContentSkeleton />}>
-          <GrammarContent userId={userId} />
+          <GrammarContent userId={undefined} />
         </Suspense>
       </div>
     </ProtectedRoute>

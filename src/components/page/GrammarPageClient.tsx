@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useTransition } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -83,7 +83,7 @@ export default function GrammarPageClient({
   initialBookmarkIds = [],
   showHero = true,
 }: GrammarPageClientProps) {
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [isPending, startTransition] = useTransition();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
@@ -102,16 +102,16 @@ export default function GrammarPageClient({
 
   // Fetch bookmark IDs on mount
   useEffect(() => {
-    if (session?.user?.id) {
-      getGrammarBookmarkIds(session.user.id).then(setBookmarkedTopics);
+    if (user?.id) {
+      getGrammarBookmarkIds(user.id).then(setBookmarkedTopics);
     }
-  }, [session?.user?.id]);
+  }, [user?.id]);
 
   // Fetch bookmarked topics for Bookmarks tab
   useEffect(() => {
-    if (session?.user?.id && activeTab === "bookmarks") {
+    if (user?.id && activeTab === "bookmarks") {
       setBookmarkLoading(true);
-      getGrammarBookmarks(session.user.id, bookmarkPage, bookmarksPerPage)
+      getGrammarBookmarks(user.id, bookmarkPage, bookmarksPerPage)
         .then((result) => {
           setBookmarkedTopicsList(
             result.bookmarks.map(mapDbTopicToGrammarTopic)
@@ -120,10 +120,10 @@ export default function GrammarPageClient({
         })
         .finally(() => setBookmarkLoading(false));
     }
-  }, [session?.user?.id, activeTab, bookmarkPage]);
+  }, [user?.id, activeTab, bookmarkPage]);
 
   const handleBookmarkToggle = (topicId: string) => {
-    if (!session?.user?.id) return;
+    if (!user?.id) return;
 
     const wasBookmarked = bookmarkedTopics.includes(topicId);
 
@@ -142,11 +142,11 @@ export default function GrammarPageClient({
     }
 
     startTransition(async () => {
-      await toggleGrammarBookmark(session.user.id, topicId);
+      await toggleGrammarBookmark(user.id, topicId);
       // Refresh bookmarked topics list if on bookmarks tab to sync with server
       if (activeTab === "bookmarks") {
         const result = await getGrammarBookmarks(
-          session.user.id,
+          user.id,
           bookmarkPage,
           bookmarksPerPage
         );

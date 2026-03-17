@@ -843,7 +843,7 @@ export default function NotebookPageClient({
 
               {/* VOCABULARY FLASHCARDS - Same style as FlashcardReviewClient */}
               {selectedCollection && viewMode === "flashcards" && currentCollectionType === "vocabulary" && currentItem && (
-                <div className="max-w-5xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                   {/* Flashcard with Stats on sides */}
                   <div className="flex items-center gap-6 mb-8">
                     {/* Learning stat - Left side */}
