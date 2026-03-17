@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
+import React, { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -8,6 +8,8 @@ import { SessionChat } from "@/components/speaking/session-chat"
 import { RadarChart } from "@/components/speaking/radar-chart"
 import { LearningHistory } from "@/components/speaking/learning-history"
 import { DetailedFeedback } from "@/components/speaking/detailed-feedback"
+import PronunciationAssessmentReview from "@/components/speaking/pronunciation-assessment"
+import type { AssessmentData } from "@/components/speaking/pronunciation-assessment"
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import {
@@ -37,6 +39,8 @@ import {
   Languages,
   Sparkles,
   FileText,
+  Lightbulb,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -47,16 +51,36 @@ import {
   analyzeAndScoreSession,
   getSessionDetailsById,
   getLearningRecordsForScenario,
+  getSessionHint,
 } from "@/actions/speaking";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiClient } from "@/lib/api-client";
 import { PitchAnalyzer, PitchMetrics } from "@/lib/pitch-analyzer";
 
 // Types
+interface WordAssessment {
+  word: string;
+  accuracyScore: number;
+  errorType: string; // None, Mispronunciation, UnexpectedBreak, MissingBreak, Monotone
+  phonemes?: { phoneme: string; accuracyScore: number }[];
+  syllables?: { syllable: string; accuracyScore: number }[];
+}
+
+interface PronunciationScores {
+  accuracyScore: number;
+  fluencyScore: number;
+  prosodyScore: number;
+  overallScore: number;
+  completenessScore?: number;
+}
+
 interface Turn {
   id: string;
   role: "user" | "tutor";
   text: string;
   timestamp: Date;
+  wordAssessments?: WordAssessment[];
+  pronunciationScores?: PronunciationScores;
   scores?: {
     pronunciation?: number;
     fluency?: number;
@@ -67,12 +91,111 @@ interface Turn {
   };
 }
 
+/** Memoized component: renders color-coded per-word pronunciation (react-best-practices: rerender-memo) */
+const PronunciationWords = React.memo(function PronunciationWords({
+  words,
+  fallbackText,
+}: {
+  words: WordAssessment[];
+  fallbackText: string;
+}) {
+  if (!words || words.length === 0) {
+    return <span>{fallbackText}</span>;
+  }
+
+  return (
+    <span className="leading-relaxed">
+      {words.map((w, i) => {
+        const score = w.accuracyScore;
+        const isError = w.errorType !== "None";
+
+        // Color coding: green (≥80), amber (≥50), red (<50)
+        let colorClass = "text-green-100"; // Good pronunciation
+        if (score < 50) {
+          colorClass = "text-red-300 font-semibold";
+        } else if (score < 80) {
+          colorClass = "text-amber-200";
+        }
+
+        // Underline mispronounced words
+        const underlineClass = isError
+          ? "underline decoration-dotted decoration-red-300/70 underline-offset-2"
+          : "";
+
+        return (
+          <span
+            key={`${w.word}-${i}`}
+            className={`${colorClass} ${underlineClass} transition-colors duration-200 cursor-default`}
+            title={
+              isError
+                ? `${w.errorType}: ${Math.round(score)}% accuracy`
+                : `${Math.round(score)}% accuracy`
+            }
+            aria-label={`${w.word}, accuracy ${Math.round(score)} percent${isError ? `, error: ${w.errorType}` : ""}`}
+          >
+            {w.word}
+            {i < words.length - 1 ? " " : ""}
+          </span>
+        );
+      })}
+    </span>
+  );
+});
+
+/** Memoized score badge: compact inline pronunciation scores */
+const PronunciationBadge = React.memo(function PronunciationBadge({
+  scores,
+}: {
+  scores: PronunciationScores;
+}) {
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "bg-emerald-400";
+    if (score >= 50) return "bg-amber-400";
+    return "bg-red-400";
+  };
+
+  const getTextColor = (score: number) => {
+    if (score >= 80) return "text-emerald-600";
+    if (score >= 50) return "text-amber-600";
+    return "text-red-600";
+  };
+
+  return (
+    <div className="flex items-center gap-2 mt-1.5 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
+      {/* Accuracy */}
+      <div className="flex items-center gap-1" title={`Accuracy: ${Math.round(scores.accuracyScore)}%`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${getScoreColor(scores.accuracyScore)}`} />
+        <span className={`text-[10px] font-semibold ${getTextColor(scores.accuracyScore)}`}>
+          {Math.round(scores.accuracyScore)}
+        </span>
+      </div>
+      <span className="text-slate-300 text-[10px]">·</span>
+      {/* Fluency */}
+      <div className="flex items-center gap-1" title={`Fluency: ${Math.round(scores.fluencyScore)}%`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${getScoreColor(scores.fluencyScore)}`} />
+        <span className={`text-[10px] font-semibold ${getTextColor(scores.fluencyScore)}`}>
+          {Math.round(scores.fluencyScore)}
+        </span>
+      </div>
+      <span className="text-slate-300 text-[10px]">·</span>
+      {/* Prosody */}
+      <div className="flex items-center gap-1" title={`Prosody: ${Math.round(scores.prosodyScore)}%`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${getScoreColor(scores.prosodyScore)}`} />
+        <span className={`text-[10px] font-semibold ${getTextColor(scores.prosodyScore)}`}>
+          {Math.round(scores.prosodyScore)}
+        </span>
+      </div>
+    </div>
+  );
+});
+
 type ViewState =
   | "preparation"
   | "active"
   | "analyzing"
   | "complete"
   | "history"
+  | "record-review"
   | "detail";
 
 export interface LearningRecord {
@@ -180,7 +303,7 @@ export default function SpeakingSessionClient({
   detailedFeedback,
 }: SpeakingSessionClientProps) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const { addFlashcard, addXP } = useAppStore();
 
   // Convert serialized dates back to Date objects
@@ -188,6 +311,9 @@ export default function SpeakingSessionClient({
     initialTurns.map((t) => ({ ...t, timestamp: new Date(t.timestamp) }))
   );
   const [isRecording, setIsRecording] = useState(false);
+  const [hintText, setHintText] = useState<string | null>(null);
+  const [isLoadingHint, setIsLoadingHint] = useState(false);
+  const [sessionMode, setSessionMode] = useState<"scripted" | "unscripted">("unscripted");
   const [viewState, setViewState] = useState<ViewState>("preparation");
   const [sessionStats, setSessionStats] = useState({
     avgPronunciation: 0,
@@ -205,6 +331,10 @@ export default function SpeakingSessionClient({
   const [dynamicRecords, setDynamicRecords] = useState<LearningRecord[]>([]);
   const [dynamicFeedback, setDynamicFeedback] =
     useState<DetailedFeedbackData | null>(null);
+  const [loadedSessionData, setLoadedSessionData] = useState<{
+    scores: { grammar: number; relevance: number; fluency: number; pronunciation: number; intonation: number; overall: number };
+    conversation: { role: string; text: string; pronunciationScore?: number; fluencyScore?: number }[];
+  } | null>(null);
   const [analysisResult, setAnalysisResult] = useState<{
     scores: {
       grammar: number;
@@ -238,16 +368,25 @@ export default function SpeakingSessionClient({
   const [showFinishDialog, setShowFinishDialog] = useState(false);
 
   const conversationRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const noSpeechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const transcriptRef = useRef<string>("");
+  const isTranscribingRef = useRef(false);
 
   // [NEW] Speech metrics refs for fluency & pronunciation scoring
   const confidenceScoresRef = useRef<number[]>([]); // Stores confidence from each final result
+  const azurePronScoresRef = useRef<{
+    accuracyScore: number; fluencyScore: number;
+    prosodyScore: number; overallScore: number;
+    completenessScore?: number;
+    words?: WordAssessment[];
+  } | null>(null);
   const speechStartTimeRef = useRef<number | null>(null); // When user started speaking
   const pauseCountRef = useRef<number>(0); // Count of pauses > 500ms
   const lastSpeechTimeRef = useRef<number | null>(null); // Last speech timestamp for pause detection
+  const isSpeakingRef = useRef(false); // Track TTS state to prevent recording overlap
 
   // [NEW] Ref for pitch analyzer (intonation scoring)
   const pitchAnalyzerRef = useRef<PitchAnalyzer | null>(null);
@@ -314,155 +453,91 @@ export default function SpeakingSessionClient({
     };
   }, [sessionId]);
 
-  // Initialize Speech Recognition
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition ||
-        (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = true;
-        recognitionRef.current.interimResults = true;
-        recognitionRef.current.lang = "en-US";
+  // Send recorded audio to Azure for transcription + pronunciation assessment
+  const transcribeAudio = async (audioBlob: Blob) => {
+    if (isTranscribingRef.current) return;
+    isTranscribingRef.current = true;
 
-        recognitionRef.current.onresult = (event: any) => {
-          // Clear the no-speech timeout since we got some speech
-          if (noSpeechTimeoutRef.current) {
-            clearTimeout(noSpeechTimeoutRef.current);
-            noSpeechTimeoutRef.current = null;
-          }
+    try {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "recording.ogg");
 
-          // [NEW] Track speech start time
-          if (!speechStartTimeRef.current) {
-            speechStartTimeRef.current = Date.now();
-          }
+      // In scripted mode, pass the hint text as reference text for scripted assessment
+      if (sessionMode === "scripted" && hintText) {
+        formData.append("referenceText", hintText);
+      }
 
-          // [NEW] Detect pauses (gap > 500ms between speech events)
-          if (lastSpeechTimeRef.current) {
-            const gap = Date.now() - lastSpeechTimeRef.current;
-            if (gap > 500) {
-              pauseCountRef.current++;
-            }
-          }
-          lastSpeechTimeRef.current = Date.now();
+      // Call combined transcribe + pronunciation assessment endpoint
+      const result = await apiClient.upload<{
+        text: string;
+        accuracyScore: number;
+        fluencyScore: number;
+        prosodyScore: number;
+        overallScore: number;
+        completenessScore: number;
+        words?: { word: string; accuracyScore: number; errorType: string; phonemes?: { phoneme: string; accuracyScore: number }[] }[];
+      }>("/speaking/speech/transcribe-assess", formData);
 
-          // Get the latest transcript
-          let finalTranscript = "";
-          let interimTranscript = "";
-
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const result = event.results[i];
-            const confidence = result[0].confidence;
-
-            if (result.isFinal) {
-              finalTranscript += result[0].transcript;
-              // [NEW] Capture confidence for final results (for pronunciation scoring)
-              if (confidence !== undefined && confidence !== null) {
-                confidenceScoresRef.current.push(confidence);
-              }
-            } else {
-              interimTranscript += result[0].transcript;
-            }
-          }
-
-          // Update stored transcript
-          if (finalTranscript) {
-            transcriptRef.current += finalTranscript;
-          }
-
-          // Reset silence timeout - user is still speaking
-          if (silenceTimeoutRef.current) {
-            clearTimeout(silenceTimeoutRef.current);
-          }
-
-          // Set 5s silence timeout to send message
-          silenceTimeoutRef.current = setTimeout(() => {
-            if (transcriptRef.current.trim()) {
-              const message = transcriptRef.current.trim();
-              transcriptRef.current = "";
-              recognitionRef.current?.stop();
-              setIsRecording(false);
-              handleSendMessage(message);
-            }
-          }, 5000);
+      if (result.text && result.text.trim()) {
+        // Store Azure pronunciation scores + per-word data for handleSendMessage
+        azurePronScoresRef.current = {
+          accuracyScore: result.accuracyScore,
+          fluencyScore: result.fluencyScore,
+          prosodyScore: result.prosodyScore,
+          overallScore: result.overallScore,
+          completenessScore: result.completenessScore,
+          words: result.words,
         };
 
-        recognitionRef.current.onerror = (event: any) => {
-          // Clear all timeouts
-          if (silenceTimeoutRef.current) {
-            clearTimeout(silenceTimeoutRef.current);
-            silenceTimeoutRef.current = null;
-          }
-          if (noSpeechTimeoutRef.current) {
-            clearTimeout(noSpeechTimeoutRef.current);
-            noSpeechTimeoutRef.current = null;
-          }
+        console.log("🎤 Azure Pronunciation:", {
+          accuracy: result.accuracyScore,
+          fluency: result.fluencyScore,
+          prosody: result.prosodyScore,
+          overall: result.overallScore,
+          words: result.words?.map(w => `${w.word}(${w.errorType}:${Math.round(w.accuracyScore)})`),
+        });
 
-          setIsRecording(false);
-          // Handle different error types gracefully
-          switch (event.error) {
-            case "no-speech":
-              // User didn't say anything - just turn off mic quietly
-              console.log("No speech detected, turning off mic");
-              break;
-            case "audio-capture":
-              toast.error("No microphone found. Please connect a microphone.");
-              break;
-            case "not-allowed":
-              toast.error(
-                "Microphone permission denied. Please allow microphone access."
-              );
-              break;
-            case "aborted":
-              // User cancelled - no need to show error
-              break;
-            default:
-              console.error("Speech recognition error:", event.error);
-              toast.error("Microphone error. Please try typing instead.");
-          }
-        };
-
-        recognitionRef.current.onend = () => {
-          // Clear all timeouts
-          if (silenceTimeoutRef.current) {
-            clearTimeout(silenceTimeoutRef.current);
-            silenceTimeoutRef.current = null;
-          }
-          if (noSpeechTimeoutRef.current) {
-            clearTimeout(noSpeechTimeoutRef.current);
-            noSpeechTimeoutRef.current = null;
-          }
-
-          // If there's remaining transcript, send it
-          if (transcriptRef.current.trim()) {
-            const message = transcriptRef.current.trim();
-            transcriptRef.current = "";
-            handleSendMessage(message);
-          }
-
-          setIsRecording(false);
-        };
+        handleSendMessage(result.text.trim());
+      } else {
+        console.log("No speech detected in audio");
       }
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (silenceTimeoutRef.current) {
-        clearTimeout(silenceTimeoutRef.current);
-      }
-      if (noSpeechTimeoutRef.current) {
-        clearTimeout(noSpeechTimeoutRef.current);
-      }
-      // Stop speech recognition on unmount
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (e) {
-          // Ignore - recognition might not be running
+    } catch (error) {
+      console.error("Azure transcribe+assess failed, falling back to basic STT:", error);
+      // Fallback to basic transcription if assessment fails
+      try {
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recording.ogg");
+        const result = await apiClient.upload<{ text: string; confidence?: number }>(
+          "/speaking/speech/transcribe", formData
+        );
+        if (result.text && result.text.trim()) {
+          azurePronScoresRef.current = null; // No Azure scores — use heuristics
+          handleSendMessage(result.text.trim());
         }
+      } catch (fallbackError) {
+        console.error("Fallback STT also failed:", fallbackError);
+        toast.error("Failed to transcribe speech. Please try typing instead.");
       }
-      // Stop pitch analyzer on unmount
+    } finally {
+      isTranscribingRef.current = false;
+      setIsRecording(false);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+      if (noSpeechTimeoutRef.current) clearTimeout(noSpeechTimeoutRef.current);
+      // Stop media recorder
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      // Stop media stream tracks
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      // Stop pitch analyzer
       if (pitchAnalyzerRef.current) {
         pitchAnalyzerRef.current.stop();
         pitchAnalyzerRef.current = null;
@@ -482,13 +557,19 @@ export default function SpeakingSessionClient({
       noSpeechTimeoutRef.current = null;
     }
 
-    // Stop speech recognition
-    if (recognitionRef.current) {
+    // Stop media recorder (this triggers onstop → transcribeAudio)
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       try {
-        recognitionRef.current.stop();
+        mediaRecorderRef.current.stop();
       } catch (e) {
-        // Ignore - recognition might not be running
+        // Ignore
       }
+    }
+
+    // Stop media stream tracks
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
     }
 
     // Stop pitch analyzer
@@ -497,8 +578,8 @@ export default function SpeakingSessionClient({
       pitchAnalyzerRef.current = null;
     }
 
-    // Reset transcript
-    transcriptRef.current = "";
+    // Clear audio chunks
+    audioChunksRef.current = [];
 
     // Set recording state to false
     setIsRecording(false);
@@ -508,9 +589,9 @@ export default function SpeakingSessionClient({
     setIsStartingSession(true);
     try {
       // Get userId from auth session
-      const userId = session?.user?.id || "user-1"; // Fallback for dev
+      const userId = user?.id || "user-1"; // Fallback for dev
       const result = await startSessionWithGreeting(userId, scenarioId);
-      setSessionId(result.session.id);
+      setSessionId(result.sessionId);
       setViewState("active");
 
       // Display initial messages: context info + opening greeting
@@ -535,11 +616,21 @@ export default function SpeakingSessionClient({
           timestamp: new Date(),
         });
 
-        // Speak the opening greeting
+        // Speak the opening greeting (fire-and-forget, recording start will cancel TTS)
         speakText(result.greetingMessage);
       }
 
       setTurns(initialTurns);
+
+      // In scripted mode, fetch hint in parallel with TTS (don't await TTS)
+      if (sessionMode === "scripted" && result.sessionId) {
+        try {
+          const hint = await getSessionHint(result.sessionId);
+          setHintText(hint);
+        } catch {
+          console.error("Failed to auto-fetch hint for scripted session start");
+        }
+      }
     } catch (e) {
       console.error("Failed to start session", e);
       toast.error("Failed to start session");
@@ -577,14 +668,14 @@ export default function SpeakingSessionClient({
     }
   };
 
-  const handleToggleRecording = () => {
+  const handleToggleRecording = async () => {
     if (!sessionId) {
       toast.error("Session not started");
       return;
     }
 
     if (isRecording) {
-      // Immediately set isRecording to false for responsive UI
+      // STOP recording
       setIsRecording(false);
 
       // Clear timeouts
@@ -603,56 +694,125 @@ export default function SpeakingSessionClient({
         pitchAnalyzerRef.current = null;
       }
 
-      // Stop speech recognition
-      try {
-        recognitionRef.current?.stop();
-      } catch (e) {
-        // Ignore - recognition might not be running
+      // Stop MediaRecorder → triggers onstop → transcribeAudio
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
       }
 
-      // Clear transcript to prevent sending incomplete speech
-      transcriptRef.current = "";
+      // Stop media stream tracks
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+        mediaStreamRef.current = null;
+      }
     } else {
+      // START recording
       try {
-        transcriptRef.current = "";
-        recognitionRef.current?.start();
+        // Cancel any ongoing TTS to prevent mic picking up speaker output
+        if ("speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+          isSpeakingRef.current = false;
+        }
+
+        // Request microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaStreamRef.current = stream;
+        audioChunksRef.current = [];
+
+        // Track speech timing
+        speechStartTimeRef.current = Date.now();
+
+        // Choose a supported MIME type
+        const mimeType = MediaRecorder.isTypeSupported("audio/ogg; codecs=opus")
+          ? "audio/ogg; codecs=opus"
+          : MediaRecorder.isTypeSupported("audio/webm; codecs=opus")
+            ? "audio/webm; codecs=opus"
+            : "audio/webm";
+
+        const recorder = new MediaRecorder(stream, { mimeType });
+        mediaRecorderRef.current = recorder;
+
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+
+        recorder.onstop = () => {
+          // Combine audio chunks into a single blob
+          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+          audioChunksRef.current = [];
+
+          // Only transcribe if we have meaningful audio (> 1KB)
+          if (audioBlob.size > 1024) {
+            transcribeAudio(audioBlob);
+          } else {
+            console.log("Audio too short, skipping transcription");
+            setIsRecording(false);
+          }
+        };
+
+        // Start recording — collect data every 250ms for responsiveness
+        recorder.start(250);
         setIsRecording(true);
 
-        // [NEW] Start pitch analyzer for intonation scoring
+        // Start pitch analyzer for intonation scoring
         pitchAnalyzerRef.current = new PitchAnalyzer();
         pitchAnalyzerRef.current.start().catch((err) => {
           console.warn("[PitchAnalyzer] Failed to start:", err);
-          // Non-critical - continue without pitch analysis
         });
 
-        // Set 10s no-speech timeout - if user doesn't speak at all, turn off mic
+        // Set 30s max recording timeout
         noSpeechTimeoutRef.current = setTimeout(() => {
-          if (isRecording && !transcriptRef.current.trim()) {
-            console.log("No speech after 10s, turning off mic");
-            recognitionRef.current?.stop();
+          console.log("Max recording time reached (30s), stopping");
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
           }
-        }, 10000);
-      } catch (e) {
+          if (mediaStreamRef.current) {
+            mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+            mediaStreamRef.current = null;
+          }
+        }, 30000);
+      } catch (e: any) {
         console.error("Failed to start recording", e);
-        toast.error("Could not start microphone");
+        if (e.name === "NotAllowedError") {
+          toast.error("Microphone permission denied. Please allow microphone access.");
+        } else if (e.name === "NotFoundError") {
+          toast.error("No microphone found. Please connect a microphone.");
+        } else {
+          toast.error("Could not start microphone");
+        }
       }
     }
   };
 
-  const speakText = (text: string) => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel(); // Stop previous
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      // Try to select a better voice
-      const voices = window.speechSynthesis.getVoices();
-      const googleVoice = voices.find((v) =>
-        v.name.includes("Google US English")
-      );
-      if (googleVoice) utterance.voice = googleVoice;
+  const speakText = (text: string): Promise<void> => {
+    return new Promise((resolve) => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel(); // Stop previous
+        isSpeakingRef.current = true;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "en-US";
+        // Try to select a better voice
+        const voices = window.speechSynthesis.getVoices();
+        const googleVoice = voices.find((v) =>
+          v.name.includes("Google US English")
+        );
+        if (googleVoice) utterance.voice = googleVoice;
 
-      window.speechSynthesis.speak(utterance);
-    }
+        utterance.onend = () => {
+          isSpeakingRef.current = false;
+          resolve();
+        };
+        utterance.onerror = () => {
+          isSpeakingRef.current = false;
+          resolve();
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } else {
+        resolve();
+      }
+    });
   };
 
   const handleSendMessage = async (text: string) => {
@@ -674,35 +834,36 @@ export default function SpeakingSessionClient({
     const pitchMetrics = pitchAnalyzerRef.current?.stop();
     pitchAnalyzerRef.current = null;
 
+    // Get Azure pronunciation scores if available
+    const azureScores = azurePronScoresRef.current;
+
     const speechMetrics = {
-      confidenceScores: [...confidenceScoresRef.current], // Clone array
+      confidenceScores: [...confidenceScoresRef.current],
       wordCount,
-      speakingDurationMs: Math.max(speakingDurationMs, 1000), // Min 1s to avoid extreme WPM
+      speakingDurationMs: Math.max(speakingDurationMs, 1000),
       pauseCount: pauseCountRef.current,
-      // [NEW] Include pitch data for intonation scoring
-      pitchVariance: pitchMetrics?.variance ?? null,
-      avgPitch: pitchMetrics?.avgPitch ?? null,
-      pitchSamplesCount: pitchMetrics?.sampleCount ?? null,
+      pitchVariance: pitchMetrics?.variance ?? undefined,
+      avgPitch: pitchMetrics?.avgPitch ?? undefined,
+      pitchSamplesCount: pitchMetrics?.sampleCount ?? undefined,
+      // Azure Pronunciation Assessment scores (real scores from SDK)
+      azureAccuracyScore: azureScores?.accuracyScore ?? undefined,
+      azureFluencyScore: azureScores?.fluencyScore ?? undefined,
+      azureProsodyScore: azureScores?.prosodyScore ?? undefined,
+      azureOverallScore: azureScores?.overallScore ?? undefined,
     };
 
-    // Debug log
     console.log("[handleSendMessage] Speech metrics:", {
       wordCount,
-      speakingDurationMs,
-      adjustedDuration: speechMetrics.speakingDurationMs,
-      confidenceCount: confidenceScoresRef.current.length,
-      confidenceScores: confidenceScoresRef.current,
-      pauseCount: pauseCountRef.current,
-      pitchVariance: speechMetrics.pitchVariance,
-      avgPitch: speechMetrics.avgPitch,
-      pitchSamplesCount: speechMetrics.pitchSamplesCount,
+      speakingDurationMs: speechMetrics.speakingDurationMs,
+      azureScores: azureScores ? `acc=${azureScores.accuracyScore}, flu=${azureScores.fluencyScore}, pro=${azureScores.prosodyScore}` : "none (heuristic fallback)",
     });
 
-    // [NEW] Reset speech metrics refs for next turn
+    // Reset speech metrics refs for next turn
     confidenceScoresRef.current = [];
     speechStartTimeRef.current = null;
     pauseCountRef.current = 0;
     lastSpeechTimeRef.current = null;
+    azurePronScoresRef.current = null;
 
     // Optimistically add user turn
     const tempId = `temp-${Date.now()}`;
@@ -711,13 +872,22 @@ export default function SpeakingSessionClient({
       role: "user",
       text,
       timestamp: new Date(),
+      wordAssessments: azureScores?.words ?? undefined,
+      pronunciationScores: azureScores ? {
+        accuracyScore: azureScores.accuracyScore,
+        fluencyScore: azureScores.fluencyScore,
+        prosodyScore: azureScores.prosodyScore,
+        overallScore: azureScores.overallScore,
+        completenessScore: azureScores.completenessScore,
+      } : undefined,
     };
 
     setTurns((prev) => [...prev, userTurn]);
+    setHintText(null); // Clear hint when user submits
 
     try {
       // [MODIFIED] Pass speech metrics to submitTurn
-      const result = await submitTurn(sessionId, text, null, speechMetrics);
+      const result = await submitTurn(sessionId, text, undefined, speechMetrics);
 
       // Update user turn with real ID (no scores during conversation)
       setTurns((prev) =>
@@ -740,7 +910,19 @@ export default function SpeakingSessionClient({
       };
       setTurns((prev) => [...prev, aiTurn]);
 
+      // Fire TTS (non-blocking) and fetch hint in parallel
+      // Recording start will cancel TTS if user begins speaking while AI is still talking
       speakText(result.aiResponse);
+
+      // In scripted mode, fetch hint immediately (runs in parallel with TTS)
+      if (sessionMode === "scripted" && sessionId) {
+        try {
+          const hint = await getSessionHint(sessionId);
+          setHintText(hint);
+        } catch {
+          console.error("Failed to auto-fetch hint in scripted mode");
+        }
+      }
     } catch (e) {
       console.error("Submit turn error", e);
       toast.error("Failed to process message");
@@ -771,13 +953,24 @@ export default function SpeakingSessionClient({
   const handleSelectRecord = async (recordId: string) => {
     setSelectedRecordId(recordId);
     setIsLoadingFeedback(true);
-    setViewState("detail");
+    setViewState("record-review");
 
     try {
       const sessionData = await getSessionDetailsById(recordId);
 
       if (sessionData) {
-        // Helper function to generate corrected sentence from errors
+        // Store session data for the assessment review
+        setLoadedSessionData({
+          scores: sessionData.scores,
+          conversation: sessionData.conversation.map((c) => ({
+            role: c.role,
+            text: c.text,
+            pronunciationScore: c.pronunciationScore ?? undefined,
+            fluencyScore: c.fluencyScore ?? undefined,
+          })),
+        });
+
+        // Also prepare DetailedFeedbackData for when they click "Detailed Feedback"
         const generateCorrectedSentence = (
           text: string,
           errors: { word: string; correction: string; type: string }[]
@@ -822,7 +1015,7 @@ export default function SpeakingSessionClient({
             }));
 
             return {
-              role: c.role,
+              role: c.role as "user" | "tutor",
               text: c.text,
               userErrors,
               correctedSentence:
@@ -953,6 +1146,48 @@ export default function SpeakingSessionClient({
     { label: "Grammar", value: scores.grammar },
   ], [scores.relevance, scores.pronunciation, scores.intonation, scores.fluency, scores.grammar]);
 
+  // Build AssessmentData for the pronunciation review page (per-turn)
+  const assessmentData: AssessmentData = useMemo(() => {
+    const userTurns = turns.filter((t) => t.role === "user");
+
+    const turnAssessments = userTurns.map((t) => ({
+      text: t.text,
+      words: t.wordAssessments ?? [],
+      accuracyScore: t.pronunciationScores?.accuracyScore ?? scores.pronunciation,
+      fluencyScore: t.pronunciationScores?.fluencyScore ?? scores.fluency,
+      prosodyScore: t.pronunciationScores?.prosodyScore ?? scores.intonation,
+      overallScore: t.pronunciationScores?.overallScore ?? scores.pronunciation,
+      completenessScore: t.pronunciationScores?.completenessScore ?? 0,
+    }));
+
+    const fullText = userTurns.map((t) => t.text).join(" ");
+
+    // Average across turns
+    const avg = (fn: (t: typeof turnAssessments[0]) => number, fallback: number) =>
+      turnAssessments.length > 0
+        ? turnAssessments.reduce((sum, t) => sum + fn(t), 0) / turnAssessments.length
+        : fallback;
+
+    // Average completeness scores (only meaningful in scripted mode)
+    const avgCompleteness = turnAssessments.length > 0
+      ? turnAssessments.reduce((sum, t) => sum + (t.completenessScore ?? 0), 0) / turnAssessments.length
+      : 0;
+
+    return {
+      turns: turnAssessments,
+      fullText,
+      pronunciationScore: Math.round(avg((t) => t.overallScore, scores.pronunciation)),
+      accuracyScore: Math.round(avg((t) => t.accuracyScore, scores.pronunciation)),
+      fluencyScore: Math.round(avg((t) => t.fluencyScore, scores.fluency)),
+      prosodyScore: Math.round(avg((t) => t.prosodyScore, scores.intonation)),
+      completenessScore: Math.round(avgCompleteness),
+      contentScore: Math.round((scores.grammar + scores.relevance) / 2),
+      grammarScore: scores.grammar,
+      relevanceScore: scores.relevance,
+      vocabularyScore: scores.grammar,
+    };
+  }, [turns, scores]);
+
   if (!scenario) {
     return (
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
@@ -1025,15 +1260,92 @@ export default function SpeakingSessionClient({
         <LearningHistory
           records={dynamicRecords}
           onBack={() => setViewState("preparation")}
+          onSelectRecord={handleSelectRecord}
         />
       </div>
     );
   }
 
+  if (viewState === "record-review") {
+    if (isLoadingFeedback) {
+      return (
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16">
+          <Card className="p-16 text-center border-0 shadow-2xl bg-white rounded-[3rem] relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-50 via-transparent to-transparent opacity-70" />
+            <div className="relative z-10">
+              <div className="relative mx-auto mb-8 w-24 h-24">
+                <div className="absolute inset-0 rounded-full border-4 border-primary-100"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-primary-500 border-t-transparent animate-spin"></div>
+                <Bot className="absolute inset-0 m-auto h-8 w-8 text-primary-500 animate-pulse" />
+              </div>
+              <h2 className="text-3xl font-bold mb-3 text-slate-800">
+                Loading Assessment...
+              </h2>
+              <p className="text-lg text-slate-500 max-w-md mx-auto">
+                Retrieving your pronunciation and content assessment results.
+              </p>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
+    if (loadedSessionData) {
+      // Build AssessmentData from loaded session
+      const userConvTurns = loadedSessionData.conversation.filter(
+        (c) => c.role === "user"
+      );
+
+      const recordAssessmentData: AssessmentData = {
+        turns: userConvTurns.map((c) => ({
+          text: c.text,
+          words: [], // Per-word data not stored in DB; text is shown as-is
+          accuracyScore: c.pronunciationScore ?? loadedSessionData.scores.pronunciation,
+          fluencyScore: c.fluencyScore ?? loadedSessionData.scores.fluency,
+          prosodyScore: loadedSessionData.scores.intonation,
+          overallScore: c.pronunciationScore ?? loadedSessionData.scores.pronunciation,
+        })),
+        fullText: userConvTurns.map((c) => c.text).join(" "),
+        pronunciationScore: loadedSessionData.scores.pronunciation,
+        accuracyScore: loadedSessionData.scores.pronunciation,
+        fluencyScore: loadedSessionData.scores.fluency,
+        prosodyScore: loadedSessionData.scores.intonation,
+        contentScore: Math.round(
+          (loadedSessionData.scores.grammar + loadedSessionData.scores.relevance) / 2
+        ),
+        grammarScore: loadedSessionData.scores.grammar,
+        relevanceScore: loadedSessionData.scores.relevance,
+        vocabularyScore: loadedSessionData.scores.grammar,
+      };
+
+      return (
+        <PronunciationAssessmentReview
+          data={recordAssessmentData}
+          onBack={() => {
+            setViewState("history");
+            setSelectedRecordId(null);
+            setLoadedSessionData(null);
+          }}
+          onRetry={() => {
+            setSessionId(null);
+            setTurns([]);
+            setAnalysisResult(null);
+            setDynamicFeedback(null);
+            setLoadedSessionData(null);
+            setViewState("preparation");
+          }}
+          onDetailedFeedback={() => {
+            setViewState("detail");
+          }}
+        />
+      );
+    }
+  }
+
   if (viewState === "detail") {
     if (isLoadingFeedback) {
       return (
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16">
           <Card className="p-16 text-center border-0 shadow-2xl bg-white rounded-[3rem] relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-50 via-transparent to-transparent opacity-70" />
             <div className="relative z-10">
@@ -1064,7 +1376,7 @@ export default function SpeakingSessionClient({
       );
 
     return (
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
         <DetailedFeedback
           scores={detailScoresWithIcons}
           errorCategories={feedbackToUse.errorCategories}
@@ -1073,9 +1385,8 @@ export default function SpeakingSessionClient({
           overallScore={overallScore}
           tip={feedbackToUse.tip}
           onBack={() => {
-            setViewState(selectedRecordId ? "history" : "complete");
-            if (selectedRecordId) {
-              setSelectedRecordId(null);
+            setViewState(selectedRecordId ? "record-review" : "complete");
+            if (!selectedRecordId) {
               setDynamicFeedback(null);
             }
           }}
@@ -1231,7 +1542,39 @@ export default function SpeakingSessionClient({
                 {scenario.description || scenario.context}
               </p>
 
-              <div className="flex gap-3 mt-6">
+              {/* Mode Selector */}
+              <div className="mt-6 mb-4">
+                <p className="text-sm font-semibold text-slate-700 mb-2">Assessment Mode</p>
+                <div className="flex bg-slate-100 rounded-xl p-1 gap-1">
+                  <button
+                    onClick={() => setSessionMode("unscripted")}
+                    className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                      sessionMode === "unscripted"
+                        ? "bg-white text-slate-800 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    🗣️ Free Speaking
+                  </button>
+                  <button
+                    onClick={() => setSessionMode("scripted")}
+                    className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                      sessionMode === "scripted"
+                        ? "bg-white text-slate-800 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    📖 Read Aloud
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400 mt-1.5">
+                  {sessionMode === "scripted"
+                    ? "Read the AI suggestions aloud — scored on accuracy, completeness, and pronunciation."
+                    : "Speak freely using AI hints as reference — scored on accuracy, fluency, and prosody."}
+                </p>
+              </div>
+
+              <div className="flex gap-3">
                 <Button
                   onClick={startSession}
                   className="flex-1 gap-2 text-lg py-6"
@@ -1248,8 +1591,8 @@ export default function SpeakingSessionClient({
                     setViewState("history");
                     setIsLoadingRecords(true);
                     try {
-                      // Get userId from session
-                      const userId = session?.user?.id || "user-1"; // Fallback for dev
+                      // Get userId from auth context
+                      const userId = user?.id || "user-1"; // Fallback for dev
                       const records = await getLearningRecordsForScenario(
                         userId,
                         scenarioId
@@ -1263,7 +1606,7 @@ export default function SpeakingSessionClient({
                           fluencyScore: r.fluencyScore,
                           pronunciationScore: r.pronunciationScore,
                           intonationScore: r.intonationScore,
-                          date: r.date,
+                          date: new Date(r.date),
                         }))
                       );
                     } catch (error) {
@@ -1309,7 +1652,25 @@ export default function SpeakingSessionClient({
                     try {
                       if (sessionId) {
                         const result = await analyzeAndScoreSession(sessionId);
-                        setAnalysisResult(result);
+                        setAnalysisResult({
+                          scores: result.scores,
+                          sessionAnalysis: {
+                            feedbackTitle: result.feedbackTitle,
+                            feedbackSummary: result.feedbackSummary,
+                            feedbackRating: result.feedbackRating,
+                            feedbackTip: result.feedbackTip,
+                          },
+                          errorCategories: result.errorCategories,
+                          conversation: result.conversation.map(c => ({
+                            ...c,
+                            role: c.role as "user" | "tutor",
+                            userErrors: c.userErrors?.map(e => ({
+                              ...e,
+                              startIndex: e.startIndex ?? 0,
+                              endIndex: e.endIndex ?? 0,
+                            })),
+                          })),
+                        });
                       }
                       setViewState("complete");
                     } catch (error) {
@@ -1362,7 +1723,25 @@ export default function SpeakingSessionClient({
                     try {
                       if (sessionId) {
                         const result = await analyzeAndScoreSession(sessionId);
-                        setAnalysisResult(result);
+                        setAnalysisResult({
+                          scores: result.scores,
+                          sessionAnalysis: {
+                            feedbackTitle: result.feedbackTitle,
+                            feedbackSummary: result.feedbackSummary,
+                            feedbackRating: result.feedbackRating,
+                            feedbackTip: result.feedbackTip,
+                          },
+                          errorCategories: result.errorCategories,
+                          conversation: result.conversation.map(c => ({
+                            ...c,
+                            role: c.role as "user" | "tutor",
+                            userErrors: c.userErrors?.map(e => ({
+                              ...e,
+                              startIndex: e.startIndex ?? 0,
+                              endIndex: e.endIndex ?? 0,
+                            })),
+                          })),
+                        });
                       }
                       setViewState("complete");
                     } catch (error) {
@@ -1478,30 +1857,96 @@ export default function SpeakingSessionClient({
               )}
             </div>
 
-            {/* Input Area */}
-            <div className="p-6 border-t border-border bg-white/80 backdrop-blur-xl absolute bottom-0 w-full z-10">
-              <div className="flex justify-center items-center">
+            {/* Input Area — glassmorphism bar */}
+            <div className="px-4 py-3 border-t border-border/50 bg-white/90 backdrop-blur-2xl absolute bottom-0 w-full z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+              {/* Hint display card */}
+              {hintText && (
+                <div className="mb-3 mx-auto max-w-lg motion-safe:animate-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50/80 border border-amber-200/60 shadow-md shadow-amber-100/40">
+                    {/* Gradient left accent */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-400 via-orange-400 to-amber-300" />
+                    <div className="flex items-start gap-3 pl-4 pr-3 py-3">
+                      <div className="shrink-0 mt-0.5 w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center shadow-sm">
+                        <Lightbulb className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600/80 mb-1">
+                          {sessionMode === "scripted" ? "📖 Read aloud" : "Suggested response"}
+                        </p>
+                        <p className="text-[14px] text-amber-950 leading-relaxed font-medium">&ldquo;{hintText}&rdquo;</p>
+                      </div>
+                      {sessionMode !== "scripted" && (
+                        <button
+                          onClick={() => setHintText(null)}
+                          className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center hover:bg-amber-200/50 transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                          aria-label="Dismiss hint"
+                        >
+                          <X className="h-3.5 w-3.5 text-amber-400" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action buttons row */}
+              <div className="flex justify-center items-center gap-5">
+                {/* Hint button */}
+                <button
+                  onClick={async () => {
+                    if (!sessionId || isLoadingHint) return;
+                    setIsLoadingHint(true);
+                    setHintText(null);
+                    try {
+                      const hint = await getSessionHint(sessionId);
+                      setHintText(hint);
+                    } catch (e) {
+                      toast.error("Failed to get hint");
+                    } finally {
+                      setIsLoadingHint(false);
+                    }
+                  }}
+                  disabled={isLoadingHint || isRecording}
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 ${
+                    isLoadingHint
+                      ? "bg-amber-100 text-amber-500 motion-safe:animate-pulse shadow-inner"
+                      : hintText
+                        ? "bg-gradient-to-br from-amber-400 to-orange-400 text-white shadow-lg shadow-amber-200/50 hover:shadow-amber-300/60"
+                        : "bg-amber-50 border border-amber-200/80 text-amber-500 hover:bg-amber-100 hover:border-amber-300 hover:shadow-md hover:shadow-amber-100/40 motion-safe:hover:scale-105"
+                  } disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100`}
+                  aria-label={isLoadingHint ? "Loading hint..." : "Get a hint for what to say"}
+                >
+                  <Lightbulb className="h-5 w-5" />
+                </button>
+
+                {/* Mic button — primary action */}
                 <button
                   onClick={handleToggleRecording}
-                  className={`relative w-[60px] h-[60px] rounded-full flex items-center justify-center transition-all duration-300 ${
+                  className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 ${
                     isRecording
-                      ? "bg-[#818cf8] shadow-lg shadow-[#818cf8]/20 scale-110 ring-4 ring-[#818cf8]/30"
-                      : "bg-[#4f46e5] shadow-lg shadow-[#4f46e5]/20 hover:scale-105 hover:bg-[#4338ca]"
-                  } text-white group`}
+                      ? "bg-gradient-to-br from-indigo-400 to-violet-500 shadow-xl shadow-indigo-300/40 motion-safe:scale-110 ring-4 ring-indigo-300/30"
+                      : "bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-200/50 motion-safe:hover:scale-105 hover:from-indigo-600 hover:to-indigo-700 hover:shadow-xl hover:shadow-indigo-300/40"
+                  } text-white`}
+                  aria-label={isRecording ? "Stop recording" : "Start recording"}
                 >
                   <Mic
-                    className={`h-6 w-6 ${isRecording ? "animate-pulse" : ""}`}
+                    className={`h-6 w-6 ${isRecording ? "motion-safe:animate-pulse" : ""}`}
                   />
 
                   {/* Ripple effect when recording */}
                   {isRecording && (
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-[#818cf8] opacity-20 animate-ping"></span>
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-20 motion-safe:animate-ping" />
                   )}
                 </button>
               </div>
+
+              {/* Helper text */}
+              <p className="text-center text-[11px] text-muted-foreground/60 mt-2 select-none">
+                {isRecording ? "Tap to stop recording" : "Tap mic to speak · Lightbulb for hints"}
+              </p>
             </div>
             {/* Spacer for input area since it's absolute */}
-            <div className="h-[100px] shrink-0" />
+            <div className="h-[140px] shrink-0" />
           </div>
         </div>
 
@@ -1536,7 +1981,7 @@ export default function SpeakingSessionClient({
   // Analyzing state - show loading while AI analyzes the session
   if (viewState === "analyzing") {
     return (
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16">
         <Card className="p-16 text-center border-0 shadow-2xl bg-white rounded-[3rem] relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-50 via-transparent to-transparent opacity-70" />
           <div className="relative z-10">
@@ -1595,88 +2040,23 @@ export default function SpeakingSessionClient({
       return "Don't give up! Consistency is key. Try listening to native speakers and shadowing their pronunciation.";
     };
 
+
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-5xl w-full">
-          {/* Back Button */}
-          <Link href="/speaking">
-            <Button variant="outline" className="gap-2 mb-6 bg-white">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Speaking Room
-            </Button>
-          </Link>
-
-          {/* Score and Radar Chart Row */}
-          <div className="grid lg:grid-cols-2 gap-6 mb-6">
-            {/* Overall Score Card */}
-            <Card className="p-6 border-2 border-border bg-white h-full flex items-center justify-center">
-              <div className="flex flex-col items-center justify-center">
-                <div className="flex items-center justify-center w-32 h-32 text-white rounded-full bg-primary mb-4">
-                  <span className="text-5xl font-bold">{overallScore}</span>
-                </div>
-                <h2 className="text-xl font-bold text-foreground">
-                  Overall Score
-                </h2>
-              </div>
-            </Card>
-
-            {/* Radar Chart Card */}
-            <Card className="p-4 border-2 border-border bg-white flex items-center justify-center">
-              <RadarChart data={radarData} size={280} />
-            </Card>
-          </div>
-
-          {/* AI Summary Card */}
-          <Card className="p-6 border-2 border-border bg-white mb-6">
-            <div className="flex items-start gap-4">
-              <div className="shrink-0 p-3 rounded-xl bg-primary-50">
-                <Sparkles className="h-6 w-6 text-primary" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-foreground">
-                  {getSummaryTitle()}
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {getSummaryDescription()}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-3 gap-4">
-            <Button
-              onClick={handleViewDetailedFeedback}
-              className="h-14 gap-2 bg-primary hover:bg-primary/90"
-            >
-              <BarChart3 className="h-5 w-5" />
-              Detailed Feedback
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleDownloadTranscript}
-              className="h-14 gap-2 border-2 bg-white hover:border-primary"
-            >
-              <FileText className="h-5 w-5 text-primary" />
-              Transcript
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSessionId(null);
-                setTurns([]);
-                setAnalysisResult(null);
-                setDynamicFeedback(null);
-                setViewState("preparation");
-              }}
-              className="h-14 gap-2 border-2 bg-white hover:border-primary"
-            >
-              <RotateCcw className="h-5 w-5 text-primary" />
-              Retry
-            </Button>
-          </div>
-        </div>
-      </div>
+      <PronunciationAssessmentReview
+        data={assessmentData}
+        mode={sessionMode}
+        onBack={() => {
+          router.push("/speaking");
+        }}
+        onRetry={() => {
+          setSessionId(null);
+          setTurns([]);
+          setAnalysisResult(null);
+          setDynamicFeedback(null);
+          setViewState("preparation");
+        }}
+        onDetailedFeedback={handleViewDetailedFeedback}
+      />
     );
   }
 
