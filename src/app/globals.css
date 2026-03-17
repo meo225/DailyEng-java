@@ -435,3 +435,43 @@
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
+
+/* ================================================================
+   ACCESSIBILITY: Respect prefers-reduced-motion
+   UX skill rule: 'reduced-motion' — severity HIGH
+   Disables all decorative animations for users who prefer reduced motion
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Keep essential state transitions slightly visible */
+  .flashcard-inner {
+    transition-duration: 0.15s !important;
+  }
+}
+
+/* ================================================================
+   animate-float — used by ProtectedRoute background orbs
+   Only plays when motion is safe (motion-safe:animate-float class)
+   ================================================================ */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  33%       { transform: translateY(-18px) scale(1.04); }
+  66%       { transform: translateY(10px) scale(0.97); }
+}
+
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+/* Scroll-based animation columns — paused on hover via Tailwind hover:paused */
+.hover\:paused:hover {
+  animation-play-state: paused;
+}

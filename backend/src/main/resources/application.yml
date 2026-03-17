@@ -18,13 +18,17 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # Validate against existing schema, don't modify
+      ddl-auto: none  # Skip validation — Prisma manages the schema
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
     show-sql: false
     open-in-view: false   # Disable OSIV for performance
     properties:
       hibernate:
         format_sql: true
         default_schema: public
+        globally_quoted_identifiers: true
         jdbc:
           time_zone: UTC
         types:
@@ -83,7 +87,7 @@ server:
 # ========================
 app:
   jwt:
-    secret: ${JWT_SECRET:dailyeng-super-secret-key-change-in-production-must-be-at-least-256-bits-long}
+    secret: ${JWT_SECRET}
     expiration-ms: 86400000   # 24 hours
     refresh-expiration-ms: 604800000  # 7 days
 
@@ -100,12 +104,24 @@ app:
   # ========================
   # External APIs
   # ========================
-  gemini:
-    api-key: ${GEMINI_API_KEY:}
-    model: gemini-2.5-flash
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-4o}
+    temperature: 0.7
+    max-tokens: 4096
+
+  azure-speech:
+    subscription-key: ${AZURE_SPEECH_KEY:}
+    region: ${AZURE_SPEECH_REGION:japaneast}
+    stt-language: en-US
+    tts-voice: en-US-JennyNeural
 
   pexels:
     api-key: ${PEXELS_API_KEY:}
+
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
 
   # ========================
   # App URLs

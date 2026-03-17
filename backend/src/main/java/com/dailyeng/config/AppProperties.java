@@ -1,12 +1,15 @@
 package com.dailyeng.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 /**
- * Centralized application properties mapped from {@code app.*} in application.yml.
+ * Centralized application properties mapped from {@code app.*} in
+ * application.yml.
  * Uses Java 21+ and Spring Boot 3.x configuration properties binding.
  */
 @Configuration
@@ -17,9 +20,23 @@ public class AppProperties {
 
     private Jwt jwt = new Jwt();
     private Cors cors = new Cors();
-    private Gemini gemini = new Gemini();
+    private Openai openai = new Openai();
+    private AzureSpeech azureSpeech = new AzureSpeech();
     private Pexels pexels = new Pexels();
+    private Google google = new Google();
     private String frontendUrl = "http://localhost:3000";
+
+    @PostConstruct
+    public void validate() {
+        if (!StringUtils.hasText(jwt.getSecret())) {
+            throw new IllegalStateException(
+                    "JWT_SECRET environment variable is not set. A secret is required for secure operation.");
+        }
+        if (jwt.getSecret().length() < 32) {
+            throw new IllegalStateException(
+                    "JWT_SECRET must be at least 32 characters (256 bits) long for secure HS256 algorithm usage.");
+        }
+    }
 
     @Getter
     @Setter
@@ -41,14 +58,32 @@ public class AppProperties {
 
     @Getter
     @Setter
-    public static class Gemini {
+    public static class Openai {
         private String apiKey;
-        private String model = "gemini-2.5-flash";
+        private String model = "gpt-4o";
+        private double temperature = 0.7;
+        private int maxTokens = 4096;
+    }
+
+    @Getter
+    @Setter
+    public static class AzureSpeech {
+        private String subscriptionKey;
+        private String region = "eastjp";
+        private String sttLanguage = "en-US";
+        private String ttsVoice = "en-US-JennyNeural";
     }
 
     @Getter
     @Setter
     public static class Pexels {
         private String apiKey;
+    }
+
+    @Getter
+    @Setter
+    public static class Google {
+        private String clientId;
+        private String clientSecret;
     }
 }

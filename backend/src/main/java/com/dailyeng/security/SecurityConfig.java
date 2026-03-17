@@ -62,6 +62,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/speaking/scenarios").permitAll()
                         .requestMatchers(HttpMethod.GET, "/speaking/scenarios/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/speaking/scenarios/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/speaking/speech/voices").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/speaking/speech/synthesize").permitAll()
                         .requestMatchers(HttpMethod.GET, "/topic-groups/**").permitAll()
                         // Actuator
                         .requestMatchers("/actuator/health").permitAll()
