@@ -112,7 +112,7 @@ app:
 
   azure-speech:
     subscription-key: ${AZURE_SPEECH_KEY:}
-    region: ${AZURE_SPEECH_REGION:eastus}
+    region: ${AZURE_SPEECH_REGION:japaneast}
     stt-language: en-US
     tts-voice: en-US-JennyNeural
 

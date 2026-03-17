@@ -2,13 +2,17 @@ package com.dailyeng.controller;
 
 import com.dailyeng.dto.speaking.SpeakingDtos.*;
 import com.dailyeng.security.JwtTokenProvider;
+import com.dailyeng.service.AzureSpeechService;
 import com.dailyeng.service.SpeakingService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST controller for the Speaking module — 15 endpoints.
@@ -20,6 +24,7 @@ import java.util.List;
 public class SpeakingController {
 
     private final SpeakingService speakingService;
+    private final AzureSpeechService azureSpeechService;
     private final JwtTokenProvider jwtTokenProvider;
 
     // ======================== Topic Groups ========================
@@ -156,6 +161,68 @@ public class SpeakingController {
     ) {
         var userId = requireUserId(request);
         return ResponseEntity.ok(speakingService.getLearningRecords(userId, id));
+    }
+
+    // ======================== Speech (Azure STT/TTS) ========================
+
+    /** POST /speaking/speech/transcribe — Transcribe audio to text */
+    @PostMapping("/speech/transcribe")
+    public ResponseEntity<AzureSpeechService.TranscriptionResult> transcribeAudio(
+            @RequestParam("audio") MultipartFile audioFile,
+            HttpServletRequest request
+    ) {
+        requireUserId(request);
+        try {
+            var contentType = audioFile.getContentType();
+            String azureContentType = "audio/wav; codecs=audio/pcm; samplerate=16000";
+            if (contentType != null && contentType.contains("ogg")) {
+                azureContentType = "audio/ogg; codecs=opus";
+            }
+            var result = azureSpeechService.transcribe(audioFile.getBytes(), azureContentType);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /** POST /speaking/speech/synthesize — Text to speech */
+    @PostMapping("/speech/synthesize")
+    public ResponseEntity<byte[]> synthesizeSpeech(@RequestBody Map<String, String> body) {
+        var text = body.get("text");
+        var voice = body.getOrDefault("voice", null);
+        if (text == null || text.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var audioBytes = azureSpeechService.synthesize(text, voice);
+        if (audioBytes.length == 0) {
+            return ResponseEntity.internalServerError().build();
+        }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "audio/ogg")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"speech.ogg\"")
+                .body(audioBytes);
+    }
+
+    /** POST /speaking/speech/pronunciation — Pronunciation assessment */
+    @PostMapping("/speech/pronunciation")
+    public ResponseEntity<AzureSpeechService.PronunciationResult> assessPronunciation(
+            @RequestParam("audio") MultipartFile audioFile,
+            @RequestParam("referenceText") String referenceText,
+            HttpServletRequest request
+    ) {
+        requireUserId(request);
+        try {
+            var result = azureSpeechService.assessPronunciation(audioFile.getBytes(), referenceText);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /** GET /speaking/speech/voices — List available TTS voices */
+    @GetMapping("/speech/voices")
+    public ResponseEntity<?> listVoices() {
+        return ResponseEntity.ok(azureSpeechService.listVoices());
     }
 
     // ======================== Helpers ========================
