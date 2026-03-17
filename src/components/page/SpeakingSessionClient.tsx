@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -921,10 +921,37 @@ export default function SpeakingSessionClient({
   };
 
   // Transform scores with icons for DetailedFeedback component
-  const scoresWithIcons = detailedFeedback.scores.map((s) => ({
+  const scoresWithIcons = useMemo(() => detailedFeedback.scores.map((s) => ({
     ...s,
     icon: getScoreIcon(s.label),
-  }));
+  })), [detailedFeedback.scores]);
+
+  // Use dynamic feedback if available, otherwise fall back to prop
+  const feedbackToUse = dynamicFeedback || detailedFeedback;
+
+  // Build scores with icons
+  const detailScoresWithIcons = useMemo(() => feedbackToUse.scores.map((s) => ({
+    ...s,
+    icon: getScoreIcon(s.label),
+  })), [feedbackToUse.scores]);
+
+  // Use analysisResult if available, otherwise calculate from turns (fallback)
+  const scores = analysisResult?.scores || {
+    grammar: 0,
+    relevance: 0,
+    fluency: 70,
+    pronunciation: 70,
+    intonation: 70,
+    overall: 0,
+  };
+
+  const radarData = useMemo(() => [
+    { label: "Relevance", value: scores.relevance },
+    { label: "Pronunciation", value: scores.pronunciation },
+    { label: "Intonation & Stress", value: scores.intonation },
+    { label: "Fluency", value: scores.fluency },
+    { label: "Grammar", value: scores.grammar },
+  ], [scores.relevance, scores.pronunciation, scores.intonation, scores.fluency, scores.grammar]);
 
   if (!scenario) {
     return (
@@ -1004,15 +1031,6 @@ export default function SpeakingSessionClient({
   }
 
   if (viewState === "detail") {
-    // Use dynamic feedback if available, otherwise fall back to prop
-    const feedbackToUse = dynamicFeedback || detailedFeedback;
-
-    // Build scores with icons
-    const detailScoresWithIcons = feedbackToUse.scores.map((s) => ({
-      ...s,
-      icon: getScoreIcon(s.label),
-    }));
-
     if (isLoadingFeedback) {
       return (
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16">
@@ -1541,24 +1559,6 @@ export default function SpeakingSessionClient({
   }
 
   if (viewState === "complete") {
-    // Use analysisResult if available, otherwise calculate from turns (fallback)
-    const scores = analysisResult?.scores || {
-      grammar: 0,
-      relevance: 0,
-      fluency: 70,
-      pronunciation: 70,
-      intonation: 70,
-      overall: 0,
-    };
-
-    const radarData = [
-      { label: "Relevance", value: scores.relevance },
-      { label: "Pronunciation", value: scores.pronunciation },
-      { label: "Intonation & Stress", value: scores.intonation },
-      { label: "Fluency", value: scores.fluency },
-      { label: "Grammar", value: scores.grammar },
-    ];
-
     const overallScore =
       scores.overall ||
       Math.round(
