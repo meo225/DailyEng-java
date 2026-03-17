@@ -57,7 +57,114 @@ public class AzureSpeechService {
     }
 
     // ========================================================================
-    // STT — Speech-to-Text (short audio ≤60s, REST API)
+    // STT — Speech-to-Text (Speech SDK — higher accuracy than REST API)
+    // ========================================================================
+
+    /**
+     * Transcribe audio using Azure Speech SDK (higher accuracy than REST API).
+     * Accepts WAV PCM 16kHz mono audio bytes.
+     */
+    public TranscriptionResult transcribeSdk(byte[] wavBytes) {
+        if (!enabled) {
+            log.warn("Azure Speech not enabled — returning empty transcription");
+            return TranscriptionResult.empty();
+        }
+
+        var config = appProperties.getAzureSpeech();
+        File tempFile = null;
+
+        try {
+            // Write WAV to temp file (SDK requires file or stream input)
+            tempFile = File.createTempFile("stt_sdk_", ".wav");
+            try (var fos = new FileOutputStream(tempFile)) {
+                fos.write(wavBytes);
+            }
+
+            // Configure Speech SDK
+            var speechConfig = SpeechConfig.fromSubscription(
+                    config.getSubscriptionKey(), config.getRegion());
+            speechConfig.setSpeechRecognitionLanguage(config.getSttLanguage());
+            // Request detailed output for word-level timing and confidence
+            speechConfig.setOutputFormat(OutputFormat.Detailed);
+
+            // Configure audio input from WAV file
+            var audioConfig = AudioConfig.fromWavFileInput(tempFile.getAbsolutePath());
+
+            // Create recognizer
+            var recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+
+            // Recognize
+            var result = recognizer.recognizeOnceAsync().get();
+
+            TranscriptionResult transcriptionResult;
+
+            if (result.getReason() == ResultReason.RecognizedSpeech) {
+                // Parse detailed JSON for word-level info
+                var jsonStr = result.getProperties().getProperty(
+                        PropertyId.SpeechServiceResponse_JsonResult);
+                var json = objectMapper.readTree(jsonStr);
+
+                var nBest = json.path("NBest");
+                if (nBest.isArray() && !nBest.isEmpty()) {
+                    var best = nBest.get(0);
+                    var displayText = best.path("Display").asText(result.getText());
+                    var confidence = best.path("Confidence").asDouble(0.0);
+
+                    List<WordResult> words = new ArrayList<>();
+                    var wordsNode = best.path("Words");
+                    if (wordsNode.isArray()) {
+                        for (var w : wordsNode) {
+                            words.add(new WordResult(
+                                    w.path("Word").asText(),
+                                    w.path("Confidence").asDouble(0.0),
+                                    w.path("Offset").asLong(0),
+                                    w.path("Duration").asLong(0)));
+                        }
+                    }
+
+                    log.info("🎤 SDK STT: \"{}\" (confidence: {}, words: {})",
+                            displayText, confidence, words.size());
+                    transcriptionResult = new TranscriptionResult(displayText, confidence, words, "Success");
+                } else {
+                    // Fallback: use result.getText() directly
+                    log.info("🎤 SDK STT (basic): \"{}\"", result.getText());
+                    transcriptionResult = new TranscriptionResult(
+                            result.getText(), 0.9, List.of(), "Success");
+                }
+
+            } else if (result.getReason() == ResultReason.NoMatch) {
+                log.warn("🎤 SDK STT: No speech recognized in audio");
+                transcriptionResult = TranscriptionResult.empty();
+
+            } else {
+                // Cancellation or error
+                var cancellation = CancellationDetails.fromResult(result);
+                log.error("🎤 SDK STT failed: reason={}, code={}, details={}",
+                        cancellation.getReason(),
+                        cancellation.getErrorCode(),
+                        cancellation.getErrorDetails());
+                transcriptionResult = TranscriptionResult.empty();
+            }
+
+            // Cleanup SDK resources
+            recognizer.close();
+            audioConfig.close();
+            speechConfig.close();
+
+            return transcriptionResult;
+
+        } catch (Exception e) {
+            log.error("🎤 SDK STT error: {}", e.getMessage(), e);
+            return TranscriptionResult.empty();
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+    }
+
+    // ========================================================================
+    // STT — Speech-to-Text (REST API fallback — for reference)
     // ========================================================================
 
     public TranscriptionResult transcribe(byte[] audioBytes, String contentType) {

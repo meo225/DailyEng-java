@@ -284,4 +284,13 @@ public class AuthService {
     private AuthResponse.UserInfo toUserInfo(User user) {
         return new AuthResponse.UserInfo(user.getId(), user.getName(), user.getEmail(), user.getImage());
     }
+
+    /**
+     * Get user info by ID. Used by /auth/me to return user data from JWT cookie.
+     */
+    public AuthResponse.UserInfo getUserInfo(String userId) {
+        return userRepository.findById(userId)
+                .map(this::toUserInfo)
+                .orElse(null);
+    }
 }

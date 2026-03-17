@@ -77,6 +77,8 @@ public class OpenAiService {
 
     public record SpeakingResponseResult(String response) {}
 
+    public record SpeakingHintResult(String hint) {}
+
     public record ScenarioConfig(String context, String userRole, String botRole, String goal, String level) {}
 
     /**
@@ -125,12 +127,93 @@ public class OpenAiService {
         try {
             var messages = buildMessages(systemPrompt, history, userMessage);
             var responseText = callOpenAi(messages, 0.7, 1024);
-            var parsed = objectMapper.readTree(responseText);
-            return new SpeakingResponseResult(parsed.path("response").asText(
-                    "I'm sorry, I didn't catch that. Could you repeat?"));
+
+            // Try parsing as JSON first, fall back to raw text
+            try {
+                var parsed = objectMapper.readTree(responseText);
+                var responseField = parsed.path("response").asText(null);
+                if (responseField != null && !responseField.isBlank()) {
+                    return new SpeakingResponseResult(responseField);
+                }
+            } catch (Exception jsonEx) {
+                // GPT returned plain text instead of JSON — use it directly
+                log.debug("[generateSpeakingResponse] GPT returned plain text, using as-is");
+            }
+
+            // Use raw text (strip quotes if wrapped)
+            var cleaned = responseText.strip();
+            if (cleaned.startsWith("\"") && cleaned.endsWith("\"")) {
+                cleaned = cleaned.substring(1, cleaned.length() - 1);
+            }
+            return new SpeakingResponseResult(cleaned.isBlank()
+                    ? "I'm sorry, I didn't catch that. Could you repeat?"
+                    : cleaned);
         } catch (Exception e) {
             log.error("[generateSpeakingResponse] Error: {}", e.getMessage());
             return new SpeakingResponseResult("I'm sorry, I didn't catch that. Could you repeat?");
+        }
+    }
+
+    // ========================================================================
+    // 1b. generateSpeakingHint — Suggest what the user could say
+    // ========================================================================
+
+    /**
+     * Generate a sample response hint that the user can read aloud.
+     * Shows what the user COULD say in this conversation, at their level.
+     */
+    public SpeakingHintResult generateSpeakingHint(
+            ScenarioConfig scenario,
+            List<Map<String, String>> history
+    ) {
+        if (client == null) {
+            return new SpeakingHintResult("I would like to ask about that, please.");
+        }
+
+        var levelDesc = scenario.level() != null
+                ? "The user is at %s level. Use %s.".formatted(
+                scenario.level(), getLevelGuidance(scenario.level()))
+                : "Use moderate vocabulary.";
+
+        var systemPrompt = """
+                You are helping an English learner practice speaking through roleplay.
+                
+                SCENARIO: %s
+                USER ROLE: %s
+                BOT ROLE: %s
+                GOAL: %s
+                %s
+                
+                The user doesn't know what to say next. Generate a SAMPLE RESPONSE that the user could say.
+                
+                Rules:
+                1. The response should be from the USER's perspective (playing their role: %s)
+                2. Keep it natural, 1-2 sentences
+                3. Match the user's CEFR level — don't use vocabulary beyond their ability
+                4. Make it relevant to the last thing the tutor said
+                5. Return ONLY the sample text the user should say, nothing else
+                6. Do NOT add quotation marks, labels, or explanations
+                """.formatted(
+                scenario.context(),
+                scenario.userRole() != null ? scenario.userRole() : "a learner",
+                scenario.botRole() != null ? scenario.botRole() : "a tutor",
+                scenario.goal() != null ? scenario.goal() : "Complete the conversation",
+                levelDesc,
+                scenario.userRole() != null ? scenario.userRole() : "a learner");
+
+        try {
+            var messages = buildMessages(systemPrompt, history, "Give me a hint for what I should say next.");
+            var responseText = callOpenAi(messages, 0.8, 256);
+            // Clean any accidental quotes/labels
+            var cleaned = responseText.strip()
+                    .replaceAll("^[\"']|[\"']$", "")
+                    .replaceAll("^(User|You|Hint|Sample|Response|Suggested):\\s*", "");
+            return new SpeakingHintResult(cleaned.isBlank()
+                    ? "I would like to ask about that, please."
+                    : cleaned);
+        } catch (Exception e) {
+            log.error("[generateSpeakingHint] Error: {}", e.getMessage());
+            return new SpeakingHintResult("I would like to ask about that, please.");
         }
     }
 

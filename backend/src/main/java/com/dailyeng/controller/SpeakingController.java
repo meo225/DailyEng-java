@@ -1,7 +1,6 @@
 package com.dailyeng.controller;
 
 import com.dailyeng.dto.speaking.SpeakingDtos.*;
-import com.dailyeng.security.JwtTokenProvider;
 import com.dailyeng.service.AzureSpeechService;
 import com.dailyeng.service.SpeakingService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,7 +24,6 @@ public class SpeakingController {
 
     private final SpeakingService speakingService;
     private final AzureSpeechService azureSpeechService;
-    private final JwtTokenProvider jwtTokenProvider;
 
     // ======================== Topic Groups ========================
 
@@ -108,6 +106,13 @@ public class SpeakingController {
         return ResponseEntity.ok(speakingService.analyzeAndScoreSession(id));
     }
 
+    /** POST /speaking/sessions/{id}/hint — generate a sample response hint */
+    @PostMapping("/sessions/{id}/hint")
+    public ResponseEntity<Map<String, String>> getHint(@PathVariable String id) {
+        var hint = speakingService.generateHint(id);
+        return ResponseEntity.ok(Map.of("hint", hint));
+    }
+
     /** GET /speaking/sessions/{id} — getSessionDetailsById() */
     @GetMapping("/sessions/{id}")
     public ResponseEntity<SessionDetailResponse> getSessionDetails(@PathVariable String id) {
@@ -174,14 +179,169 @@ public class SpeakingController {
         requireUserId(request);
         try {
             var contentType = audioFile.getContentType();
-            String azureContentType = "audio/wav; codecs=audio/pcm; samplerate=16000";
-            if (contentType != null && contentType.contains("ogg")) {
-                azureContentType = "audio/ogg; codecs=opus";
-            }
-            var result = azureSpeechService.transcribe(audioFile.getBytes(), azureContentType);
+            var originalFilename = audioFile.getOriginalFilename();
+            var size = audioFile.getSize();
+
+            System.out.printf("🎤 STT Request: contentType=%s, filename=%s, size=%d bytes%n",
+                    contentType, originalFilename, size);
+
+            // Always convert to WAV PCM 16kHz mono via ffmpeg (handles WebM, OGG, etc.)
+            byte[] wavBytes = convertToWav(audioFile.getBytes());
+            System.out.printf("🎤 Converted to WAV: %d bytes%n", wavBytes.length);
+
+            // Use Azure Speech SDK (higher accuracy than REST API)
+            var result = azureSpeechService.transcribeSdk(wavBytes);
+
+            System.out.printf("🎤 STT Result: text='%s', confidence=%.2f, status=%s%n",
+                    result.text(), result.confidence(), result.status());
+
             return ResponseEntity.ok(result);
         } catch (Exception e) {
+            System.err.printf("🎤 STT Error: %s%n", e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * POST /speaking/speech/transcribe-assess — Transcribe + Pronunciation Assessment in one call.
+     * Supports both scripted (with referenceText) and unscripted (without) modes.
+     * - Scripted: uses Azure Speech SDK scripted assessment → includes CompletenessScore, Omission/Insertion errors
+     * - Unscripted: uses Azure Speech SDK unscripted assessment → no CompletenessScore, 4 error types
+     */
+    @PostMapping("/speech/transcribe-assess")
+    public ResponseEntity<TranscribeAssessResponse> transcribeAndAssess(
+            @RequestParam("audio") MultipartFile audioFile,
+            @RequestParam(value = "referenceText", required = false) String referenceText,
+            HttpServletRequest request
+    ) {
+        requireUserId(request);
+        boolean isScripted = referenceText != null && !referenceText.isBlank();
+        try {
+            System.out.printf("🎤 Transcribe+Assess [%s]: contentType=%s, size=%d bytes%n",
+                    isScripted ? "scripted" : "unscripted",
+                    audioFile.getContentType(), audioFile.getSize());
+
+            // Convert to WAV PCM 16kHz mono
+            byte[] wavBytes = convertToWav(audioFile.getBytes());
+
+            // Run scripted or unscripted pronunciation assessment
+            var pronResult = isScripted
+                    ? azureSpeechService.assessPronunciation(wavBytes, referenceText)
+                    : azureSpeechService.assessPronunciationUnscripted(wavBytes);
+
+            if (pronResult.recognizedText() == null || pronResult.recognizedText().isBlank()) {
+                System.out.println("🎤 Transcribe+Assess: no speech detected");
+                return ResponseEntity.ok(new TranscribeAssessResponse(
+                        "", 0, 0, 0, 0, 0, List.of()));
+            }
+
+            // Map per-word results to simplified response
+            var wordResults = pronResult.words().stream()
+                    .map(w -> new WordAssessResult(
+                            w.word(),
+                            w.accuracyScore(),
+                            w.errorType(),
+                            w.phonemes().stream()
+                                    .map(p -> new PhonemeResult(p.phoneme(), p.accuracyScore()))
+                                    .toList(),
+                            w.syllables() != null ? w.syllables().stream()
+                                    .map(s -> new SyllableResult(s.syllable(), s.accuracyScore()))
+                                    .toList() : List.of()))
+                    .toList();
+
+            var response = new TranscribeAssessResponse(
+                    pronResult.recognizedText(),
+                    pronResult.accuracyScore(),
+                    pronResult.fluencyScore(),
+                    pronResult.prosodyScore(),
+                    pronResult.overallScore(),
+                    pronResult.completenessScore(),
+                    wordResults);
+
+            System.out.printf("🎤 Transcribe+Assess OK [%s]: text='%s', accuracy=%.0f, fluency=%.0f, prosody=%.0f, completeness=%.0f, overall=%.0f%n",
+                    isScripted ? "scripted" : "unscripted",
+                    pronResult.recognizedText(),
+                    pronResult.accuracyScore(), pronResult.fluencyScore(),
+                    pronResult.prosodyScore(), pronResult.completenessScore(),
+                    pronResult.overallScore());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.printf("🎤 Transcribe+Assess Error: %s%n", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /** Response DTO for combined transcribe + pronunciation assessment. */
+    public record TranscribeAssessResponse(
+            String text,
+            double accuracyScore,
+            double fluencyScore,
+            double prosodyScore,
+            double overallScore,
+            double completenessScore,
+            List<WordAssessResult> words
+    ) {}
+
+    /** Per-word pronunciation result with IPA phonemes. */
+    public record WordAssessResult(
+            String word,
+            double accuracyScore,
+            String errorType,  // None, Mispronunciation, UnexpectedBreak, MissingBreak, Monotone
+            List<PhonemeResult> phonemes,
+            List<SyllableResult> syllables
+    ) {}
+
+    /** Per-phoneme IPA result. */
+    public record PhonemeResult(
+            String phoneme,       // IPA symbol, e.g. "θ", "ɛ"
+            double accuracyScore
+    ) {}
+
+    /** Per-syllable result. */
+    public record SyllableResult(
+            String syllable,
+            double accuracyScore
+    ) {}
+
+    /**
+     * Convert any audio format to WAV PCM 16kHz mono via ffmpeg.
+     * This ensures Azure STT always gets a format it can decode.
+     */
+    private byte[] convertToWav(byte[] inputAudio) throws java.io.IOException, InterruptedException {
+        // Write input to temp file
+        var inputFile = java.io.File.createTempFile("stt_input_", ".audio");
+        var outputFile = java.io.File.createTempFile("stt_output_", ".wav");
+        try {
+            java.nio.file.Files.write(inputFile.toPath(), inputAudio);
+
+            // ffmpeg: convert to WAV PCM 16kHz mono (Azure STT optimal format)
+            var process = new ProcessBuilder(
+                    "ffmpeg", "-y",
+                    "-i", inputFile.getAbsolutePath(),
+                    "-ar", "16000",     // 16kHz sample rate
+                    "-ac", "1",         // mono
+                    "-f", "wav",        // WAV format
+                    outputFile.getAbsolutePath()
+            )
+                    .redirectErrorStream(true)
+                    .start();
+
+            // Read ffmpeg output for debugging
+            var ffmpegOutput = new String(process.getInputStream().readAllBytes());
+            var exitCode = process.waitFor();
+
+            if (exitCode != 0) {
+                System.err.printf("🎤 ffmpeg failed (exit %d): %s%n", exitCode, ffmpegOutput);
+                throw new RuntimeException("ffmpeg conversion failed with exit code " + exitCode);
+            }
+
+            return java.nio.file.Files.readAllBytes(outputFile.toPath());
+        } finally {
+            inputFile.delete();
+            outputFile.delete();
         }
     }
 
@@ -234,23 +394,18 @@ public class SpeakingController {
     // ======================== Helpers ========================
 
     /**
-     * Extract userId from JWT if present (optional auth).
+     * Extract userId from SecurityContext (set by JwtAuthenticationFilter which reads cookies + header).
      */
     private String extractUserId(HttpServletRequest request) {
-        try {
-            var bearerToken = request.getHeader("Authorization");
-            if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-                var token = bearerToken.substring(7);
-                if (jwtTokenProvider.validateToken(token)) {
-                    return jwtTokenProvider.getUserIdFromToken(token);
-                }
-            }
-        } catch (Exception ignored) {}
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            return auth.getName(); // userId from JWT subject
+        }
         return null;
     }
 
     /**
-     * Require userId from JWT (throws 401 if not present).
+     * Require userId from SecurityContext (throws 401 if not present).
      */
     private String requireUserId(HttpServletRequest request) {
         var userId = extractUserId(request);
