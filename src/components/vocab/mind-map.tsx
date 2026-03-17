@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Volume2 } from "lucide-react"
@@ -60,7 +60,7 @@ export function MindMap({ selectedGroup, selectedSubcategory }: MindMapProps) {
     },
   }
 
-  const generateMindMap = (): MindMapNode => {
+  const mindMapData = useMemo(() => {
     const centerX = 400
     const centerY = 300
 
@@ -73,8 +73,11 @@ export function MindMap({ selectedGroup, selectedSubcategory }: MindMapProps) {
       children: [],
     }
 
-    const subtopics = Object.keys(vocabularyData[selectedGroup] || {})
-    const angleStep = (2 * Math.PI) / subtopics.length
+    // Since vocabularyData is static here, we don't strictly need it in deps,
+    // but if it were props we would.
+    const groupData = vocabularyData[selectedGroup] || {}
+    const subtopics = Object.keys(groupData)
+    const angleStep = (2 * Math.PI) / (subtopics.length || 1)
     const topicRadius = 200
 
     subtopics.forEach((subtopic, index) => {
@@ -91,7 +94,7 @@ export function MindMap({ selectedGroup, selectedSubcategory }: MindMapProps) {
         children: [],
       }
 
-      const words = vocabularyData[selectedGroup]?.[subtopic] || []
+      const words = groupData[subtopic] || []
       const wordAngleStep = Math.PI / 3 / Math.max(words.length - 1, 1)
       const wordRadius = 120
 
@@ -115,9 +118,7 @@ export function MindMap({ selectedGroup, selectedSubcategory }: MindMapProps) {
     })
 
     return root
-  }
-
-  const mindMapData = generateMindMap()
+  }, [selectedGroup])
 
   const renderConnections = (node: MindMapNode) => {
     if (!node.children) return null
@@ -244,7 +245,9 @@ export function MindMap({ selectedGroup, selectedSubcategory }: MindMapProps) {
     )
   }
 
-  const selectedNodeData = (() => {
+  const selectedNodeData = useMemo(() => {
+    if (!selectedNode) return null
+
     const findNode = (node: MindMapNode): MindMapNode | null => {
       if (node.id === selectedNode) return node
       if (node.children) {
@@ -256,7 +259,7 @@ export function MindMap({ selectedGroup, selectedSubcategory }: MindMapProps) {
       return null
     }
     return findNode(mindMapData)
-  })()
+  }, [selectedNode, mindMapData])
 
   const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
     if ((e.target as SVGElement).tagName === "svg") {
