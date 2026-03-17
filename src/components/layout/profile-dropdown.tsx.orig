@@ -33,7 +33,7 @@ export function ProfileDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" title="Profile" aria-label="Open user profile menu">
+        <Button variant="ghost" size="icon" title="Profile">
           {userImage ? (
             <img
               src={userImage}
