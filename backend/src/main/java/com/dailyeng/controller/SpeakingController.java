@@ -309,8 +309,23 @@ public class SpeakingController {
     /**
      * Convert any audio format to WAV PCM 16kHz mono via ffmpeg.
      * This ensures Azure STT always gets a format it can decode.
+     *
+     * Safeguards:
+     * - Rejects uploads larger than 20 MB
+     * - Enforces a 30-second timeout on ffmpeg
+     * - Provides a clear error when ffmpeg is not installed
      */
+    private static final int MAX_AUDIO_BYTES = 20 * 1024 * 1024; // 20 MB
+    private static final long FFMPEG_TIMEOUT_SECONDS = 30L;
+
     private byte[] convertToWav(byte[] inputAudio) throws java.io.IOException, InterruptedException {
+        if (inputAudio == null || inputAudio.length == 0) {
+            throw new java.io.IOException("Input audio is empty.");
+        }
+        if (inputAudio.length > MAX_AUDIO_BYTES) {
+            throw new java.io.IOException("Input audio is too large; maximum supported size is 20 MB.");
+        }
+
         // Write input to temp file
         var inputFile = java.io.File.createTempFile("stt_input_", ".audio");
         var outputFile = java.io.File.createTempFile("stt_output_", ".wav");
@@ -318,24 +333,37 @@ public class SpeakingController {
             java.nio.file.Files.write(inputFile.toPath(), inputAudio);
 
             // ffmpeg: convert to WAV PCM 16kHz mono (Azure STT optimal format)
-            var process = new ProcessBuilder(
-                    "ffmpeg", "-y",
-                    "-i", inputFile.getAbsolutePath(),
-                    "-ar", "16000",     // 16kHz sample rate
-                    "-ac", "1",         // mono
-                    "-f", "wav",        // WAV format
-                    outputFile.getAbsolutePath()
-            )
-                    .redirectErrorStream(true)
-                    .start();
+            Process process;
+            try {
+                process = new ProcessBuilder(
+                        "ffmpeg", "-y",
+                        "-i", inputFile.getAbsolutePath(),
+                        "-ar", "16000",     // 16kHz sample rate
+                        "-ac", "1",         // mono
+                        "-f", "wav",        // WAV format
+                        outputFile.getAbsolutePath()
+                )
+                        .redirectErrorStream(true)
+                        .start();
+            } catch (java.io.IOException e) {
+                throw new java.io.IOException(
+                        "Failed to execute ffmpeg. Ensure ffmpeg is installed and available on the system PATH.", e);
+            }
 
             // Read ffmpeg output for debugging
             var ffmpegOutput = new String(process.getInputStream().readAllBytes());
-            var exitCode = process.waitFor();
 
+            // Enforce timeout to avoid hanging conversions
+            boolean finished = process.waitFor(FFMPEG_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new java.io.IOException("ffmpeg conversion timed out after " + FFMPEG_TIMEOUT_SECONDS + " seconds.");
+            }
+
+            var exitCode = process.exitValue();
             if (exitCode != 0) {
                 System.err.printf("🎤 ffmpeg failed (exit %d): %s%n", exitCode, ffmpegOutput);
-                throw new RuntimeException("ffmpeg conversion failed with exit code " + exitCode);
+                throw new java.io.IOException("ffmpeg conversion failed with exit code " + exitCode);
             }
 
             return java.nio.file.Files.readAllBytes(outputFile.toPath());
