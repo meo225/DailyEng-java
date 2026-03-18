@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import Link from "next/link"
 import { Tag } from "@/components/ui/tag"
-import { Bookmark } from "lucide-react"
+import { Bookmark, Mic, Globe, Briefcase, BookOpen, Coffee, Users, ShoppingBag, HeartPulse, Plane } from "lucide-react"
 
 interface TopicCardProps {
   id: string;
@@ -19,11 +19,58 @@ interface TopicCardProps {
   thumbnail?: string;
   progress?: number;
   href?: string;
+  onClick?: (id: string, e: React.MouseEvent) => void;
   onNotYet?: () => void;
   type?: "vocabulary" | "grammar" | "speaking";
   isBookmarked?: boolean;
   onBookmarkToggle?: (id: string) => void;
   subcategory?: string;
+}
+
+const getThumbnailStyle = (title: string, subcategory: string = "") => {
+  const str = (subcategory || title).toLowerCase();
+  
+  if (str.includes("shop") || str.includes("buy")) return { bg: "from-pink-500 to-rose-400", Icon: ShoppingBag };
+  if (str.includes("din") || str.includes("food") || str.includes("coffee") || str.includes("restaurant")) return { bg: "from-orange-400 to-amber-500", Icon: Coffee };
+  if (str.includes("travel") || str.includes("airport") || str.includes("flight") || str.includes("transport")) return { bg: "from-cyan-400 to-blue-500", Icon: Plane };
+  if (str.includes("hotel") || str.includes("tourist") || str.includes("site")) return { bg: "from-sky-400 to-indigo-500", Icon: Globe };
+  if (str.includes("meet") || str.includes("present") || str.includes("negotiat") || str.includes("interview") || str.includes("business")) return { bg: "from-indigo-500 to-purple-600", Icon: Briefcase };
+  if (str.includes("academic") || str.includes("lectur") || str.includes("research")) return { bg: "from-emerald-400 to-teal-500", Icon: BookOpen };
+  if (str.includes("health") || str.includes("doctor") || str.includes("pharmac") || str.includes("medic")) return { bg: "from-rose-400 to-red-500", Icon: HeartPulse };
+  if (str.includes("social") || str.includes("part") || str.includes("friend") || str.includes("dat")) return { bg: "from-violet-400 to-fuchsia-500", Icon: Users };
+  
+  // Default/Fallback based on hash string to ensure stability
+  const colors = [
+    "from-blue-500 to-indigo-600",
+    "from-emerald-500 to-teal-600",
+    "from-orange-500 to-red-500",
+    "from-purple-500 to-pink-600",
+    "from-cyan-500 to-blue-600"
+  ];
+  const hash = str.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return { bg: colors[hash % colors.length], Icon: Mic };
+}
+
+const SpeakingThumbnail = ({ title, subcategory, level }: { title: string, subcategory?: string, level: string }) => {
+  const { bg, Icon } = getThumbnailStyle(title, subcategory);
+  
+  return (
+    <div className={`relative w-full h-full overflow-hidden bg-gradient-to-br ${bg} p-6 flex flex-col items-center justify-center transition-transform duration-500 group-hover:scale-105`}>
+      {/* Decorative overlapping circles for mesh-like effect */}
+      <div className="absolute -top-16 -right-16 w-48 h-48 bg-white/20 rounded-full blur-3xl"></div>
+      <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-black/10 rounded-full blur-3xl"></div>
+      
+      {/* Glassmorphic icon container */}
+      <div className="relative z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-xl transition-all duration-300 group-hover:-translate-y-1">
+        <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-md" strokeWidth={1.5} />
+      </div>
+      
+      {/* Decorative level indicator */}
+      <div className="absolute bottom-2 right-4 z-10 font-black text-white/20 text-5xl tracking-tighter mix-blend-overlay select-none">
+        {level}
+      </div>
+    </div>
+  )
 }
 
 export function TopicCard({
@@ -40,6 +87,7 @@ export function TopicCard({
   isBookmarked = false,
   onBookmarkToggle,
   subcategory,
+  onClick,
 }: TopicCardProps) {
   const isCompleted = progress === 100;
   const isInProgress = progress > 0 && progress < 100;
@@ -96,12 +144,16 @@ export function TopicCard({
 
       <div className="p-4 pt-0 pb-0">
         <div className="relative aspect-video w-full overflow-hidden rounded-xl">
-          <Image
-            src={thumbnail || "/placeholder.svg"}
-            alt={title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+          {type === "speaking" ? (
+            <SpeakingThumbnail title={title} subcategory={subcategory} level={level} />
+          ) : (
+            <Image
+              src={thumbnail || "/placeholder.svg"}
+              alt={title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          )}
         </div>
       </div>
 
@@ -112,7 +164,7 @@ export function TopicCard({
           </Badge>
           {/* Show subcategory badge for speaking cards */}
           {type === "speaking" && subcategory && (
-            <Badge className="text-xs px-2.5 py-1 bg-primary-100 text-primary-600 border border-primary-200 font-medium">
+            <Badge className="text-xs px-2.5 py-1 bg-primary-100 text-primary-600 border border-primary-200 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
               {subcategory}
             </Badge>
           )}
@@ -178,8 +230,16 @@ export function TopicCard({
   );
 
   if (href) {
-    return <Link href={href}>{cardContent}</Link>;
+    return (
+      <Link href={href} onClick={(e) => onClick?.(id, e)}>
+        {cardContent}
+      </Link>
+    );
   }
 
-  return cardContent;
+  return (
+    <div onClick={(e) => onClick?.(id, e)} className="h-full">
+      {cardContent}
+    </div>
+  );
 }

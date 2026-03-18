@@ -41,6 +41,9 @@ interface AppStore {
 
   language: string;
   setLanguage: (lang: string) => void;
+
+  ttsVoice: string;
+  setTtsVoice: (voice: string) => void;
 }
 
 // Helper to get initial language, prefer localStorage if available
@@ -49,6 +52,14 @@ const getInitialLanguage = () => {
     return localStorage.getItem("language") || "en";
   }
   return "en";
+};
+
+// Helper to get initial TTS voice from localStorage
+const getInitialTtsVoice = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("ttsVoice") || "en-US-JennyNeural";
+  }
+  return "en-US-JennyNeural";
 };
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -110,5 +121,13 @@ export const useAppStore = create<AppStore>((set) => ({
       localStorage.setItem("language", lang);
     }
     set({ language: lang });
+  },
+
+  ttsVoice: getInitialTtsVoice(),
+  setTtsVoice: (voice) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ttsVoice", voice);
+    }
+    set({ ttsVoice: voice });
   },
 }));
