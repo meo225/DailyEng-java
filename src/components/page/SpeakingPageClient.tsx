@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import {
   Gift,
   MessageSquarePlus,
+  MessageCircle,
   ChevronRight,
   ChevronLeft,
   Plus,
@@ -50,6 +51,7 @@ import { toast } from "sonner";
 import {
   createCustomScenario,
   createRandomScenario,
+  createFreeTalkScenario,
   getSpeakingScenariosWithProgress,
   searchSpeakingScenarios,
   getCustomTopics,
@@ -500,6 +502,22 @@ export default function SpeakingPageClient({
     } catch (error) {
       console.error(error);
       toast.error("Failed to generate random scenario");
+      setIsGenerating(false);
+    }
+  };
+
+  const handleFreeTalk = async () => {
+    setIsGenerating(true);
+    setGeneratingMessage("Starting free conversation...");
+
+    try {
+      const result = await createFreeTalkScenario(effectiveUserId);
+      router.push(
+        `/speaking/session/${result.scenario.id}?session=${result.sessionId}`
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to start free conversation");
       setIsGenerating(false);
     }
   };
@@ -973,7 +991,24 @@ export default function SpeakingPageClient({
                     </p>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <Card
+                      onClick={handleFreeTalk}
+                      className="p-6 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 hover:border-emerald-400 transition-colors cursor-pointer group"
+                    >
+                      <div className="text-center">
+                        <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+                          <MessageCircle className="h-6 w-6 text-emerald-600" />
+                        </div>
+                        <h4 className="font-bold mb-2">
+                          Free Talk
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          Talk about anything you like — no topic restrictions
+                        </p>
+                      </div>
+                    </Card>
+
                     <Card
                       onClick={() => setIsDialogOpen(true)}
                       className="p-6 rounded-2xl border-2 border-dashed border-primary-200 bg-primary-50/50 hover:border-primary-400 transition-colors cursor-pointer group"

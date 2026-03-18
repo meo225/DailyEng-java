@@ -21,7 +21,7 @@ public class AppProperties {
     private Jwt jwt = new Jwt();
     private Cookie cookie = new Cookie();
     private Cors cors = new Cors();
-    private Openai openai = new Openai();
+    private Gemini gemini = new Gemini();
     private AzureSpeech azureSpeech = new AzureSpeech();
     private Pexels pexels = new Pexels();
     private Google google = new Google();
@@ -69,9 +69,9 @@ public class AppProperties {
 
     @Getter
     @Setter
-    public static class Openai {
+    public static class Gemini {
         private String apiKey;
-        private String model = "gpt-4o";
+        private String model = "gemini-2.5-flash";
         private double temperature = 0.7;
         private int maxTokens = 4096;
     }

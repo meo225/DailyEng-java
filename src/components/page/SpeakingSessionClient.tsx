@@ -387,6 +387,7 @@ export default function SpeakingSessionClient({
   const pauseCountRef = useRef<number>(0); // Count of pauses > 500ms
   const lastSpeechTimeRef = useRef<number | null>(null); // Last speech timestamp for pause detection
   const isSpeakingRef = useRef(false); // Track TTS state to prevent recording overlap
+  const audioElementRef = useRef<HTMLAudioElement | null>(null); // Azure TTS audio element
 
   // [NEW] Ref for pitch analyzer (intonation scoring)
   const pitchAnalyzerRef = useRef<PitchAnalyzer | null>(null);
@@ -708,8 +709,10 @@ export default function SpeakingSessionClient({
       // START recording
       try {
         // Cancel any ongoing TTS to prevent mic picking up speaker output
-        if ("speechSynthesis" in window) {
-          window.speechSynthesis.cancel();
+        if (audioElementRef.current) {
+          audioElementRef.current.pause();
+          audioElementRef.current.currentTime = 0;
+          audioElementRef.current = null;
           isSpeakingRef.current = false;
         }
 
@@ -785,34 +788,58 @@ export default function SpeakingSessionClient({
     }
   };
 
-  const speakText = (text: string): Promise<void> => {
-    return new Promise((resolve) => {
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel(); // Stop previous
-        isSpeakingRef.current = true;
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "en-US";
-        // Try to select a better voice
-        const voices = window.speechSynthesis.getVoices();
-        const googleVoice = voices.find((v) =>
-          v.name.includes("Google US English")
-        );
-        if (googleVoice) utterance.voice = googleVoice;
+  const speakText = async (text: string): Promise<void> => {
+    // Stop any previously playing TTS audio
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      audioElementRef.current.currentTime = 0;
+      audioElementRef.current = null;
+    }
 
-        utterance.onend = () => {
-          isSpeakingRef.current = false;
-          resolve();
-        };
-        utterance.onerror = () => {
-          isSpeakingRef.current = false;
-          resolve();
-        };
+    isSpeakingRef.current = true;
 
-        window.speechSynthesis.speak(utterance);
-      } else {
-        resolve();
+    try {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+      const response = await fetch(`${API_BASE}/speaking/speech/synthesize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`TTS failed: ${response.status}`);
       }
-    });
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audioElementRef.current = audio;
+
+      return new Promise<void>((resolve) => {
+        audio.onended = () => {
+          isSpeakingRef.current = false;
+          URL.revokeObjectURL(audioUrl);
+          audioElementRef.current = null;
+          resolve();
+        };
+        audio.onerror = () => {
+          isSpeakingRef.current = false;
+          URL.revokeObjectURL(audioUrl);
+          audioElementRef.current = null;
+          resolve();
+        };
+        audio.play().catch(() => {
+          isSpeakingRef.current = false;
+          URL.revokeObjectURL(audioUrl);
+          audioElementRef.current = null;
+          resolve();
+        });
+      });
+    } catch (error) {
+      console.error('[speakText] Azure TTS error:', error);
+      isSpeakingRef.current = false;
+    }
   };
 
   const handleSendMessage = async (text: string) => {

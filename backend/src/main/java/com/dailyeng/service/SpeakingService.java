@@ -37,7 +37,7 @@ public class SpeakingService {
     private final SpeakingTurnRepository turnRepo;
     private final SpeakingTurnErrorRepository turnErrorRepo;
     private final UserRepository userRepo;
-    private final OpenAiService openAiService;
+    private final GeminiService geminiService;
     private final PexelsService pexelsService;
     private final SpeechMetricsCalculator metricsCalculator;
 
@@ -156,7 +156,7 @@ public class SpeakingService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var userLevel = user.getLevel() != null ? user.getLevel().name() : "B1";
 
-        var generated = openAiService.generateScenario(topicPrompt, userLevel);
+        var generated = geminiService.generateScenario(topicPrompt, userLevel);
         var imageUrl = pexelsService.fetchImage(generated.imageKeyword());
 
         var scenario = SpeakingScenario.builder()
@@ -194,6 +194,58 @@ public class SpeakingService {
     @Transactional
     public CustomScenarioResponse createRandomScenario(String userId) {
         return createCustomScenario(userId, null);
+    }
+
+    // ========================================================================
+    // 6b. createFreeTalkScenario — open-ended conversation
+    // ========================================================================
+
+    @Transactional
+    public CustomScenarioResponse createFreeTalkScenario(String userId) {
+        var user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var userLevel = user.getLevel() != null ? user.getLevel().name() : "B1";
+
+        var openingLine = "Hi there! I'm your English conversation partner. " +
+                "Today we can talk about absolutely anything you'd like — " +
+                "your hobbies, a movie you watched, your day, travel dreams, or anything else. " +
+                "So, what's on your mind?";
+
+        var scenario = SpeakingScenario.builder()
+                .title("Free Talk")
+                .description("Practice speaking English freely about any topic you choose.")
+                .goal("Have a natural English conversation about any topic.")
+                .context("This is a free conversation session. The user can talk about anything they want. " +
+                        "As a tutor, follow the user's lead, ask follow-up questions, and keep the conversation engaging.")
+                .difficulty(safeLevel(userLevel))
+                .image("/learning.png")
+                .userRole("English Learner")
+                .botRole("Friendly English Tutor")
+                .openingLine(openingLine)
+                .objectives(List.of(
+                        "Practice natural conversation",
+                        "Build confidence in speaking",
+                        "Expand vocabulary on topics you enjoy"))
+                .isCustom(true)
+                .createdById(userId)
+                .category("Custom")
+                .build();
+        scenarioRepo.save(scenario);
+
+        var session = SpeakingSession.builder()
+                .userId(userId).scenarioId(scenario.getId()).build();
+        sessionRepo.save(session);
+
+        turnRepo.save(SpeakingTurn.builder()
+                .sessionId(session.getId()).role(Role.tutor)
+                .text(openingLine).build());
+
+        var detail = new ScenarioDetailResponse(scenario.getId(), scenario.getTitle(),
+                scenario.getDescription(), scenario.getContext(), scenario.getGoal(),
+                List.of("Practice natural conversation", "Build confidence in speaking", "Expand vocabulary on topics you enjoy"),
+                scenario.getUserRole(), scenario.getBotRole(),
+                scenario.getOpeningLine(), scenario.getImage());
+        return new CustomScenarioResponse(detail, session.getId());
     }
 
     // ========================================================================
@@ -240,10 +292,10 @@ public class SpeakingService {
                 .collect(Collectors.toList());
 
         // Call AI
-        var config = new OpenAiService.ScenarioConfig(
+        var config = new GeminiService.ScenarioConfig(
                 scenario.getContext(), scenario.getUserRole(), scenario.getBotRole(),
                 scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null);
-        var aiResult = openAiService.generateSpeakingResponse(config, history, req.userText());
+        var aiResult = geminiService.generateSpeakingResponse(config, history, req.userText());
 
         // Calculate speech metrics — prefer Azure SDK scores when available
         Integer pronunciationScore = null;
@@ -313,11 +365,11 @@ public class SpeakingService {
                 .map(t -> Map.of("role", t.getRole() == Role.user ? "user" : "assistant", "text", t.getText()))
                 .collect(Collectors.toList());
 
-        var config = new OpenAiService.ScenarioConfig(
+        var config = new GeminiService.ScenarioConfig(
                 scenario.getContext(), scenario.getUserRole(), scenario.getBotRole(),
                 scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null);
 
-        return openAiService.generateSpeakingHint(config, history).hint();
+        return geminiService.generateSpeakingHint(config, history).hint();
     }
 
     // ========================================================================
@@ -338,7 +390,7 @@ public class SpeakingService {
                 .map(t -> Map.of("role", t.getRole() == Role.user ? "user" : "tutor",
                         "text", t.getText(), "id", t.getId()))
                 .collect(Collectors.toList());
-        var analysis = openAiService.analyzeSessionConversation(scenario.getContext(), turnsForAnalysis);
+        var analysis = geminiService.analyzeSessionConversation(scenario.getContext(), turnsForAnalysis);
 
         // Save errors per turn
         for (var ta : analysis.turnAnalyses()) {

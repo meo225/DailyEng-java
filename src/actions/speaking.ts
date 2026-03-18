@@ -285,6 +285,12 @@ export async function createRandomScenario(
   return apiClient.post<CustomScenarioResponse>("/speaking/scenarios/random");
 }
 
+export async function createFreeTalkScenario(
+  _userId: string
+): Promise<CustomScenarioResponse> {
+  return apiClient.post<CustomScenarioResponse>("/speaking/scenarios/free-talk");
+}
+
 // ======================== Sessions ========================
 
 export async function startSessionWithGreeting(

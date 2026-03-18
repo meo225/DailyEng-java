@@ -1,13 +1,12 @@
 package com.dailyeng.service;
 
 import com.dailyeng.config.AppProperties;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.openai.client.OpenAIClient;
-import com.openai.client.okhttp.OpenAIOkHttpClient;
-import com.openai.models.ChatModel;
-import com.openai.models.chat.completions.*;
+import com.google.genai.Client;
+import com.google.genai.types.Content;
+import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.Part;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * OpenAI GPT integration service.
- * Ports 4 AI methods from src/lib/gemini.ts to OpenAI Java SDK.
+ * Google Gemini AI integration service.
+ * Provides AI methods for speaking practice, scenario generation, and chatbot.
  *
  * <p>Methods:
  * <ul>
@@ -30,27 +29,25 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-public class OpenAiService {
+public class GeminiService {
 
     private final AppProperties appProperties;
     private final ObjectMapper objectMapper;
-    private OpenAIClient client;
+    private Client client;
 
-    public OpenAiService(AppProperties appProperties, ObjectMapper objectMapper) {
+    public GeminiService(AppProperties appProperties, ObjectMapper objectMapper) {
         this.appProperties = appProperties;
         this.objectMapper = objectMapper;
     }
 
     @PostConstruct
     void init() {
-        var apiKey = appProperties.getOpenai().getApiKey();
+        var apiKey = appProperties.getGemini().getApiKey();
         if (apiKey != null && !apiKey.isBlank()) {
-            this.client = OpenAIOkHttpClient.builder()
-                    .apiKey(apiKey)
-                    .build();
-            log.info("OpenAI client initialized with model: {}", appProperties.getOpenai().getModel());
+            this.client = Client.builder().apiKey(apiKey).build();
+            log.info("Gemini client initialized with model: {}", appProperties.getGemini().getModel());
         } else {
-            log.warn("OPENAI_API_KEY not set — AI features will return fallback responses");
+            log.warn("GEMINI_API_KEY not set — AI features will return fallback responses");
         }
     }
 
@@ -83,7 +80,6 @@ public class OpenAiService {
 
     /**
      * Generate AI speaking response during conversation.
-     * Ports: generateSpeakingResponse() from gemini.ts
      */
     public SpeakingResponseResult generateSpeakingResponse(
             ScenarioConfig scenario,
@@ -125,8 +121,8 @@ public class OpenAiService {
                 scenario.botRole() != null ? scenario.botRole() : "the tutor");
 
         try {
-            var messages = buildMessages(systemPrompt, history, userMessage);
-            var responseText = callOpenAi(messages, 0.7, 1024);
+            var contents = buildContents(history, userMessage);
+            var responseText = callGemini(systemPrompt, contents, 0.7, 1024);
 
             // Try parsing as JSON first, fall back to raw text
             try {
@@ -136,8 +132,7 @@ public class OpenAiService {
                     return new SpeakingResponseResult(responseField);
                 }
             } catch (Exception jsonEx) {
-                // GPT returned plain text instead of JSON — use it directly
-                log.debug("[generateSpeakingResponse] GPT returned plain text, using as-is");
+                log.debug("[generateSpeakingResponse] Gemini returned plain text, using as-is");
             }
 
             // Use raw text (strip quotes if wrapped)
@@ -160,7 +155,6 @@ public class OpenAiService {
 
     /**
      * Generate a sample response hint that the user can read aloud.
-     * Shows what the user COULD say in this conversation, at their level.
      */
     public SpeakingHintResult generateSpeakingHint(
             ScenarioConfig scenario,
@@ -202,8 +196,8 @@ public class OpenAiService {
                 scenario.userRole() != null ? scenario.userRole() : "a learner");
 
         try {
-            var messages = buildMessages(systemPrompt, history, "Give me a hint for what I should say next.");
-            var responseText = callOpenAi(messages, 0.8, 256);
+            var contents = buildContents(history, "Give me a hint for what I should say next.");
+            var responseText = callGemini(systemPrompt, contents, 0.8, 256);
             // Clean any accidental quotes/labels
             var cleaned = responseText.strip()
                     .replaceAll("^[\"']|[\"']$", "")
@@ -229,7 +223,6 @@ public class OpenAiService {
 
     /**
      * Analyze session conversation for errors and scoring.
-     * Ports: analyzeSessionConversation() from gemini.ts
      */
     public SessionAnalysisResult analyzeSessionConversation(
             String scenarioContext,
@@ -296,11 +289,12 @@ public class OpenAiService {
                 """.formatted(scenarioContext, sb.toString());
 
         try {
-            var messages = List.of(
-                    ChatCompletionMessageParam.ofUser(
-                            ChatCompletionUserMessageParam.builder()
-                                    .content(prompt).build()));
-            var responseText = callOpenAi(messages, 0.3, 16384);
+            var contents = List.of(
+                    Content.builder()
+                            .role("user")
+                            .parts(List.of(Part.builder().text(prompt).build()))
+                            .build());
+            var responseText = callGemini(null, contents, 0.3, 16384);
             return objectMapper.readValue(responseText, SessionAnalysisResult.class);
         } catch (Exception e) {
             log.error("[analyzeSessionConversation] Error: {}", e.getMessage());
@@ -319,7 +313,6 @@ public class OpenAiService {
 
     /**
      * Generate a speaking scenario via AI.
-     * Ports: generateScenario() from gemini.ts
      */
     public GeneratedScenario generateScenario(String topic, String userLevel) {
         if (client == null) {
@@ -359,11 +352,12 @@ public class OpenAiService {
                 """.formatted(topicInstruction, levelInstruction, userLevel != null ? userLevel : "B1");
 
         try {
-            var messages = List.of(
-                    ChatCompletionMessageParam.ofUser(
-                            ChatCompletionUserMessageParam.builder()
-                                    .content(prompt).build()));
-            var responseText = callOpenAi(messages, 0.8, 8192);
+            var contents = List.of(
+                    Content.builder()
+                            .role("user")
+                            .parts(List.of(Part.builder().text(prompt).build()))
+                            .build());
+            var responseText = callGemini(null, contents, 0.8, 8192);
             var parsed = objectMapper.readValue(responseText, GeneratedScenario.class);
             // Fill fallbacks for missing fields
             return new GeneratedScenario(
@@ -390,7 +384,6 @@ public class OpenAiService {
 
     /**
      * Generate Dorara AI chatbot response.
-     * Ports: generateDoraraResponse() from gemini.ts
      */
     public String generateDoraraResponse(
             String systemInstruction,
@@ -402,8 +395,8 @@ public class OpenAiService {
         }
 
         try {
-            var messages = buildMessages(systemInstruction, history, userMessage);
-            var responseText = callOpenAi(messages, 0.7, 2048);
+            var contents = buildContents(history, userMessage);
+            var responseText = callGemini(systemInstruction, contents, 0.7, 2048);
             // Clean any accidental markdown
             return responseText
                     .replaceAll("\\*\\*", "")
@@ -422,17 +415,14 @@ public class OpenAiService {
     // Private helpers
     // ========================================================================
 
-    private List<ChatCompletionMessageParam> buildMessages(
-            String systemPrompt,
+    /**
+     * Build a list of Content objects from conversation history + current user message.
+     */
+    private List<Content> buildContents(
             List<Map<String, String>> history,
             String userMessage
     ) {
-        var messages = new ArrayList<ChatCompletionMessageParam>();
-
-        // System message
-        messages.add(ChatCompletionMessageParam.ofSystem(
-                ChatCompletionSystemMessageParam.builder()
-                        .content(systemPrompt).build()));
+        var contents = new ArrayList<Content>();
 
         // History
         if (history != null) {
@@ -441,38 +431,48 @@ public class OpenAiService {
                 var text = msg.get("text") != null ? msg.get("text") : msg.get("content");
                 if (text == null) continue;
 
-                if ("user".equals(role)) {
-                    messages.add(ChatCompletionMessageParam.ofUser(
-                            ChatCompletionUserMessageParam.builder()
-                                    .content(text).build()));
-                } else {
-                    messages.add(ChatCompletionMessageParam.ofAssistant(
-                            ChatCompletionAssistantMessageParam.builder()
-                                    .content(text).build()));
-                }
+                // Gemini uses "user" and "model" roles
+                var geminiRole = "user".equals(role) ? "user" : "model";
+                contents.add(Content.builder()
+                        .role(geminiRole)
+                        .parts(List.of(Part.builder().text(text).build()))
+                        .build());
             }
         }
 
         // Current user message
-        messages.add(ChatCompletionMessageParam.ofUser(
-                ChatCompletionUserMessageParam.builder()
-                        .content(userMessage).build()));
+        contents.add(Content.builder()
+                .role("user")
+                .parts(List.of(Part.builder().text(userMessage).build()))
+                .build());
 
-        return messages;
+        return contents;
     }
 
-    private String callOpenAi(List<ChatCompletionMessageParam> messages, double temperature, int maxTokens) {
-        var model = appProperties.getOpenai().getModel();
-        var params = ChatCompletionCreateParams.builder()
-                .model(model)
-                .messages(messages)
-                .temperature(temperature)
-                .maxCompletionTokens((long) maxTokens)
-                .build();
+    /**
+     * Call Gemini API with the given system prompt, contents, temperature, and max tokens.
+     */
+    private String callGemini(String systemPrompt, List<Content> contents, double temperature, int maxTokens) {
+        var model = appProperties.getGemini().getModel();
 
-        var completion = client.chat().completions().create(params);
-        var choice = completion.choices().getFirst();
-        var content = choice.message().content().orElse("");
+        var configBuilder = GenerateContentConfig.builder()
+                .candidateCount(1)
+                .temperature((float) temperature)
+                .maxOutputTokens(maxTokens);
+
+        // Set system instruction if provided
+        if (systemPrompt != null && !systemPrompt.isBlank()) {
+            configBuilder.systemInstruction(
+                    Content.fromParts(Part.fromText(systemPrompt)));
+        }
+
+        var config = configBuilder.build();
+        GenerateContentResponse response = client.models.generateContent(model, contents, config);
+        var content = response.text();
+
+        if (content == null) {
+            return "";
+        }
 
         // Strip markdown code fences if present
         if (content.startsWith("```")) {
