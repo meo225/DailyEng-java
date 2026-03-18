@@ -1,0 +1,18 @@
+{
+  "nav": {
+    "home": "Trang chủ",
+    "speaking_room": "Phòng luyện nói",
+    "vocabulary_hub": "Kho từ vựng",
+    "grammar_hub": "Kho ngữ pháp",
+    "study_plan": "Lộ trình học",
+    "notebook": "Sổ tay"
+  },
+  "auth": {
+    "sign_in": "Đăng nhập",
+    "register": "Đăng ký",
+    "sign_out": "Đăng xuất"
+  },
+  "common": {
+    "language": "Ngôn ngữ"
+  }
+}

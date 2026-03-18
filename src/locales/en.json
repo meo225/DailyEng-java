@@ -1,0 +1,18 @@
+{
+  "nav": {
+    "home": "Home",
+    "speaking_room": "Speaking Room",
+    "vocabulary_hub": "Vocabulary Hub",
+    "grammar_hub": "Grammar Hub",
+    "study_plan": "Study Plan",
+    "notebook": "Notebook"
+  },
+  "auth": {
+    "sign_in": "Sign in",
+    "register": "Register",
+    "sign_out": "Sign out"
+  },
+  "common": {
+    "language": "Language"
+  }
+}

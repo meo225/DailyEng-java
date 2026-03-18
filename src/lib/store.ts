@@ -38,7 +38,18 @@ interface AppStore {
   updateFlashcard: (card: SRSCard) => void;
   removeFlashcard: (id: string) => void;
   setFlashcards: (cards: SRSCard[]) => void;
+
+  language: string;
+  setLanguage: (lang: string) => void;
 }
+
+// Helper to get initial language, prefer localStorage if available
+const getInitialLanguage = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("language") || "en";
+  }
+  return "en";
+};
 
 export const useAppStore = create<AppStore>((set) => ({
   user: null,
@@ -92,4 +103,12 @@ export const useAppStore = create<AppStore>((set) => ({
       flashcards: state.flashcards.filter((c) => c.id !== id),
     })),
   setFlashcards: (cards) => set({ flashcards: cards }),
+
+  language: getInitialLanguage(),
+  setLanguage: (lang) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("language", lang);
+    }
+    set({ language: lang });
+  },
 }));
