@@ -19,11 +19,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
@@ -49,7 +46,7 @@ public class AuthService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo?id_token=";
-    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+    private static final RestTemplate REST_TEMPLATE = new RestTemplate();
 
     // ========================
     // Registration & Login
@@ -222,21 +219,12 @@ public class AuthService {
 
     private JsonNode verifyGoogleToken(String idToken) {
         try {
-            var httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(GOOGLE_TOKENINFO_URL + idToken))
-                    .GET()
-                    .build();
-            var response = HTTP_CLIENT.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() != 200) {
-                throw new BadRequestException("Invalid Google ID token");
-            }
-            return objectMapper.readTree(response.body());
-        } catch (BadRequestException e) {
-            throw e;
+            String url = GOOGLE_TOKENINFO_URL + idToken;
+            String responseBody = REST_TEMPLATE.getForObject(url, String.class);
+            return objectMapper.readTree(responseBody);
         } catch (Exception e) {
             log.error("Failed to verify Google ID token: {}", e.getMessage());
-            throw new BadRequestException("Failed to verify Google token");
+            throw new BadRequestException("Invalid or failed to verify Google token");
         }
     }
 
