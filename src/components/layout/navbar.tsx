@@ -7,6 +7,7 @@ import dynamic from "next/dynamic"
 import { Menu, X, ChevronDown } from "lucide-react"
 import { LanguageSwitcher } from "./language-switcher"
 import { useTranslation } from "@/hooks/use-translation"
+import { useNavigation } from "@/contexts/NavigationContext"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +55,7 @@ export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { t } = useTranslation()
+  const { startNavigation } = useNavigation()
 
   const isImmersivePage =
     pathname?.startsWith("/speaking/session/") ||
@@ -99,7 +101,7 @@ export function Navbar() {
                     <DropdownMenuContent align="start" className="bg-white border-gray-200 shadow-lg">
                       {item.dropdown.map((subItem) => (
                         <DropdownMenuItem key={subItem.href} asChild>
-                          <Link href={subItem.href} className="cursor-pointer">
+                          <Link href={subItem.href} className="cursor-pointer" onClick={() => startNavigation(subItem.href)}>
                             {t(`nav.${subItem.labelKey}`)}
                           </Link>
                         </DropdownMenuItem>
@@ -114,6 +116,7 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => startNavigation(item.href)}
                   className={`text-[13.5px] px-3 py-1.5 rounded-xl font-semibold transition-all duration-200 ${
                     isActive
                       ? "bg-primary-500 text-white shadow-sm shadow-primary-200"
@@ -168,7 +171,7 @@ export function Navbar() {
                             ? "bg-primary-500 text-white"
                             : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                         }`}
-                        onClick={() => setMobileOpen(false)}
+                        onClick={() => { startNavigation(subItem.href); setMobileOpen(false); }}
                       >
                         {t(`nav.${subItem.labelKey}`)}
                       </Link>
@@ -187,7 +190,7 @@ export function Navbar() {
                       ? "bg-primary-500 text-white"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                   }`}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => { startNavigation(item.href); setMobileOpen(false); }}
                 >
                   {t(`nav.${item.labelKey}`)}
                 </Link>
