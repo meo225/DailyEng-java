@@ -82,6 +82,16 @@ export interface SpeechMetrics {
   azureFluencyScore?: number;
   azureProsodyScore?: number;
   azureOverallScore?: number;
+  // Per-word pronunciation assessment data from Azure Speech SDK
+  wordAssessments?: WordAssessmentResult[];
+}
+
+export interface WordAssessmentResult {
+  word: string;
+  accuracyScore: number;
+  errorType: string;
+  phonemes?: { phoneme: string; accuracyScore: number }[];
+  syllables?: { syllable: string; accuracyScore: number }[];
 }
 
 export interface SessionScores {
@@ -113,6 +123,7 @@ export interface ConversationTurn {
   userErrors?: TurnError[];
   pronunciationScore?: number;
   fluencyScore?: number;
+  wordAssessments?: WordAssessmentResult[];
 }
 
 export interface SessionAnalysisResponse {

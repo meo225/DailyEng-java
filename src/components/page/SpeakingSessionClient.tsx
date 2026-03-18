@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { SessionChat } from "@/components/speaking/session-chat"
@@ -11,6 +11,7 @@ import { DetailedFeedback } from "@/components/speaking/detailed-feedback"
 import PronunciationAssessmentReview from "@/components/speaking/pronunciation-assessment"
 import type { AssessmentData } from "@/components/speaking/pronunciation-assessment"
 import { useAppStore } from "@/lib/store";
+import { useTranslation } from "@/hooks/use-translation";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -45,6 +46,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import VocabHelperChatbot from "@/components/speaking/vocab-helper-chatbot";
+import VoiceSelector from "@/components/speaking/VoiceSelector";
 import {
   startSessionWithGreeting,
   submitTurn,
@@ -303,8 +305,14 @@ export default function SpeakingSessionClient({
   detailedFeedback,
 }: SpeakingSessionClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { addFlashcard, addXP } = useAppStore();
+  const { addFlashcard, addXP, ttsVoice } = useAppStore();
+  const { t } = useTranslation();
+
+  // Derive back URL: if navigated from history tab, go back to history tab
+  const fromParam = searchParams.get("from");
+  const backUrl = fromParam === "history" ? "/speaking?tab=history" : "/speaking";
 
   // Convert serialized dates back to Date objects
   const [turns, setTurns] = useState<Turn[]>(
@@ -333,7 +341,7 @@ export default function SpeakingSessionClient({
     useState<DetailedFeedbackData | null>(null);
   const [loadedSessionData, setLoadedSessionData] = useState<{
     scores: { grammar: number; relevance: number; fluency: number; pronunciation: number; intonation: number; overall: number };
-    conversation: { role: string; text: string; pronunciationScore?: number; fluencyScore?: number }[];
+    conversation: { role: string; text: string; pronunciationScore?: number; fluencyScore?: number; wordAssessments?: { word: string; accuracyScore: number; errorType: string; phonemes?: { phoneme: string; accuracyScore: number }[]; syllables?: { syllable: string; accuracyScore: number }[] }[] }[];
   } | null>(null);
   const [analysisResult, setAnalysisResult] = useState<{
     scores: {
@@ -366,6 +374,95 @@ export default function SpeakingSessionClient({
   } | null>(null);
   const [showQuitDialog, setShowQuitDialog] = useState(false);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
+
+  // Auto-load session detail when navigated from History tab with ?session= param
+  const sessionParamHandled = useRef(false);
+  useEffect(() => {
+    if (sessionParamHandled.current) return;
+    const sessionParam = searchParams.get("session");
+    if (sessionParam) {
+      sessionParamHandled.current = true;
+      // Trigger the existing handleSelectRecord logic
+      (async () => {
+        setSelectedRecordId(sessionParam);
+        setIsLoadingFeedback(true);
+        setViewState("record-review");
+        try {
+          const sessionData = await getSessionDetailsById(sessionParam);
+          if (sessionData) {
+            setLoadedSessionData({
+              scores: sessionData.scores,
+              conversation: sessionData.conversation.map((c) => ({
+                role: c.role,
+                text: c.text,
+                pronunciationScore: c.pronunciationScore ?? undefined,
+                fluencyScore: c.fluencyScore ?? undefined,
+                wordAssessments: c.wordAssessments ?? undefined,
+              })),
+            });
+
+            const generateCorrectedSentence = (
+              text: string,
+              errors: { word: string; correction: string; type: string }[]
+            ): string => {
+              if (!errors || errors.length === 0) return text;
+              let corrected = text;
+              const sortedErrors = [...errors].sort((a, b) => {
+                const posA = text.toLowerCase().indexOf(a.word.toLowerCase());
+                const posB = text.toLowerCase().indexOf(b.word.toLowerCase());
+                return posB - posA;
+              });
+              for (const error of sortedErrors) {
+                const regex = new RegExp(
+                  error.word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                  "gi"
+                );
+                corrected = corrected.replace(regex, error.correction);
+              }
+              return corrected;
+            };
+
+            const clientData: DetailedFeedbackData = {
+              scores: [
+                { label: "Relevance", value: sessionData.scores.relevance },
+                { label: "Pronunciation", value: sessionData.scores.pronunciation },
+                { label: "Intonation & Stress", value: sessionData.scores.intonation },
+                { label: "Fluency", value: sessionData.scores.fluency },
+                { label: "Grammar", value: sessionData.scores.grammar },
+              ],
+              errorCategories: sessionData.errorCategories,
+              conversation: sessionData.conversation.map((c) => {
+                const userErrors = c.userErrors?.map((e) => ({
+                  word: e.word,
+                  correction: e.correction,
+                  type: e.type,
+                }));
+                return {
+                  role: c.role as "user" | "tutor",
+                  text: c.text,
+                  userErrors,
+                  correctedSentence:
+                    c.role === "user" && userErrors && userErrors.length > 0
+                      ? generateCorrectedSentence(c.text, userErrors)
+                      : undefined,
+                };
+              }),
+              overallRating: sessionData.session.feedbackRating || "N/A",
+              tip: sessionData.session.feedbackTip || "Great effort!",
+            };
+            setDynamicFeedback(clientData);
+          } else {
+            setViewState("preparation");
+          }
+        } catch (error) {
+          console.error("Error loading session from URL:", error);
+          setViewState("preparation");
+        } finally {
+          setIsLoadingFeedback(false);
+        }
+      })();
+    }
+  }, [searchParams]);
 
   const conversationRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -804,7 +901,7 @@ export default function SpeakingSessionClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, voice: ttsVoice }),
       });
 
       if (!response.ok) {
@@ -877,6 +974,8 @@ export default function SpeakingSessionClient({
       azureFluencyScore: azureScores?.fluencyScore ?? undefined,
       azureProsodyScore: azureScores?.prosodyScore ?? undefined,
       azureOverallScore: azureScores?.overallScore ?? undefined,
+      // Per-word pronunciation data for persistence
+      wordAssessments: azureScores?.words ?? undefined,
     };
 
     console.log("[handleSendMessage] Speech metrics:", {
@@ -921,9 +1020,9 @@ export default function SpeakingSessionClient({
         prev.map((t) =>
           t.id === tempId
             ? {
-                ...t,
-                id: result.userTurnId,
-              }
+              ...t,
+              id: result.userTurnId,
+            }
             : t
         )
       );
@@ -994,6 +1093,7 @@ export default function SpeakingSessionClient({
             text: c.text,
             pronunciationScore: c.pronunciationScore ?? undefined,
             fluencyScore: c.fluencyScore ?? undefined,
+            wordAssessments: c.wordAssessments ?? undefined,
           })),
         });
 
@@ -1306,10 +1406,10 @@ export default function SpeakingSessionClient({
                 <Bot className="absolute inset-0 m-auto h-8 w-8 text-primary-500 animate-pulse" />
               </div>
               <h2 className="text-3xl font-bold mb-3 text-slate-800">
-                Loading Assessment...
+                {t("speaking_session.analyzing.loading_assessment")}
               </h2>
               <p className="text-lg text-slate-500 max-w-md mx-auto">
-                Retrieving your pronunciation and content assessment results.
+                {t("speaking_session.analyzing.loading_desc")}
               </p>
             </div>
           </Card>
@@ -1326,7 +1426,13 @@ export default function SpeakingSessionClient({
       const recordAssessmentData: AssessmentData = {
         turns: userConvTurns.map((c) => ({
           text: c.text,
-          words: [], // Per-word data not stored in DB; text is shown as-is
+          words: (c.wordAssessments ?? []).map(w => ({
+            word: w.word,
+            accuracyScore: w.accuracyScore,
+            errorType: w.errorType ?? "None",
+            phonemes: w.phonemes,
+            syllables: w.syllables,
+          })),
           accuracyScore: c.pronunciationScore ?? loadedSessionData.scores.pronunciation,
           fluencyScore: c.fluencyScore ?? loadedSessionData.scores.fluency,
           prosodyScore: loadedSessionData.scores.intonation,
@@ -1349,6 +1455,10 @@ export default function SpeakingSessionClient({
         <PronunciationAssessmentReview
           data={recordAssessmentData}
           onBack={() => {
+            if (fromParam === "history") {
+              router.push(backUrl);
+              return;
+            }
             setViewState("history");
             setSelectedRecordId(null);
             setLoadedSessionData(null);
@@ -1399,7 +1509,7 @@ export default function SpeakingSessionClient({
       analysisResult?.scores.overall ||
       Math.round(
         feedbackToUse.scores.reduce((sum, s) => sum + s.value, 0) /
-          feedbackToUse.scores.length
+        feedbackToUse.scores.length
       );
 
     return (
@@ -1412,6 +1522,10 @@ export default function SpeakingSessionClient({
           overallScore={overallScore}
           tip={feedbackToUse.tip}
           onBack={() => {
+            if (fromParam === "history" && selectedRecordId) {
+              router.push(backUrl);
+              return;
+            }
             setViewState(selectedRecordId ? "record-review" : "complete");
             if (!selectedRecordId) {
               setDynamicFeedback(null);
@@ -1480,7 +1594,7 @@ export default function SpeakingSessionClient({
   if (viewState === "preparation") {
     return (
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/speaking">
+        <Link href={backUrl}>
           <Button variant="outline" className="gap-2 mb-6 bg-white">
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -1495,7 +1609,7 @@ export default function SpeakingSessionClient({
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-6">
                 <BookOpen className="h-6 w-6" />
-                <h2 className="text-2xl font-bold">Learning Goals</h2>
+                <h2 className="text-2xl font-bold">{t("speaking_session.preparation.learning_goals")}</h2>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
@@ -1503,7 +1617,7 @@ export default function SpeakingSessionClient({
                     1
                   </span>
                   <p className="p-4 bg-primary-50 rounded-xl flex-1">
-                    {scenario.goal || "Practice conversation skill"}
+                    {scenario.goal || t("speaking_session.preparation.goal_practice")}
                   </p>
                 </div>
                 {scenario.objectives && scenario.objectives.length > 0 ? (
@@ -1524,7 +1638,7 @@ export default function SpeakingSessionClient({
                         2
                       </span>
                       <p className="p-4 bg-primary-50 rounded-xl flex-1">
-                        Improve vocabulary
+                        {t("speaking_session.preparation.goal_vocab")}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1532,7 +1646,7 @@ export default function SpeakingSessionClient({
                         3
                       </span>
                       <p className="p-4 bg-primary-50 rounded-xl flex-1">
-                        Enhance fluency
+                        {t("speaking_session.preparation.goal_fluency")}
                       </p>
                     </div>
                   </>
@@ -1544,7 +1658,7 @@ export default function SpeakingSessionClient({
             <div className="mt-8 pt-6 border-t border-border">
               <div className="flex items-center gap-2 mb-4">
                 <MessageSquare className="h-5 w-5" />
-                <h2 className="text-xl font-bold">Context</h2>
+                <h2 className="text-xl font-bold">{t("speaking_session.preparation.context")}</h2>
               </div>
               <div className="p-4 bg-primary-50 rounded-xl text-sm italic text-muted-foreground">
                 {scenario.context}
@@ -1571,35 +1685,38 @@ export default function SpeakingSessionClient({
 
               {/* Mode Selector */}
               <div className="mt-6 mb-4">
-                <p className="text-sm font-semibold text-slate-700 mb-2">Assessment Mode</p>
+                <p className="text-sm font-semibold text-slate-700 mb-2">{t("speaking_session.preparation.assessment_mode")}</p>
                 <div className="flex bg-slate-100 rounded-xl p-1 gap-1">
                   <button
                     onClick={() => setSessionMode("unscripted")}
-                    className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                      sessionMode === "unscripted"
+                    className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer ${sessionMode === "unscripted"
                         ? "bg-white text-slate-800 shadow-sm"
                         : "text-slate-500 hover:text-slate-700"
-                    }`}
+                      }`}
+                    aria-label="Free Speaking mode"
                   >
-                    🗣️ Free Speaking
+                    <Mic2 className="inline h-4 w-4 mr-1.5 -mt-0.5" /> {t("speaking_session.preparation.free_speaking")}
                   </button>
                   <button
                     onClick={() => setSessionMode("scripted")}
-                    className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                      sessionMode === "scripted"
+                    aria-label="Read Aloud mode"
+                    className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer ${sessionMode === "scripted"
                         ? "bg-white text-slate-800 shadow-sm"
                         : "text-slate-500 hover:text-slate-700"
-                    }`}
+                      }`}
                   >
-                    📖 Read Aloud
+                    <BookOpen className="inline h-4 w-4 mr-1.5 -mt-0.5" /> {t("speaking_session.preparation.read_aloud")}
                   </button>
                 </div>
                 <p className="text-xs text-slate-400 mt-1.5">
                   {sessionMode === "scripted"
-                    ? "Read the AI suggestions aloud — scored on accuracy, completeness, and pronunciation."
-                    : "Speak freely using AI hints as reference — scored on accuracy, fluency, and prosody."}
+                    ? t("speaking_session.preparation.desc_read_aloud")
+                    : t("speaking_session.preparation.desc_free_speaking")}
                 </p>
               </div>
+
+              {/* Voice Selector */}
+              <VoiceSelector />
 
               <div className="flex gap-3">
                 <Button
@@ -1608,7 +1725,7 @@ export default function SpeakingSessionClient({
                   size="lg"
                 >
                   <Play className="h-5 w-5" />
-                  Start Speaking
+                  {t("speaking_session.preparation.start_speaking")}
                 </Button>
                 <Button
                   variant="outline"
@@ -1661,13 +1778,13 @@ export default function SpeakingSessionClient({
         {showQuitDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-              <h3 className="text-lg font-bold text-center mb-6">Option</h3>
+              <h3 className="text-lg font-bold text-center mb-6">{t("speaking_session.active.option")}</h3>
               <div className="flex flex-col gap-3">
                 <Button
                   className="w-full bg-[#4f46e5] hover:bg-[#4338ca]"
                   onClick={() => setShowQuitDialog(false)}
                 >
-                  Continue
+                  {t("speaking_session.active.continue")}
                 </Button>
                 <Button
                   variant="outline"
@@ -1707,10 +1824,10 @@ export default function SpeakingSessionClient({
                     }
                   }}
                 >
-                  Finish
+                  {t("speaking_session.active.finish")}
                 </Button>
                 <Link
-                  href="/speaking"
+                  href={backUrl}
                   className="w-full"
                   onClick={stopMicrophone}
                 >
@@ -1718,7 +1835,7 @@ export default function SpeakingSessionClient({
                     variant="outline"
                     className="w-full border-2 border-primary-200 hover:bg-primary-50"
                   >
-                    Back to Home
+                    {t("speaking_session.active.back_to_home")}
                   </Button>
                 </Link>
               </div>
@@ -1731,14 +1848,14 @@ export default function SpeakingSessionClient({
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
               <h3 className="text-lg font-bold text-center mb-6">
-                Are you sure you want to finish this conversation?
+                {t("speaking_session.active.finish_confirm")}
               </h3>
               <div className="flex flex-col gap-3">
                 <Button
                   className="w-full bg-[#4f46e5] hover:bg-[#4338ca]"
                   onClick={() => setShowFinishDialog(false)}
                 >
-                  No
+                  {t("speaking_session.active.no")}
                 </Button>
                 <Button
                   variant="outline"
@@ -1778,7 +1895,7 @@ export default function SpeakingSessionClient({
                     }
                   }}
                 >
-                  Yes
+                  {t("speaking_session.active.yes")}
                 </Button>
               </div>
             </div>
@@ -1790,9 +1907,9 @@ export default function SpeakingSessionClient({
           {/* Menu Button - with rotation animation */}
           <button
             onClick={() => setShowQuitDialog(true)}
-            className={`absolute left-0 w-10 h-10 rounded-full bg-[#e0e7ff] flex items-center justify-center hover:bg-[#c7d2fe] transition-all duration-300 ${
-              showQuitDialog ? "rotate-90" : "rotate-0"
-            }`}
+            aria-label="Session menu"
+            className={`absolute left-0 w-10 h-10 rounded-full bg-[#e0e7ff] flex items-center justify-center hover:bg-[#c7d2fe] transition-all duration-300 ${showQuitDialog ? "rotate-90" : "rotate-0"
+              }`}
           >
             <Menu className="h-5 w-5 text-[#4b3fd4]" />
           </button>
@@ -1800,6 +1917,7 @@ export default function SpeakingSessionClient({
           {/* Fast Forward Button */}
           <button
             onClick={() => setShowFinishDialog(true)}
+            aria-label="Finish conversation"
             className="absolute right-0 w-10 h-10 rounded-full bg-[#e0e7ff] flex items-center justify-center hover:bg-[#c7d2fe] transition-all duration-300"
           >
             <FastForward className="h-5 w-5 text-[#4b3fd4]" />
@@ -1816,9 +1934,8 @@ export default function SpeakingSessionClient({
               {turns.map((turn) => (
                 <div
                   key={turn.id}
-                  className={`flex ${
-                    turn.role === "user" ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${turn.role === "user" ? "justify-end" : "justify-start"
+                    }`}
                 >
                   <div className="flex gap-3 max-w-2xl group">
                     {turn.role === "tutor" && (
@@ -1829,22 +1946,21 @@ export default function SpeakingSessionClient({
 
                     <div className="flex-1">
                       <div
-                        className={`rounded-2xl px-3 py-2 shadow-md backdrop-blur-sm text-[15px] ${
-                          turn.role === "user"
+                        className={`rounded-2xl px-3 py-2 shadow-md backdrop-blur-sm text-[15px] ${turn.role === "user"
                             ? "bg-[#4f46e5] text-white rounded-tr-sm"
                             : "bg-white text-foreground border border-border rounded-tl-sm"
-                        }`}
+                          }`}
                       >
                         <p className="leading-relaxed">{turn.text}</p>
                       </div>
                       <div
-                        className={`flex gap-2 mt-1 px-1 ${
-                          turn.role === "user" ? "justify-end" : "justify-start"
-                        } opacity-0 group-hover:opacity-100 transition-opacity`}
+                        className={`flex gap-2 mt-1 px-1 ${turn.role === "user" ? "justify-end" : "justify-start"
+                          } opacity-0 group-hover:opacity-100 transition-opacity`}
                       >
                         <button
                           onClick={() => speakText(turn.text)}
-                          className="p-1.5 hover:bg-slate-700 rounded-full text-slate-500 hover:text-blue-400 transition-colors"
+                          aria-label="Listen to this message"
+                          className="p-1.5 hover:bg-indigo-50 rounded-full text-slate-400 hover:text-indigo-500 transition-colors"
                         >
                           <Volume2 className="h-4 w-4" />
                         </button>
@@ -1877,7 +1993,7 @@ export default function SpeakingSessionClient({
                       />
                     </div>
                     <span className="text-sm text-muted-foreground font-medium">
-                      Thinking...
+                      {t("speaking_session.active.thinking")}
                     </span>
                   </div>
                 </div>
@@ -1897,20 +2013,43 @@ export default function SpeakingSessionClient({
                         <Lightbulb className="h-3.5 w-3.5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600/80 mb-1">
-                          {sessionMode === "scripted" ? "📖 Read aloud" : "Suggested response"}
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600/80 mb-1 flex items-center gap-1">
+                          {sessionMode === "scripted" ? <><BookOpen className="inline h-3 w-3" /> {t("speaking_session.active.read_aloud_hint")}</> : t("speaking_session.active.suggested_response")}
                         </p>
                         <p className="text-[14px] text-amber-950 leading-relaxed font-medium">&ldquo;{hintText}&rdquo;</p>
                       </div>
-                      {sessionMode !== "scripted" && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* Listen button — plays TTS audio of the hint */}
                         <button
-                          onClick={() => setHintText(null)}
-                          className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center hover:bg-amber-200/50 transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-                          aria-label="Dismiss hint"
+                          onClick={async () => {
+                            if (isSpeakingRef.current) {
+                              // Stop playback if already speaking
+                              if (audioElementRef.current) {
+                                audioElementRef.current.pause();
+                                audioElementRef.current.currentTime = 0;
+                                audioElementRef.current = null;
+                              }
+                              isSpeakingRef.current = false;
+                              return;
+                            }
+                            await speakText(hintText);
+                          }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-amber-200/50 transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                          aria-label="Listen to hint"
+                          title="Listen to sample pronunciation"
                         >
-                          <X className="h-3.5 w-3.5 text-amber-400" />
+                          <Volume2 className="h-3.5 w-3.5 text-amber-500" />
                         </button>
-                      )}
+                        {sessionMode !== "scripted" && (
+                          <button
+                            onClick={() => setHintText(null)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-amber-200/50 transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                            aria-label="Dismiss hint"
+                          >
+                            <X className="h-3.5 w-3.5 text-amber-400" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1934,13 +2073,12 @@ export default function SpeakingSessionClient({
                     }
                   }}
                   disabled={isLoadingHint || isRecording}
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 ${
-                    isLoadingHint
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 ${isLoadingHint
                       ? "bg-amber-100 text-amber-500 motion-safe:animate-pulse shadow-inner"
                       : hintText
                         ? "bg-gradient-to-br from-amber-400 to-orange-400 text-white shadow-lg shadow-amber-200/50 hover:shadow-amber-300/60"
                         : "bg-amber-50 border border-amber-200/80 text-amber-500 hover:bg-amber-100 hover:border-amber-300 hover:shadow-md hover:shadow-amber-100/40 motion-safe:hover:scale-105"
-                  } disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100`}
+                    } disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100`}
                   aria-label={isLoadingHint ? "Loading hint..." : "Get a hint for what to say"}
                 >
                   <Lightbulb className="h-5 w-5" />
@@ -1949,11 +2087,10 @@ export default function SpeakingSessionClient({
                 {/* Mic button — primary action */}
                 <button
                   onClick={handleToggleRecording}
-                  className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 ${
-                    isRecording
+                  className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 ${isRecording
                       ? "bg-gradient-to-br from-indigo-400 to-violet-500 shadow-xl shadow-indigo-300/40 motion-safe:scale-110 ring-4 ring-indigo-300/30"
                       : "bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-200/50 motion-safe:hover:scale-105 hover:from-indigo-600 hover:to-indigo-700 hover:shadow-xl hover:shadow-indigo-300/40"
-                  } text-white`}
+                    } text-white`}
                   aria-label={isRecording ? "Stop recording" : "Start recording"}
                 >
                   <Mic
@@ -1969,7 +2106,7 @@ export default function SpeakingSessionClient({
 
               {/* Helper text */}
               <p className="text-center text-[11px] text-muted-foreground/60 mt-2 select-none">
-                {isRecording ? "Tap to stop recording" : "Tap mic to speak · Lightbulb for hints"}
+                {isRecording ? t("speaking_session.active.tap_stop_recording") : t("speaking_session.active.tap_mic_speak")}
               </p>
             </div>
             {/* Spacer for input area since it's absolute */}
@@ -2018,11 +2155,10 @@ export default function SpeakingSessionClient({
               <Bot className="absolute inset-0 m-auto h-8 w-8 text-primary-500 animate-pulse" />
             </div>
             <h2 className="text-3xl font-bold mb-3 text-slate-800">
-              Analyzing Your Session...
+              {t("speaking_session.analyzing.title")}
             </h2>
             <p className="text-lg text-slate-500 max-w-md mx-auto">
-              AI is reviewing your conversation, checking grammar, and
-              calculating your scores. Please wait.
+              {t("speaking_session.analyzing.desc")}
             </p>
           </div>
         </Card>
@@ -2039,7 +2175,7 @@ export default function SpeakingSessionClient({
           scores.fluency +
           scores.pronunciation +
           scores.intonation) /
-          5
+        5
       );
 
     // Generate summary title and description based on analysisResult or fallback
@@ -2073,7 +2209,7 @@ export default function SpeakingSessionClient({
         data={assessmentData}
         mode={sessionMode}
         onBack={() => {
-          router.push("/speaking");
+          router.push(backUrl);
         }}
         onRetry={() => {
           setSessionId(null);
