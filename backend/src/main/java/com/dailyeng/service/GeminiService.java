@@ -76,7 +76,12 @@ public class GeminiService {
 
     public record SpeakingHintResult(String hint) {}
 
-    public record ScenarioConfig(String context, String userRole, String botRole, String goal, String level) {}
+    public record ScenarioConfig(String context, String userRole, String botRole, String goal, String level, Integer variationSeed) {
+        /** Backwards-compatible constructor without variationSeed */
+        public ScenarioConfig(String context, String userRole, String botRole, String goal, String level) {
+            this(context, userRole, botRole, goal, level, null);
+        }
+    }
 
     /**
      * Generate AI speaking response during conversation.
@@ -101,11 +106,13 @@ public class GeminiService {
                 ? "LEARNER LEVEL: %s - Adjust your vocabulary accordingly. Use %s.".formatted(
                 scenario.level(), getLevelGuidance(scenario.level()))
                 : "";
+        var variationDesc = buildVariationDirective(scenario.variationSeed());
 
         var systemPrompt = """
                 You are an English tutor helping a language learner practice speaking through roleplay.
                 
                 SCENARIO CONTEXT: %s
+                %s
                 %s
                 %s
                 %s
@@ -118,7 +125,7 @@ public class GeminiService {
                 IMPORTANT: Be natural and engaging. Do NOT use markdown formatting.
                 CRITICAL: Return ONLY a JSON object: {"response": "<your response>"}
                 """.formatted(scenario.context(), botRoleDesc, userRoleDesc, goalDesc, levelDesc,
-                scenario.botRole() != null ? scenario.botRole() : "the tutor");
+                variationDesc, scenario.botRole() != null ? scenario.botRole() : "the tutor");
 
         try {
             var contents = buildContents(history, userMessage);
@@ -168,6 +175,7 @@ public class GeminiService {
                 ? "The user is at %s level. Use %s.".formatted(
                 scenario.level(), getLevelGuidance(scenario.level()))
                 : "Use moderate vocabulary.";
+        var variationDesc = buildVariationDirective(scenario.variationSeed());
 
         var systemPrompt = """
                 You are helping an English learner practice speaking through roleplay.
@@ -176,6 +184,7 @@ public class GeminiService {
                 USER ROLE: %s
                 BOT ROLE: %s
                 GOAL: %s
+                %s
                 %s
                 
                 The user doesn't know what to say next. Generate a SAMPLE RESPONSE that the user could say.
@@ -193,6 +202,7 @@ public class GeminiService {
                 scenario.botRole() != null ? scenario.botRole() : "a tutor",
                 scenario.goal() != null ? scenario.goal() : "Complete the conversation",
                 levelDesc,
+                variationDesc,
                 scenario.userRole() != null ? scenario.userRole() : "a learner");
 
         try {
@@ -479,6 +489,21 @@ public class GeminiService {
             content = content.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "");
         }
         return content;
+    }
+
+    /**
+     * Build a variation directive for the AI prompt based on a seed number.
+     * This makes the same scenario produce different conversations each time.
+     */
+    private String buildVariationDirective(Integer seed) {
+        if (seed == null || seed <= 0) return "";
+        return """
+                VARIATION SEED: %d
+                Use this number to create UNIQUE details for this conversation instance.
+                Vary: specific items/products/menu choices, names of people/places, prices/numbers,
+                personality traits/attitudes, and minor complications or twists.
+                The seed determines YOUR choices — be creative but stay within the scenario's theme and difficulty level.
+                Do NOT mention the seed number to the user.""".formatted(seed);
     }
 
     private SessionAnalysisResult fallbackAnalysis(List<Map<String, String>> userTurns) {

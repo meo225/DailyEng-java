@@ -3,18 +3,8 @@ spring:
     name: dailyeng-api
 
   # ========================
-  # Database (PostgreSQL)
+  # Database logic managed by com.dailyeng.config.DatabaseConfig
   # ========================
-  datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/dailyeng}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      idle-timeout: 300000
-      connection-timeout: 20000
 
   jpa:
     hibernate:

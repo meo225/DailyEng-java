@@ -440,6 +440,9 @@ model SpeakingSession {
   feedbackRating  String? // Rating: "Excellent", "Good", "Average", "Needs Improvement"
   feedbackTip     String? // Personalized improvement tip
 
+  // Conversation variation seed — makes the same scenario produce different conversations
+  variationSeed   Int?    // Random seed (1-9999) for AI prompt variation
+
   turns SpeakingTurn[]
 }
 

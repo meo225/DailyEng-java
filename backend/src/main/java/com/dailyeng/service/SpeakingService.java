@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -171,7 +172,9 @@ public class SpeakingService {
         scenarioRepo.save(scenario);
 
         var session = SpeakingSession.builder()
-                .userId(userId).scenarioId(scenario.getId()).build();
+                .userId(userId).scenarioId(scenario.getId())
+                .variationSeed(ThreadLocalRandom.current().nextInt(1, 10000))
+                .build();
         sessionRepo.save(session);
 
         if (generated.openingLine() != null) {
@@ -233,7 +236,9 @@ public class SpeakingService {
         scenarioRepo.save(scenario);
 
         var session = SpeakingSession.builder()
-                .userId(userId).scenarioId(scenario.getId()).build();
+                .userId(userId).scenarioId(scenario.getId())
+                .variationSeed(ThreadLocalRandom.current().nextInt(1, 10000))
+                .build();
         sessionRepo.save(session);
 
         turnRepo.save(SpeakingTurn.builder()
@@ -258,8 +263,11 @@ public class SpeakingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Scenario not found: " + scenarioId));
 
         var session = SpeakingSession.builder()
-                .userId(userId).scenarioId(scenarioId).build();
+                .userId(userId).scenarioId(scenarioId)
+                .variationSeed(ThreadLocalRandom.current().nextInt(1, 10000))
+                .build();
         sessionRepo.save(session);
+        log.info("🎲 Session started with variationSeed={}", session.getVariationSeed());
 
         String greetingTurnId = null;
         if (scenario.getOpeningLine() != null && !scenario.getOpeningLine().isBlank()) {
@@ -294,7 +302,8 @@ public class SpeakingService {
         // Call AI
         var config = new GeminiService.ScenarioConfig(
                 scenario.getContext(), scenario.getUserRole(), scenario.getBotRole(),
-                scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null);
+                scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null,
+                session.getVariationSeed());
         var aiResult = geminiService.generateSpeakingResponse(config, history, req.userText());
 
         // Calculate speech metrics — prefer Azure SDK scores when available
@@ -338,6 +347,7 @@ public class SpeakingService {
                 .pitchVariance(storedPitchVariance)
                 .avgPitch(metrics != null ? metrics.avgPitch() : null)
                 .pitchSamplesCount(metrics != null ? metrics.pitchSamplesCount() : null)
+                .wordAssessmentsJson(metrics != null ? metrics.wordAssessments() : null)
                 .build();
         turnRepo.save(userTurn);
 
@@ -367,7 +377,8 @@ public class SpeakingService {
 
         var config = new GeminiService.ScenarioConfig(
                 scenario.getContext(), scenario.getUserRole(), scenario.getBotRole(),
-                scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null);
+                scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null,
+                session.getVariationSeed());
 
         return geminiService.generateSpeakingHint(config, history).hint();
     }
@@ -491,7 +502,8 @@ public class SpeakingService {
             return new ConversationTurn(t.getRole().name(), t.getText(), t.getId(),
                     turnErrors.isEmpty() ? null : turnErrors,
                     t.getRole() == Role.user ? t.getPronunciationScore() : null,
-                    t.getRole() == Role.user ? t.getFluencyScore() : null);
+                    t.getRole() == Role.user ? t.getFluencyScore() : null,
+                    t.getRole() == Role.user ? parseWordAssessments(t.getWordAssessmentsJson()) : null);
         }).toList();
 
         var scores = new SessionScores(analysis.grammarScore(), analysis.relevanceScore(),
@@ -526,7 +538,8 @@ public class SpeakingService {
             return new ConversationTurn(t.getRole().name(), t.getText(), t.getId(),
                     errors.isEmpty() ? null : errors,
                     t.getRole() == Role.user ? t.getPronunciationScore() : null,
-                    t.getRole() == Role.user ? t.getFluencyScore() : null);
+                    t.getRole() == Role.user ? t.getFluencyScore() : null,
+                    t.getRole() == Role.user ? parseWordAssessments(t.getWordAssessmentsJson()) : null);
         }).toList();
 
         var errorCategories = errorMap.entrySet().stream()
@@ -706,5 +719,47 @@ public class SpeakingService {
         return (int) Math.round(sessions.stream()
                 .mapToInt(s -> { var v = getter.apply(s); return v != null ? v : 0; })
                 .average().orElse(0));
+    }
+
+    /**
+     * Parse stored JSONB word assessments back into DTOs for API response.
+     */
+    @SuppressWarnings("unchecked")
+    private List<WordAssessmentDto> parseWordAssessments(Object jsonData) {
+        if (jsonData == null) return null;
+        try {
+            if (jsonData instanceof List<?> list) {
+                return list.stream()
+                        .filter(item -> item instanceof Map)
+                        .map(item -> {
+                            var map = (Map<String, Object>) item;
+                            var phonemes = map.get("phonemes") instanceof List<?> pList
+                                    ? pList.stream().filter(p -> p instanceof Map).map(p -> {
+                                        var pm = (Map<String, Object>) p;
+                                        return new PhonemeDto(
+                                                (String) pm.get("phoneme"),
+                                                ((Number) pm.getOrDefault("accuracyScore", 0)).doubleValue());
+                                    }).toList()
+                                    : List.<PhonemeDto>of();
+                            var syllables = map.get("syllables") instanceof List<?> sList
+                                    ? sList.stream().filter(s -> s instanceof Map).map(s -> {
+                                        var sm = (Map<String, Object>) s;
+                                        return new SyllableDto(
+                                                (String) sm.get("syllable"),
+                                                ((Number) sm.getOrDefault("accuracyScore", 0)).doubleValue());
+                                    }).toList()
+                                    : List.<SyllableDto>of();
+                            return new WordAssessmentDto(
+                                    (String) map.get("word"),
+                                    ((Number) map.getOrDefault("accuracyScore", 0)).doubleValue(),
+                                    (String) map.getOrDefault("errorType", "None"),
+                                    phonemes, syllables);
+                        }).toList();
+            }
+            return null;
+        } catch (Exception e) {
+            log.warn("Failed to parse word assessments: {}", e.getMessage());
+            return null;
+        }
     }
 }
