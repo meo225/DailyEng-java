@@ -32,7 +32,9 @@ public final class SpeakingDtos {
             Double azureAccuracyScore,
             Double azureFluencyScore,
             Double azureProsodyScore,
-            Double azureOverallScore
+            Double azureOverallScore,
+            // Per-word pronunciation assessment data from Azure Speech SDK
+            List<WordAssessmentDto> wordAssessments
     ) {}
 
     // ============================== Responses ==============================
@@ -76,7 +78,8 @@ public final class SpeakingDtos {
     public record ConversationTurn(
             String role, String text, String turnId,
             List<TurnErrorDto> userErrors,
-            Integer pronunciationScore, Integer fluencyScore
+            Integer pronunciationScore, Integer fluencyScore,
+            List<WordAssessmentDto> wordAssessments
     ) {}
 
     public record TurnErrorDto(
@@ -136,4 +139,17 @@ public final class SpeakingDtos {
             String id, int overallScore, int grammarScore, int relevanceScore,
             int fluencyScore, int pronunciationScore, int intonationScore, String date
     ) {}
+
+    // ============================== Word Assessment ==============================
+
+    public record WordAssessmentDto(
+            String word,
+            double accuracyScore,
+            String errorType,
+            List<PhonemeDto> phonemes,
+            List<SyllableDto> syllables
+    ) {}
+
+    public record PhonemeDto(String phoneme, double accuracyScore) {}
+    public record SyllableDto(String syllable, double accuracyScore) {}
 }

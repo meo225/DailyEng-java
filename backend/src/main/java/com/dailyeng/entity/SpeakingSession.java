@@ -36,6 +36,8 @@ public class SpeakingSession extends BaseEntity {
     private String feedbackRating;
     private String feedbackTip;
 
+    private Integer variationSeed;
+
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true) @Builder.Default
     private List<SpeakingTurn> turns = new ArrayList<>();
 }

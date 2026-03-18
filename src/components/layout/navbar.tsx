@@ -5,6 +5,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import dynamic from "next/dynamic"
 import { Menu, X, ChevronDown } from "lucide-react"
+import { LanguageSwitcher } from "./language-switcher"
+import { useTranslation } from "@/hooks/use-translation"
+import { useNavigation } from "@/contexts/NavigationContext"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,24 +34,28 @@ const NavbarAuthSection = dynamic(
   }
 )
 
+type NavItemKey = "home" | "speaking_room" | "vocabulary_hub" | "grammar_hub" | "study_plan" | "notebook";
+
 type NavItem = {
   href: string
-  label: string
-  dropdown?: Array<{ href: string; label: string }>
+  labelKey: NavItemKey
+  dropdown?: Array<{ href: string; labelKey: string }>
 }
 
 const navItems: NavItem[] = [
-  { href: "/", label: "Home" },
-  { href: "/speaking", label: "Speaking Room" },
-  { href: "/vocab", label: "Vocabulary Hub" },
-  { href: "/grammar", label: "Grammar Hub" },
-  { href: "/plan", label: "Study Plan" },
-  { href: "/notebook", label: "Notebook" },
+  { href: "/", labelKey: "home" },
+  { href: "/speaking", labelKey: "speaking_room" },
+  { href: "/vocab", labelKey: "vocabulary_hub" },
+  { href: "/grammar", labelKey: "grammar_hub" },
+  { href: "/plan", labelKey: "study_plan" },
+  { href: "/notebook", labelKey: "notebook" },
 ]
 
 export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { t } = useTranslation()
+  const { startNavigation } = useNavigation()
 
   const isImmersivePage =
     pathname?.startsWith("/speaking/session/") ||
@@ -86,16 +93,16 @@ export function Navbar() {
             {navItems.map((item) => {
               if ("dropdown" in item && item.dropdown) {
                 return (
-                  <DropdownMenu key={item.label}>
+                  <DropdownMenu key={item.labelKey}>
                     <DropdownMenuTrigger className="px-3 py-1.5 rounded-xl text-sm font-semibold transition-all text-gray-500 hover:text-gray-900 hover:bg-gray-100/80 flex items-center gap-1 cursor-pointer">
-                      {item.label}
+                      {t(`nav.${item.labelKey}`)}
                       <ChevronDown className="h-3.5 w-3.5" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="bg-white border-gray-200 shadow-lg">
                       {item.dropdown.map((subItem) => (
                         <DropdownMenuItem key={subItem.href} asChild>
-                          <Link href={subItem.href} className="cursor-pointer">
-                            {subItem.label}
+                          <Link href={subItem.href} className="cursor-pointer" onClick={() => startNavigation(subItem.href)}>
+                            {t(`nav.${subItem.labelKey}`)}
                           </Link>
                         </DropdownMenuItem>
                       ))}
@@ -109,13 +116,14 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => startNavigation(item.href)}
                   className={`text-[13.5px] px-3 py-1.5 rounded-xl font-semibold transition-all duration-200 ${
                     isActive
                       ? "bg-primary-500 text-white shadow-sm shadow-primary-200"
                       : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/80"
                   }`}
                 >
-                  {item.label}
+                  {t(`nav.${item.labelKey}`)}
                 </Link>
               )
             })}
@@ -123,6 +131,9 @@ export function Navbar() {
 
           {/* Right Section — dynamic import, never SSR'd */}
           <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
             <NavbarAuthSection />
 
             {/* Mobile toggle — min 44x44 touch target per ux skill */}
@@ -140,12 +151,16 @@ export function Navbar() {
         {/* Mobile Nav */}
         {mobileOpen && (
           <div className="md:hidden border-t border-gray-100 px-4 pb-4 pt-3 space-y-1">
+            <div className="px-3 py-2 flex items-center justify-between border-b border-gray-100 mb-2 pb-3">
+              <span className="text-sm font-semibold text-gray-500">{t("common.language")}</span>
+              <LanguageSwitcher />
+            </div>
             {navItems.map((item) => {
               if ("dropdown" in item && item.dropdown) {
                 return (
-                  <div key={item.label} className="space-y-1">
+                  <div key={item.labelKey} className="space-y-1">
                     <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                      {item.label}
+                      {t(`nav.${item.labelKey}`)}
                     </div>
                     {item.dropdown.map((subItem) => (
                       <Link
@@ -156,9 +171,9 @@ export function Navbar() {
                             ? "bg-primary-500 text-white"
                             : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                         }`}
-                        onClick={() => setMobileOpen(false)}
+                        onClick={() => { startNavigation(subItem.href); setMobileOpen(false); }}
                       >
-                        {subItem.label}
+                        {t(`nav.${subItem.labelKey}`)}
                       </Link>
                     ))}
                   </div>
@@ -175,9 +190,9 @@ export function Navbar() {
                       ? "bg-primary-500 text-white"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                   }`}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => { startNavigation(item.href); setMobileOpen(false); }}
                 >
-                  {item.label}
+                  {t(`nav.${item.labelKey}`)}
                 </Link>
               )
             })}

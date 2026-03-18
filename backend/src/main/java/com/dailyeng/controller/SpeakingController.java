@@ -79,6 +79,13 @@ public class SpeakingController {
         return ResponseEntity.ok(speakingService.createRandomScenario(userId));
     }
 
+    /** POST /speaking/scenarios/free-talk — createFreeTalkScenario() */
+    @PostMapping("/scenarios/free-talk")
+    public ResponseEntity<CustomScenarioResponse> createFreeTalkScenario(HttpServletRequest request) {
+        var userId = requireUserId(request);
+        return ResponseEntity.ok(speakingService.createFreeTalkScenario(userId));
+    }
+
     // ======================== Sessions ========================
 
     /** POST /speaking/sessions — startSessionWithGreeting() */
