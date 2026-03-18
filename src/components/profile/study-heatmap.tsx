@@ -17,12 +17,17 @@ export function StudyHeatmap({ data }: StudyHeatmapProps) {
   const today = new Date()
   const days: HeatmapDay[] = []
   
+  // ⚡ Bolt: Replace O(n*m) nested loop with O(n) hash map lookup
+  // This prevents searching the data array (up to 365 items) for each of the 365 days
+  const dataMap = new Map<string, HeatmapDay>()
+  for (const day of data) {
+    dataMap.set(day.date.toDateString(), day)
+  }
+
   for (let i = 364; i >= 0; i--) {
     const date = new Date(today)
     date.setDate(date.getDate() - i)
-    const existingDay = data.find(d => 
-      d.date.toDateString() === date.toDateString()
-    )
+    const existingDay = dataMap.get(date.toDateString())
     days.push(existingDay || { date, count: 0, level: 0 })
   }
 
