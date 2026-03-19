@@ -14,6 +14,8 @@ const nextConfig = {
     ],
   },
   experimental: {
+    // CSS chunking: splits CSS into per-route chunks to reduce render-blocking
+    cssChunking: 'strict',
     // bundle-barrel-imports rule: prevents loading 1000s of unused modules from barrel files
     // Saves 200-800ms dev boot, 28% faster builds, 40% faster cold starts
     optimizePackageImports: [
@@ -38,6 +40,13 @@ const nextConfig = {
       "@radix-ui/react-tooltip",
       "framer-motion",
       "date-fns",
+      "recharts",
+      "sonner",
+      "react-hook-form",
+      "cmdk",
+      "embla-carousel-react",
+      "react-day-picker",
+      "zod",
     ],
   },
 }

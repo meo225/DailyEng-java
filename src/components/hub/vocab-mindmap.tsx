@@ -245,7 +245,7 @@ export function VocabMindmap({ topicGroups }: VocabMindmapProps) {
               const currentWordAngle = wordStartAngle + k * wordStep;
               const wordRad = toRad(currentWordAngle);
               nodes.push({
-                id: `w-${word.id}`,
+                id: `w-${topic.id}-${word.id}`,
                 type: "word",
                 x: Math.cos(wordRad) * dynamicRadius,
                 y: Math.sin(wordRad) * dynamicRadius,

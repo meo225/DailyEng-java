@@ -24,7 +24,7 @@ export const SPEAKING_TABS = [
 // ─── Composer Hook ─────────────────────────────────
 
 interface UseSpeakingPageParams {
-  initialTopicGroups?: import("@/components/hub").TopicGroup[];
+  initialTopicGroups?: import("@/components/hub/topic-groups-sidebar").TopicGroup[];
   userId: string;
   initialBookmarkIds?: string[];
 }

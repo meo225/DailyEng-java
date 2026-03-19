@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getVocabTopicGroups, getVocabTopicsWithProgress } from "@/actions/vocab";
-import type { TopicGroup } from "@/components/hub";
+import type { TopicGroup } from "@/components/hub/topic-groups-sidebar";
 import { TOPICS_PER_PAGE, type VocabTopic } from "./types";
 
 // ─── Params ────────────────────────────────────────

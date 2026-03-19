@@ -1,13 +1,40 @@
 // Server Component - No "use client" directive
-// Data fetching happens here on the server
+// Server components are directly imported (zero client JS)
+// Only truly interactive (client) components use dynamic() for code splitting
 
-import HomePageClient from "@/components/page/HomePageClient";
-import type { FeatureTab, PartnerLogo } from "@/components/page/HomePageClient";
+import dynamic from "next/dynamic"
+import type { FeatureTab, PartnerLogo } from "@/types/home"
 
-// Import reviews from seed_comments.ts (with Pexels images for avatars and success photos)
-import { reviews } from "../../prisma/seed_comments";
+// ─── Above-fold: eagerly imported ──────────────────
+import { HeroSection } from "@/components/home/HeroSection"
+import { LogosMarquee } from "@/components/home/LogosMarquee"
+import { SocialProofSection } from "@/components/home/SocialProofSection"
+import { FeaturesBentoGrid } from "@/components/home/FeaturesBentoGrid"
 
-// Mock data - In the future, this can be replaced with actual data fetching
+// ─── Below-fold SERVER components: direct import ───
+// These are server components — they contribute ZERO client JS.
+// Using dynamic() on them would incorrectly force them into the client bundle.
+import { TestEnglishSection } from "@/components/home/TestEnglishSection"
+import { BuildStudyPlanSection } from "@/components/home/BuildStudyPlanSection"
+import { FinalCtaSection } from "@/components/home/FinalCtaSection"
+
+// Static review data (mock — will be fetched from Hibernate backend in the future)
+import { reviews } from "@/data/reviews"
+
+// ─── Below-fold CLIENT components: dynamic import ──
+// These have 'use client' — dynamic() code-splits them into separate chunks
+// so their JS isn't parsed/evaluated until needed.
+
+const FeatureTabsSection = dynamic(
+  () => import("@/components/home/FeatureTabsSection").then((m) => ({ default: m.FeatureTabsSection })),
+)
+
+const ReviewsSection = dynamic(
+  () => import("@/components/home/ReviewsSection").then((m) => ({ default: m.ReviewsSection })),
+)
+
+// ─── Data ──────────────────────────────────────────
+
 const featureTabs: FeatureTab[] = [
   {
     id: "language-hub",
@@ -41,7 +68,7 @@ const featureTabs: FeatureTab[] = [
       "Track your achievements, streaks, strengths, and areas to improve. Grow with your own learning journey.",
     image: "/your-learning-profile.jpg",
   },
-];
+]
 
 const partnerLogos: PartnerLogo[] = [
   { src: "/bc-logo.png", alt: "British Council" },
@@ -49,19 +76,36 @@ const partnerLogos: PartnerLogo[] = [
   { src: "/cambridge-logo.png", alt: "Cambridge" },
   { src: "/toefl-logo.png", alt: "TOEFL" },
   { src: "/ielts-logo.png", alt: "IELTS" },
-];
+]
+
+// ─── Page ──────────────────────────────────────────
 
 export default async function HomePage() {
-  // In the future, you can fetch data from DB, API, or File System here
-  // const featureTabs = await fetchFeatureTabs()
-  // const reviews = await fetchReviews()
-  // const partnerLogos = await fetchPartnerLogos()
-
   return (
-    <HomePageClient
-      featureTabs={featureTabs}
-      reviews={reviews}
-      partnerLogos={partnerLogos}
-    />
-  );
+    <div className="min-h-screen bg-background font-sans selection:bg-primary-200 selection:text-primary-900">
+      <HeroSection />
+      <LogosMarquee partnerLogos={partnerLogos} />
+      <SocialProofSection />
+      <FeaturesBentoGrid />
+
+      {/* Client components — dynamically imported for code splitting */}
+      <div className="content-lazy">
+        <FeatureTabsSection featureTabs={featureTabs} />
+      </div>
+      <div className="content-lazy">
+        <ReviewsSection reviews={reviews} />
+      </div>
+
+      {/* Server components — direct import, zero client JS */}
+      <div className="content-lazy">
+        <TestEnglishSection />
+      </div>
+      <div className="content-lazy">
+        <BuildStudyPlanSection />
+      </div>
+      <div className="content-lazy">
+        <FinalCtaSection />
+      </div>
+    </div>
+  )
 }

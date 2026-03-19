@@ -1,17 +1,21 @@
 "use client";
 
 import { ProtectedRoute, PageIcons } from "@/components/auth/protected-route";
-import { HubHero, type TopicGroup } from "@/components/hub";
+import { HubHero } from "@/components/hub/hub-hero";
+import type { TopicGroup } from "@/components/hub/topic-groups-sidebar";
 import { useSpeakingPage } from "@/hooks/useSpeakingPage";
+import dynamic from "next/dynamic";
 import { SessionSkeleton } from "@/components/speaking/session-skeleton";
 import { SpeakingTabBar } from "@/components/speaking/tab-bar";
-import { SearchResults } from "@/components/speaking/search-results";
-import { CreateScenarioDialog } from "@/components/speaking/create-scenario-dialog";
-import { AvailableTopicsTab } from "@/components/speaking/available-topics-tab";
-import { BookmarksTab } from "@/components/speaking/bookmarks-tab";
-import { CustomTopicsTab } from "@/components/speaking/custom-topics-tab";
-import { HistoryTab } from "@/components/speaking/history-tab";
 import { SparkleLoadingOverlay } from "@/components/speaking/sparkle-loading-overlay";
+
+// --- Dynamic Imports for Heavy Client Components ---
+const SearchResults = dynamic(() => import("@/components/speaking/search-results").then(m => m.SearchResults));
+const CreateScenarioDialog = dynamic(() => import("@/components/speaking/create-scenario-dialog").then(m => m.CreateScenarioDialog));
+const AvailableTopicsTab = dynamic(() => import("@/components/speaking/available-topics-tab").then(m => m.AvailableTopicsTab));
+const BookmarksTab = dynamic(() => import("@/components/speaking/bookmarks-tab").then(m => m.BookmarksTab));
+const CustomTopicsTab = dynamic(() => import("@/components/speaking/custom-topics-tab").then(m => m.CustomTopicsTab));
+const HistoryTab = dynamic(() => import("@/components/speaking/history-tab").then(m => m.HistoryTab));
 import { useTranslation } from "@/hooks/use-translation";
 
 // ─── Props ─────────────────────────────────────────

@@ -692,6 +692,7 @@ export default function PlanPageClient({
                     src="/ielts-logo.png"
                     alt="IELTS Logo"
                     fill
+                    sizes="(max-width: 1024px) 100vw, 33vw"
                     className="object-contain p-4"
                   />
                 </div>

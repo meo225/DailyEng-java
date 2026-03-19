@@ -3,10 +3,16 @@
 import type React from "react"
 
 import { usePathname } from "next/navigation"
+import dynamic from "next/dynamic"
 import { Navbar } from "@/components/layout/navbar"
-import { Footer } from "@/components/layout/footer"
 import { useNavigation } from "@/contexts/NavigationContext"
 import { SkeletonRouter } from "@/components/layout/skeleton-router"
+
+// Footer is always below the fold — defer its JS to reduce initial bundle
+const Footer = dynamic(
+  () => import("@/components/layout/footer").then((m) => m.Footer),
+  { ssr: true }
+)
 
 const noNavRoutes = ["/placement-test", "/speaking/session", "/vocab/", "/grammar/", "/build-plan", "/auth"]
 

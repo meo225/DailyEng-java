@@ -11,15 +11,16 @@ interface StackedCardBackgroundProps {
 
 export function StackedCardBackground({ images, autoPlayInterval = 3000 }: StackedCardBackgroundProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
 
   useEffect(() => {
-    if (autoPlayInterval > 0) {
+    if (autoPlayInterval > 0 && !isPaused) {
       const interval = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % images.length)
       }, autoPlayInterval)
       return () => clearInterval(interval)
     }
-  }, [autoPlayInterval, images.length])
+  }, [autoPlayInterval, images.length, isPaused])
 
   const goToNext = () => {
     setCurrentIndex((prev) => (prev + 1) % images.length)
@@ -30,7 +31,11 @@ export function StackedCardBackground({ images, autoPlayInterval = 3000 }: Stack
   }
 
   return (
-    <div className="relative w-full h-[400px] lg:h-[500px]">
+    <div 
+      className="relative w-full h-[400px] lg:h-[500px]"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       {/* Stacked cards effect */}
       <div className="relative w-full h-full flex items-center justify-center">
         {images.map((image, index) => {
@@ -66,7 +71,7 @@ export function StackedCardBackground({ images, autoPlayInterval = 3000 }: Stack
                 zIndex,
               }}
             >
-              <Image src={image || "/placeholder.svg"} alt={`Slide ${index + 1}`} fill className="object-cover" />
+              <Image src={image || "/placeholder.svg"} alt={`Slide ${index + 1}`} fill sizes="(max-width: 1024px) 280px, 320px" className="object-cover" priority={index <= 1} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             </div>
           )
