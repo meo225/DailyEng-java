@@ -7,10 +7,11 @@ const dictionaries: Record<string, any> = {
   vi,
 };
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export function useTranslation() {
-  const { language } = useAppStore();
+  // ⚡ Bolt: Select only the language state to prevent re-renders when other store values (like XP, UI toggles) change
+  const language = useAppStore((state) => state.language);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -20,7 +21,9 @@ export function useTranslation() {
   const activeLanguage = mounted ? language : "en";
   const dictionary = dictionaries[activeLanguage] || dictionaries["en"];
 
-  const t = (key: string) => {
+  // ⚡ Bolt: Memoize the translation function to prevent unnecessary child component re-renders
+  // when this hook is used in components that pass `t` as a prop or use it in dependency arrays
+  const t = useCallback((key: string) => {
     const keys = key.split(".");
     let value = dictionary;
 
@@ -30,7 +33,7 @@ export function useTranslation() {
     }
 
     return value || key;
-  };
+  }, [dictionary]);
 
   return { t, language };
 }
