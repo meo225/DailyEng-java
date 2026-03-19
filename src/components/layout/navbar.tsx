@@ -55,7 +55,10 @@ export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { t } = useTranslation()
-  const { startNavigation } = useNavigation()
+  const { startNavigation, isNavigating, targetPath } = useNavigation()
+
+  // Use targetPath during navigation so the active highlight updates instantly
+  const activePath = isNavigating && targetPath ? targetPath : pathname
 
   const isImmersivePage =
     pathname?.startsWith("/speaking/session/") ||
@@ -111,7 +114,7 @@ export function Navbar() {
                 )
               }
 
-              const isActive = pathname === item.href
+              const isActive = activePath === item.href
               return (
                 <Link
                   key={item.href}
@@ -167,7 +170,7 @@ export function Navbar() {
                         key={subItem.href}
                         href={subItem.href}
                         className={`block pl-5 py-2 rounded-xl text-sm font-medium transition-colors ${
-                          pathname.startsWith(subItem.href)
+                          activePath.startsWith(subItem.href)
                             ? "bg-primary-500 text-white"
                             : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                         }`}
@@ -180,7 +183,7 @@ export function Navbar() {
                 )
               }
 
-              const isActive = pathname === item.href
+              const isActive = activePath === item.href
               return (
                 <Link
                   key={item.href}

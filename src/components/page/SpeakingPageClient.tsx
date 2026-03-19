@@ -11,6 +11,7 @@ import { AvailableTopicsTab } from "@/components/speaking/available-topics-tab";
 import { BookmarksTab } from "@/components/speaking/bookmarks-tab";
 import { CustomTopicsTab } from "@/components/speaking/custom-topics-tab";
 import { HistoryTab } from "@/components/speaking/history-tab";
+import { SparkleLoadingOverlay } from "@/components/speaking/sparkle-loading-overlay";
 import { useTranslation } from "@/hooks/use-translation";
 
 // ─── Props ─────────────────────────────────────────
@@ -124,6 +125,9 @@ type SpeakingPageState = ReturnType<typeof useSpeakingPage> & {
 function TabContent({
   activeTab,
   setActiveTab,
+  router,
+  search,
+  filter,
   bookmarks,
   customTopics,
   history,
