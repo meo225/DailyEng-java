@@ -25,11 +25,12 @@ export function Footer() {
           {/* About DailyEng */}
           <div className="lg:col-span-1 flex flex-col items-center lg:items-start">
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="DailyEng Logo"
-              width={180}
-              height={60}
-              className="object-contain mb-4"
+              width={96}
+              height={82}
+              className="mb-4"
+              style={{ width: "auto", height: 60 }}
             />
           </div>
           <div>

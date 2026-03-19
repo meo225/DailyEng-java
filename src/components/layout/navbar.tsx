@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import dynamic from "next/dynamic"
 import { Menu, X, ChevronDown } from "lucide-react"
@@ -80,10 +81,14 @@ export function Navbar() {
             href="/"
             className="flex items-center gap-2 font-bold text-lg transition-opacity hover:opacity-80"
           >
-            <img
-              src="/logo.png"
+            <Image
+              src="/logo.webp"
               alt="DailyEng Logo"
-              className="h-9 w-9 rounded-xl object-cover shadow-sm"
+              width={36}
+              height={36}
+              className="rounded-xl object-cover shadow-sm"
+              style={{ width: "auto", height: "auto" }}
+              priority
             />
             <div>
               <span className="hidden text-xl sm:inline text-gray-800">Daily</span>

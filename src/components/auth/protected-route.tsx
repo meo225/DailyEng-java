@@ -62,9 +62,18 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, status } = useAuth()
   const isAuthenticated = status === "authenticated" && !!user
+  
+  // Guarantee identical Server / Client HTML during hydration by using a local mount state.
+  // This prevents hydration mismatches if children Suspend (e.g. next/dynamic) 
+  // and cause the global AuthContext useEffect to run before hydration completes.
+  const [isMounted, setIsMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  // Show spinner only while AuthContext is still hydrating auth state
-  if (status === "loading") {
+  // Show spinner during SSR, Hydration, or while AuthContext is still loading
+  if (!isMounted || status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="h-10 w-10 rounded-full border-4 border-primary-200 border-t-primary-500 animate-spin" />
