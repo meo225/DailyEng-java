@@ -247,12 +247,12 @@ function ShadowingDialog({
         {currentItem && currentItem.examples.length > 0 && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <Button size="icon" variant="outline" onClick={() => setCurrentSentence(Math.max(0, currentSentence - 1))} disabled={currentSentence === 0}
+              <Button size="icon" variant="outline" aria-label="Previous sentence" onClick={() => setCurrentSentence(Math.max(0, currentSentence - 1))} disabled={currentSentence === 0}
                 className="rounded-full h-10 w-10 border-primary-200 hover:bg-primary-50 cursor-pointer">
                 <ChevronLeft className="h-5 w-5" />
               </Button>
               <span className="text-sm font-semibold text-gray-500">Sentence {currentSentence + 1} / {currentItem.examples.length}</span>
-              <Button size="icon" variant="outline" onClick={() => setCurrentSentence(Math.min(currentItem.examples.length - 1, currentSentence + 1))} disabled={currentSentence === currentItem.examples.length - 1}
+              <Button size="icon" variant="outline" aria-label="Next sentence" onClick={() => setCurrentSentence(Math.min(currentItem.examples.length - 1, currentSentence + 1))} disabled={currentSentence === currentItem.examples.length - 1}
                 className="rounded-full h-10 w-10 border-primary-200 hover:bg-primary-50 cursor-pointer">
                 <ChevronRight className="h-5 w-5" />
               </Button>
