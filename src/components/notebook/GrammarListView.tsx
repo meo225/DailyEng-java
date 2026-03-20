@@ -35,7 +35,7 @@ export function GrammarListView({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-primary-50 cursor-pointer">
+            <Button variant="ghost" size="icon" aria-label="Filter grammar rules" className="h-9 w-9 rounded-full hover:bg-primary-50 cursor-pointer">
               <Filter className="h-4 w-4 text-primary-500" />
             </Button>
           </DropdownMenuTrigger>
@@ -62,7 +62,7 @@ export function GrammarListView({
               </div>
               <div className="flex items-center gap-2">
                 <div className={`px-3 py-1 rounded text-xs font-medium ${getMasteryConfig(item.masteryLevel).bgLight} ${getMasteryConfig(item.masteryLevel).textColor}`}>{item.masteryLevel}%</div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 hover:bg-red-50" onClick={() => onDelete(item.id)}><Trash2 className="h-4 w-4 text-gray-400" /></Button>
+                <Button variant="ghost" size="icon" aria-label="Delete rule" className="h-8 w-8 opacity-0 group-hover:opacity-100 hover:bg-red-50" onClick={() => onDelete(item.id)}><Trash2 className="h-4 w-4 text-gray-400" /></Button>
               </div>
             </div>
 
@@ -79,7 +79,7 @@ export function GrammarListView({
                   <div key={idx} className="bg-gray-50 rounded-lg p-2.5 space-y-0.5">
                     <p className="text-sm text-gray-800 flex items-center gap-2">
                       <span className="text-primary-600">→</span> {ex.en}
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => speakText(ex.en)}><Volume2 className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="icon" aria-label="Listen to pronunciation" className="h-6 w-6" onClick={() => speakText(ex.en)}><Volume2 className="h-3 w-3" /></Button>
                     </p>
                     <p className="text-sm text-gray-500 pl-5">{ex.vi}</p>
                   </div>

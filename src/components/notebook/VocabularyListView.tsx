@@ -66,7 +66,7 @@ export function VocabularyListView({
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 relative rounded-full hover:bg-primary-50 cursor-pointer">
+              <Button variant="ghost" size="icon" aria-label="Filter vocabulary" className="h-9 w-9 relative rounded-full hover:bg-primary-50 cursor-pointer">
                 <Filter className="h-4 w-4 text-primary-500" />
                 {(masteryFilter.length > 0 || starredFilter !== null || levelFilter.length > 0) && (
                   <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary-500 text-white text-[10px] font-bold flex items-center justify-center">!</span>
@@ -117,7 +117,7 @@ export function VocabularyListView({
               <TableCell>
                 <div className="flex items-center gap-2">
                   <div><p className="font-semibold">{item.word}</p><p className="text-xs text-gray-500">{item.pronunciation}</p></div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => speakText(item.word)}><Volume2 className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="icon" aria-label="Listen to pronunciation" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => speakText(item.word)}><Volume2 className="h-3.5 w-3.5" /></Button>
                 </div>
               </TableCell>
               <TableCell><div className="space-y-0.5">{item.vietnamese.slice(0, 2).map((v, i) => <p key={i} className="text-sm text-gray-700 line-clamp-1">{i + 1}. {v}</p>)}</div></TableCell>
@@ -125,11 +125,11 @@ export function VocabularyListView({
               <TableCell className="text-center"><div className={`inline-block px-3 py-1 rounded text-xs font-medium ${getMasteryConfig(item.masteryLevel).bgLight} ${getMasteryConfig(item.masteryLevel).textColor}`}>{item.masteryLevel}%</div></TableCell>
               <TableCell>
                 <div className="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-yellow-50" onClick={() => setStarredItems(p => { const s = new Set(p); s.has(item.id) ? s.delete(item.id) : s.add(item.id); return s })}>
+                  <Button variant="ghost" size="icon" aria-label="Toggle star" className="h-8 w-8 rounded-full hover:bg-yellow-50" onClick={() => setStarredItems(p => { const s = new Set(p); s.has(item.id) ? s.delete(item.id) : s.add(item.id); return s })}>
                     <Star className={`h-4 w-4 ${starredItems.has(item.id) ? "fill-yellow-400 text-yellow-400" : "text-gray-400"}`} />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={() => onEdit(item)}><Edit className="h-4 w-4 text-gray-400" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50" onClick={() => onDelete(item.id)}><Trash2 className="h-4 w-4 text-gray-400" /></Button>
+                  <Button variant="ghost" size="icon" aria-label="Edit word" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={() => onEdit(item)}><Edit className="h-4 w-4 text-gray-400" /></Button>
+                  <Button variant="ghost" size="icon" aria-label="Delete word" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50" onClick={() => onDelete(item.id)}><Trash2 className="h-4 w-4 text-gray-400" /></Button>
                 </div>
               </TableCell>
             </TableRow>
