@@ -20,6 +20,7 @@ yarn-error.log*
 .env
 .env.local
 .env*.local
+.env.cloud
 
 # vercel
 .vercel
@@ -57,3 +58,4 @@ backend/.mvn/wrapper/maven-wrapper.jar
 
 # Cloud SQL Auth Proxy
 cloud-sql-proxy
+
