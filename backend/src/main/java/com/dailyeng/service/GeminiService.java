@@ -89,7 +89,8 @@ public class GeminiService {
     public SpeakingResponseResult generateSpeakingResponse(
             ScenarioConfig scenario,
             List<Map<String, String>> history,
-            String userMessage
+            String userMessage,
+            int turnsRemaining
     ) {
         if (client == null) {
             return new SpeakingResponseResult("I'm sorry, I didn't catch that. Could you repeat?");
@@ -108,6 +109,13 @@ public class GeminiService {
                 : "";
         var variationDesc = buildVariationDirective(scenario.variationSeed());
 
+        var wrapUpDirective = "";
+        if (turnsRemaining <= 0) {
+            wrapUpDirective = "\nCONVERSATION ENDING: This is the FINAL turn. End the conversation with a natural closing/goodbye. Thank the user for the practice.";
+        } else if (turnsRemaining <= 2) {
+            wrapUpDirective = "\nCONVERSATION ENDING SOON: Only %d turn(s) remaining. Start wrapping up naturally — summarize key points, give a farewell, or bring the conversation to a natural close.".formatted(turnsRemaining);
+        }
+
         var systemPrompt = """
                 You are an English tutor helping a language learner practice speaking through roleplay.
                 
@@ -121,11 +129,13 @@ public class GeminiService {
                 Your task:
                 1. Stay in character as %s and respond naturally to continue the roleplay.
                 2. Generate a natural, conversational response that advances the scenario. Keep it concise (1-2 sentences).
+                %s
                 
                 IMPORTANT: Be natural and engaging. Do NOT use markdown formatting.
                 CRITICAL: Return ONLY a JSON object: {"response": "<your response>"}
                 """.formatted(scenario.context(), botRoleDesc, userRoleDesc, goalDesc, levelDesc,
-                variationDesc, scenario.botRole() != null ? scenario.botRole() : "the tutor");
+                variationDesc, scenario.botRole() != null ? scenario.botRole() : "the tutor",
+                wrapUpDirective);
 
         try {
             var contents = buildContents(history, userMessage);

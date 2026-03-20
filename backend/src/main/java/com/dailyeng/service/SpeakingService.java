@@ -32,11 +32,15 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 public class SpeakingService {
 
+    /** Maximum number of user turns before the session auto-completes. */
+    private static final int MAX_USER_TURNS = 8;
+
     private final TopicGroupRepository topicGroupRepo;
     private final SpeakingScenarioRepository scenarioRepo;
     private final SpeakingSessionRepository sessionRepo;
     private final SpeakingTurnRepository turnRepo;
     private final SpeakingTurnErrorRepository turnErrorRepo;
+    private final SpeakingBookmarkRepository bookmarkRepo;
     private final UserRepository userRepo;
     private final GeminiService geminiService;
     private final PexelsService pexelsService;
@@ -297,12 +301,18 @@ public class SpeakingService {
                 .map(t -> Map.of("role", t.getRole() == Role.user ? "user" : "assistant", "text", t.getText()))
                 .collect(Collectors.toList());
 
+        // Count existing user turns + the new one being submitted
+        long existingUserTurns = history.stream().filter(h -> "user".equals(h.get("role"))).count();
+        int currentUserTurn = (int) existingUserTurns + 1;  // this turn counts
+        int turnsRemaining = MAX_USER_TURNS - currentUserTurn;
+        boolean sessionComplete = turnsRemaining <= 0;
+
         // Call AI
         var config = new GeminiService.ScenarioConfig(
                 scenario.getContext(), scenario.getUserRole(), scenario.getBotRole(),
                 scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null,
                 session.getVariationSeed());
-        var aiResult = geminiService.generateSpeakingResponse(config, history, req.userText());
+        var aiResult = geminiService.generateSpeakingResponse(config, history, req.userText(), turnsRemaining);
 
         // Calculate speech metrics — prefer Azure SDK scores when available
         Integer pronunciationScore = null;
@@ -354,7 +364,7 @@ public class SpeakingService {
                 .sessionId(sessionId).role(Role.tutor).text(aiResult.response()).build();
         turnRepo.save(aiTurn);
 
-        return new SubmitTurnResponse(aiResult.response(), userTurn.getId(), aiTurn.getId());
+        return new SubmitTurnResponse(aiResult.response(), userTurn.getId(), aiTurn.getId(), sessionComplete);
     }
 
     // ========================================================================
@@ -798,5 +808,52 @@ public class SpeakingService {
             log.warn("Failed to parse word assessments: {}", e.getMessage());
             return null;
         }
+    }
+
+    // ========================================================================
+    // 16. Bookmarks
+    // ========================================================================
+
+    @Transactional
+    public ToggleBookmarkResponse toggleBookmark(String userId, String scenarioId) {
+        var existing = bookmarkRepo.findByUserIdAndScenarioId(userId, scenarioId);
+        if (existing.isPresent()) {
+            bookmarkRepo.delete(existing.get());
+            return new ToggleBookmarkResponse(false);
+        } else {
+            bookmarkRepo.save(SpeakingBookmark.builder()
+                    .userId(userId).scenarioId(scenarioId).build());
+            return new ToggleBookmarkResponse(true);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public BookmarkListResponse getBookmarks(String userId, int page, int limit) {
+        var pageable = PageRequest.of(page - 1, limit);
+        var bookmarkPage = bookmarkRepo.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+
+        var bookmarks = bookmarkPage.getContent().stream().map(b -> {
+            var s = scenarioRepo.findById(b.getScenarioId()).orElse(null);
+            if (s == null) return null;
+            return new ScenarioListItem(
+                    s.getId(), s.getTitle(), s.getDescription(),
+                    s.getCategory() != null ? toTitleCase(s.getCategory()) : "General",
+                    s.getSubcategory() != null ? toTitleCase(s.getSubcategory()) : null,
+                    s.getDifficulty() != null ? s.getDifficulty().name() : "B1",
+                    s.getImage() != null ? s.getImage() : "/learning.png",
+                    0, 10, 0, s.isCustom());
+        }).filter(Objects::nonNull).toList();
+
+        var bookmarkIds = bookmarkPage.getContent().stream()
+                .map(SpeakingBookmark::getScenarioId).toList();
+
+        return new BookmarkListResponse(bookmarks, bookmarkIds,
+                bookmarkPage.getTotalElements(), bookmarkPage.getTotalPages(), page);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getBookmarkIds(String userId) {
+        return bookmarkRepo.findByUserId(userId).stream()
+                .map(SpeakingBookmark::getScenarioId).toList();
     }
 }

@@ -4,8 +4,8 @@ import type { TopicGroup } from "@/components/hub/topic-groups-sidebar";
 import {
   getSpeakingScenariosWithProgress,
   getSpeakingTopicGroups,
+  getSpeakingBookmarkIds,
 } from "@/actions/speaking";
-import { getSpeakingBookmarkIds } from "@/actions/bookmark";
 import type { Scenario } from "./types";
 
 // ─── Constants ─────────────────────────────────────

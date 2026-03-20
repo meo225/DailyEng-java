@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { StudyGoal, TaskType, Prisma } from "@prisma/client";
 
 // Helper to ensure user exists
 async function ensureUser(userId: string) {
@@ -15,7 +16,7 @@ async function ensureUser(userId: string) {
                 id: userId,
                 name: "Learner",
                 email: `learner-${userId}@example.com`,
-                level: "3.0",
+                level: "B1",
             }
         });
     }
@@ -158,7 +159,7 @@ export async function updateStudyGoal(userId: string, goal: string, level: strin
     await prisma.studyPlan.update({
         where: { userId },
         data: {
-            goal: goal as "exam" | "communication",
+            goal: goal as StudyGoal,
             level: level as "A1" | "A2" | "B1" | "B2" | "C1" | "C2",
             minutesPerDay
         }
@@ -245,7 +246,7 @@ export async function createNewPlan(userId: string, data: {
     const plan = await prisma.studyPlan.create({
         data: {
             userId,
-            goal: data.goal as "exam" | "communication",
+            goal: data.goal as StudyGoal,
             level: data.level as "A1" | "A2" | "B1" | "B2" | "C1" | "C2",
             minutesPerDay,
             interests: data.interests,
@@ -257,7 +258,7 @@ export async function createNewPlan(userId: string, data: {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const tasksData = [];
+    const tasksData: Prisma.StudyTaskCreateManyInput[] = [];
     for (let i = 0; i < 7; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() + i);
@@ -266,7 +267,7 @@ export async function createNewPlan(userId: string, data: {
         tasksData.push({
             planId: plan.id,
             date: date,
-            type: "vocab",
+            type: "vocab" as TaskType,
             title: `Vocabulary Day ${i + 1}`,
             startTime: "07:00",
             endTime: "07:30",
@@ -276,7 +277,7 @@ export async function createNewPlan(userId: string, data: {
         tasksData.push({
             planId: plan.id,
             date: date,
-            type: "speaking",
+            type: "speaking" as TaskType,
             title: `Speaking Practice Day ${i + 1}`,
             startTime: "13:00",
             endTime: "13:45",
@@ -286,7 +287,7 @@ export async function createNewPlan(userId: string, data: {
         tasksData.push({
             planId: plan.id,
             date: date,
-            type: "grammar",
+            type: "grammar" as TaskType,
             title: `Grammar Focus Day ${i + 1}`,
             startTime: "20:00",
             endTime: "20:30",
@@ -299,94 +300,3 @@ export async function createNewPlan(userId: string, data: {
     revalidatePath("/plan");
 }
 
-export async function generateStudySchedule(userId: string, courseIds: string[], daysOfWeek: number[]) {
-    // 1. Validate inputs
-    if (!courseIds.length || !daysOfWeek.length) {
-        throw new Error("Please select courses and study days.");
-    }
-
-    // 2. Clear existing tasks (optional: decided to clear for fresh start)
-    await prisma.studyTask.deleteMany({
-        where: {
-            plan: { userId },
-            date: { gte: new Date() } // Only clear future tasks
-        }
-    });
-
-    // 3. Ensure Plan Exists
-    let plan = await prisma.studyPlan.findUnique({ where: { userId } });
-    if (!plan) {
-        plan = await prisma.studyPlan.create({
-            data: {
-                userId,
-                goal: "exam",
-                level: "B1",
-                minutesPerDay: 45,
-                interests: ["General"],
-            }
-        });
-    }
-
-    // 4. Fetch Course Content (Topics)
-    // We assume courses have topics, and we schedule topics as tasks.
-    const courses = await prisma.course.findMany({
-        where: { id: { in: courseIds } },
-        include: {
-            topics: { orderBy: { order: 'asc' } }
-        }
-    });
-
-    // Flatten all topics to schedule
-    let allTopics: any[] = [];
-    courses.forEach((course: any) => {
-        allTopics = [...allTopics, ...course.topics.map((t: any) => ({ ...t, courseName: course.name }))];
-    });
-
-    // 5. Schedule Logic
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() + 1); // Start tomorrow
-    startDate.setHours(0, 0, 0, 0);
-
-    const tasksToCreate = [];
-    let currentTopicIndex = 0;
-    let currentDate = new Date(startDate);
-
-    // Safety break after 365 days or when topics run out
-    while (currentTopicIndex < allTopics.length && tasksToCreate.length < 365) {
-
-        // Check if current day is in selected days (0=Sun, 1=Mon, ...)
-        if (daysOfWeek.includes(currentDate.getDay())) {
-            const topic = allTopics[currentTopicIndex];
-
-            // Create a task for this topic
-            tasksToCreate.push({
-                planId: plan.id,
-                date: new Date(currentDate),
-                type: "vocab", // Default type, logic could be smarter based on topic category
-                title: topic.title,
-                startTime: "19:00", // Default evening slot
-                endTime: "19:45",
-                link: `/topics/${topic.id}`,
-                completed: false
-            });
-
-            currentTopicIndex++;
-        }
-
-        // Move to next day
-        currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    // 6. Batch Create Tasks
-    if (tasksToCreate.length > 0) {
-        await prisma.studyTask.createMany({
-            data: tasksToCreate
-        });
-    }
-
-    // 7. Register User for Courses if not already
-    // (Optional: Depends if logic requires tracking registration)
-
-    revalidatePath("/plan");
-    return { success: true, count: tasksToCreate.length };
-}

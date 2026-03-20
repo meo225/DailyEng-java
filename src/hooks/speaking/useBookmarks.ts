@@ -3,8 +3,8 @@ import { useState, useEffect, useTransition } from "react";
 import {
   toggleSpeakingBookmark,
   getSpeakingBookmarks,
-} from "@/actions/bookmark";
-import { type Scenario, mapDbScenarioToScenario } from "./types";
+} from "@/actions/speaking";
+import type { Scenario } from "./types";
 
 // ─── Constants ─────────────────────────────────────
 
@@ -41,7 +41,7 @@ export function useBookmarks({
       getSpeakingBookmarks(userId, bookmarkPage, BOOKMARKS_PER_PAGE)
         .then((result) => {
           setBookmarkedTopicsList(
-            result.bookmarks.map(mapDbScenarioToScenario)
+            result.bookmarks as Scenario[]
           );
           setBookmarkTotalPages(result.totalPages);
         })
@@ -76,7 +76,7 @@ export function useBookmarks({
           bookmarkPage,
           BOOKMARKS_PER_PAGE
         );
-        setBookmarkedTopicsList(result.bookmarks.map(mapDbScenarioToScenario));
+        setBookmarkedTopicsList(result.bookmarks as Scenario[]);
         setBookmarkTotalPages(result.totalPages);
       }
     });

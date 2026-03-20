@@ -24,6 +24,9 @@ import type {
   SessionScores,
 } from "./types";
 
+/** Must match backend MAX_USER_TURNS */
+const MAX_TURNS = 8;
+
 /**
  * Master hook orchestrating the entire speaking session lifecycle.
  * Composes useTextToSpeech, useAudioRecording, and useSessionFeedback.
@@ -247,6 +250,14 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
 
       tts.speakText(result.aiResponse);
 
+      // Auto-finish if session is complete
+      if (result.sessionComplete) {
+        setTimeout(() => {
+          finishAndAnalyze();
+        }, 2500);
+        return;
+      }
+
       if (sessionMode === "scripted" && sessionId) {
         try {
           const hint = await getSessionHint(sessionId);
@@ -396,6 +407,10 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
     assessmentData,
     t,
     router,
+
+    // Turn counter
+    currentTurnNumber: turns.filter((t) => t.role === "user").length,
+    maxTurns: MAX_TURNS,
 
     // Actions
     startSession,

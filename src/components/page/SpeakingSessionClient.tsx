@@ -64,7 +64,9 @@ export default function SpeakingSessionClient(
           scenario={scenario}
           turns={session.turns}
           isRecording={session.recording.isRecording}
+          isTranscribing={session.recording.isTranscribing}
           isProcessing={session.isProcessing}
+          mediaStream={session.recording.mediaStream}
           hintText={session.hintText}
           isLoadingHint={session.isLoadingHint}
           sessionMode={session.sessionMode}
@@ -94,6 +96,8 @@ export default function SpeakingSessionClient(
             await session.finishAndAnalyze();
           }}
           onStopMicrophone={session.recording.stopMicrophone}
+          currentTurnNumber={session.currentTurnNumber}
+          maxTurns={session.maxTurns}
           t={session.t}
         />
       );

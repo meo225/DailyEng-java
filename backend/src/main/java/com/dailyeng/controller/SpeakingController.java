@@ -197,6 +197,36 @@ public class SpeakingController {
         return ResponseEntity.ok(speakingService.getLearningRecords(userId, id));
     }
 
+    // ======================== Bookmarks ========================
+
+    /** POST /speaking/bookmarks/toggle — toggleSpeakingBookmark() */
+    @PostMapping("/bookmarks/toggle")
+    public ResponseEntity<ToggleBookmarkResponse> toggleBookmark(
+            @RequestBody ToggleBookmarkRequest req,
+            HttpServletRequest request
+    ) {
+        var userId = requireUserId(request);
+        return ResponseEntity.ok(speakingService.toggleBookmark(userId, req.scenarioId()));
+    }
+
+    /** GET /speaking/bookmarks — getSpeakingBookmarks() */
+    @GetMapping("/bookmarks")
+    public ResponseEntity<BookmarkListResponse> getBookmarks(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "8") int limit,
+            HttpServletRequest request
+    ) {
+        var userId = requireUserId(request);
+        return ResponseEntity.ok(speakingService.getBookmarks(userId, page, limit));
+    }
+
+    /** GET /speaking/bookmarks/ids — getSpeakingBookmarkIds() */
+    @GetMapping("/bookmarks/ids")
+    public ResponseEntity<List<String>> getBookmarkIds(HttpServletRequest request) {
+        var userId = requireUserId(request);
+        return ResponseEntity.ok(speakingService.getBookmarkIds(userId));
+    }
+
     // ======================== Speech (Azure STT/TTS) ========================
 
     /** POST /speaking/speech/transcribe — Transcribe audio to text */

@@ -13,12 +13,15 @@ import {
   X,
 } from "lucide-react";
 import type { Turn } from "@/hooks/speaking-session/types";
+import VoiceWaveform from "@/components/speaking/VoiceWaveform";
 
 interface ActiveSessionViewProps {
   scenario: { title: string };
   turns: Turn[];
   isRecording: boolean;
+  isTranscribing: boolean;
   isProcessing: boolean;
+  mediaStream: MediaStream | null;
   hintText: string | null;
   isLoadingHint: boolean;
   sessionMode: "scripted" | "unscripted";
@@ -36,6 +39,8 @@ interface ActiveSessionViewProps {
   onContinue: () => void;
   onFinish: () => void;
   onStopMicrophone: () => void;
+  currentTurnNumber: number;
+  maxTurns: number;
   t: (key: string) => string;
 }
 
@@ -43,7 +48,9 @@ export default function ActiveSessionView({
   scenario,
   turns,
   isRecording,
+  isTranscribing,
   isProcessing,
+  mediaStream,
   hintText,
   isLoadingHint,
   sessionMode,
@@ -61,6 +68,8 @@ export default function ActiveSessionView({
   onContinue,
   onFinish,
   onStopMicrophone,
+  currentTurnNumber,
+  maxTurns,
   t,
 }: ActiveSessionViewProps) {
   return (
@@ -89,6 +98,8 @@ export default function ActiveSessionView({
       <SessionHeader
         title={scenario.title}
         showQuitDialog={showQuitDialog}
+        currentTurnNumber={currentTurnNumber}
+        maxTurns={maxTurns}
         onMenuClick={() => onSetShowQuitDialog(true)}
         onFinishClick={() => onSetShowFinishDialog(true)}
       />
@@ -108,6 +119,8 @@ export default function ActiveSessionView({
             hintText={hintText}
             isLoadingHint={isLoadingHint}
             isRecording={isRecording}
+            isTranscribing={isTranscribing}
+            mediaStream={mediaStream}
             sessionMode={sessionMode}
             onToggleRecording={onToggleRecording}
             onRequestHint={onRequestHint}
@@ -115,8 +128,6 @@ export default function ActiveSessionView({
             onSpeakHint={onSpeakHint}
             t={t}
           />
-          {/* Spacer for absolute input bar */}
-          <div className="h-[140px] shrink-0" />
         </div>
       </div>
     </div>
@@ -210,11 +221,15 @@ function FinishDialog({
 function SessionHeader({
   title,
   showQuitDialog,
+  currentTurnNumber,
+  maxTurns,
   onMenuClick,
   onFinishClick,
 }: {
   title: string;
   showQuitDialog: boolean;
+  currentTurnNumber: number;
+  maxTurns: number;
   onMenuClick: () => void;
   onFinishClick: () => void;
 }) {
@@ -229,7 +244,12 @@ function SessionHeader({
       >
         <Menu className="h-5 w-5 text-[#4b3fd4]" />
       </button>
-      <h1 className="text-2xl font-bold text-center">{title}</h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-bold text-center">{title}</h1>
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold tracking-wide">
+          {currentTurnNumber}/{maxTurns}
+        </span>
+      </div>
       <button
         onClick={onFinishClick}
         aria-label="Finish conversation"
@@ -348,6 +368,8 @@ function InputBar({
   hintText,
   isLoadingHint,
   isRecording,
+  isTranscribing,
+  mediaStream,
   sessionMode,
   onToggleRecording,
   onRequestHint,
@@ -358,6 +380,8 @@ function InputBar({
   hintText: string | null;
   isLoadingHint: boolean;
   isRecording: boolean;
+  isTranscribing: boolean;
+  mediaStream: MediaStream | null;
   sessionMode: "scripted" | "unscripted";
   onToggleRecording: () => void;
   onRequestHint: () => void;
@@ -366,7 +390,7 @@ function InputBar({
   t: (key: string) => string;
 }) {
   return (
-    <div className="px-4 py-3 border-t border-border/50 bg-white/90 backdrop-blur-2xl absolute bottom-0 w-full z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+    <div className="px-4 py-3 border-t border-border/50 bg-white/90 backdrop-blur-2xl shrink-0 w-full z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
       {hintText && (
         <HintCard
           hintText={hintText}
@@ -396,30 +420,83 @@ function InputBar({
           <Lightbulb className="h-5 w-5" />
         </button>
 
-        {/* Mic button */}
+        {/* Mic button with concentric ripple rings */}
         <button
           onClick={onToggleRecording}
+          disabled={isTranscribing}
           className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 ${
             isRecording
-              ? "bg-gradient-to-br from-indigo-400 to-violet-500 shadow-xl shadow-indigo-300/40 motion-safe:scale-110 ring-4 ring-indigo-300/30"
-              : "bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-200/50 motion-safe:hover:scale-105 hover:from-indigo-600 hover:to-indigo-700 hover:shadow-xl hover:shadow-indigo-300/40"
-          } text-white`}
-          aria-label={isRecording ? "Stop recording" : "Start recording"}
+              ? "bg-gradient-to-br from-indigo-400 to-violet-500 shadow-xl shadow-indigo-300/40 motion-safe:scale-110"
+              : isTranscribing
+                ? "bg-gradient-to-br from-violet-400 to-purple-500 shadow-lg shadow-purple-300/40 cursor-wait"
+                : "bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-200/50 motion-safe:hover:scale-105 hover:from-indigo-600 hover:to-indigo-700 hover:shadow-xl hover:shadow-indigo-300/40"
+          } text-white disabled:cursor-wait`}
+          aria-label={
+            isRecording
+              ? "Stop recording"
+              : isTranscribing
+                ? "Recognizing speech..."
+                : "Start recording"
+          }
         >
           <Mic
-            className={`h-6 w-6 ${isRecording ? "motion-safe:animate-pulse" : ""}`}
+            className={`h-6 w-6 relative z-10 ${
+              isRecording ? "motion-safe:animate-pulse" : ""
+            }`}
           />
+          {/* Concentric ripple rings when recording */}
           {isRecording && (
-            <span className="absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-20 motion-safe:animate-ping" />
+            <>
+              <span className="absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-20 motion-safe:animate-ping" />
+              <span
+                className="absolute inline-flex rounded-full bg-indigo-300 opacity-10 motion-safe:animate-ping"
+                style={{ width: "120%", height: "120%", animationDelay: "150ms" }}
+              />
+              <span
+                className="absolute inline-flex rounded-full bg-indigo-200 opacity-[0.07] motion-safe:animate-ping"
+                style={{ width: "140%", height: "140%", animationDelay: "300ms" }}
+              />
+            </>
+          )}
+          {/* Shimmer effect when transcribing */}
+          {isTranscribing && (
+            <span className="absolute inset-0 rounded-full overflow-hidden">
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_1.5s_infinite]" />
+            </span>
           )}
         </button>
       </div>
 
-      <p className="text-center text-[11px] text-muted-foreground/60 mt-2 select-none">
-        {isRecording
-          ? t("speaking_session.active.tap_stop_recording")
-          : t("speaking_session.active.tap_mic_speak")}
-      </p>
+      {/* Status area: waveform / recognizing / static label */}
+      <div className="mt-2 flex justify-center items-center h-7">
+        {isRecording ? (
+          <div className="flex items-center gap-2">
+            <VoiceWaveform mediaStream={mediaStream} />
+            <span className="text-[11px] text-indigo-500 font-medium select-none">
+              {t("speaking_session.active.tap_stop_recording")}
+            </span>
+          </div>
+        ) : isTranscribing ? (
+          <div className="flex items-center gap-1.5">
+            <div className="flex gap-0.5">
+              {[0, 100, 200].map((delay) => (
+                <div
+                  key={delay}
+                  className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce"
+                  style={{ animationDelay: `${delay}ms` }}
+                />
+              ))}
+            </div>
+            <span className="text-[11px] text-violet-500 font-medium select-none">
+              Recognizing...
+            </span>
+          </div>
+        ) : (
+          <p className="text-center text-[11px] text-muted-foreground/60 select-none">
+            {t("speaking_session.active.tap_mic_speak")}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
