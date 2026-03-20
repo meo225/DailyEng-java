@@ -8,7 +8,7 @@ This is the backend for the **DailyEng** English Learning Platform, built with S
 - **Framework**: Spring Boot 3.4.3
 - **Database**: PostgreSQL (via Spring Data JPA)
 - **Security**: Spring Security + JWT (httpOnly cookies)
-- **AI Integration**: OpenAI GPT-4o
+- **AI Integration**: Gemmini Flash Lite 3.1
 - **Speech**: Azure Speech Services
 - **Caching**: Caffeine
 - **Build Tool**: Maven

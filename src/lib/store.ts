@@ -38,7 +38,29 @@ interface AppStore {
   updateFlashcard: (card: SRSCard) => void;
   removeFlashcard: (id: string) => void;
   setFlashcards: (cards: SRSCard[]) => void;
+
+  language: string;
+  setLanguage: (lang: string) => void;
+
+  ttsVoice: string;
+  setTtsVoice: (voice: string) => void;
 }
+
+// Helper to get initial language, prefer localStorage if available
+const getInitialLanguage = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("language") || "en";
+  }
+  return "en";
+};
+
+// Helper to get initial TTS voice from localStorage
+const getInitialTtsVoice = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("ttsVoice") || "en-US-JennyNeural";
+  }
+  return "en-US-JennyNeural";
+};
 
 export const useAppStore = create<AppStore>((set) => ({
   user: null,
@@ -92,4 +114,20 @@ export const useAppStore = create<AppStore>((set) => ({
       flashcards: state.flashcards.filter((c) => c.id !== id),
     })),
   setFlashcards: (cards) => set({ flashcards: cards }),
+
+  language: getInitialLanguage(),
+  setLanguage: (lang) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("language", lang);
+    }
+    set({ language: lang });
+  },
+
+  ttsVoice: getInitialTtsVoice(),
+  setTtsVoice: (voice) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ttsVoice", voice);
+    }
+    set({ ttsVoice: voice });
+  },
 }));

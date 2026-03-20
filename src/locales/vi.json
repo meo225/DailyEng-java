@@ -1,0 +1,110 @@
+{
+  "nav": {
+    "home": "Trang chủ",
+    "speaking_room": "Phòng luyện nói",
+    "vocabulary_hub": "Kho từ vựng",
+    "grammar_hub": "Kho ngữ pháp",
+    "study_plan": "Lộ trình học",
+    "notebook": "Sổ tay"
+  },
+  "auth": {
+    "sign_in": "Đăng nhập",
+    "register": "Đăng ký",
+    "sign_out": "Đăng xuất"
+  },
+  "common": {
+    "language": "Ngôn ngữ"
+  },
+  "speaking_hub": {
+    "title": "PHÒNG LUYỆN NÓI",
+    "description": "Thực hành các cuộc hội thoại thực tế với gia sư AI và nhận phản hồi tức thì về phát âm, độ trôi chảy, ngữ pháp và nội dung của bạn.",
+    "page_name": "Phòng luyện nói",
+    "page_description": "Thực hành kỹ năng nói của bạn với các cuộc hội thoại được AI hỗ trợ và nhận phản hồi tức thời.",
+    "build_study_plan": "Tạo lộ trình học",
+    "random_topic": "Chủ đề ngẫu nhiên",
+    "practice_streak": "Chuỗi luyện tập: 7 ngày",
+    "continue": "Tiếp tục",
+    "tabs": {
+      "available": "Các chủ đề có sẵn",
+      "custom": "Chủ đề tùy chỉnh",
+      "bookmarks": "Đã lưu",
+      "history": "Lịch sử"
+    },
+    "search_placeholder": "Tìm kiếm các chủ đề...",
+    "history": {
+      "performance_overview": "Tổng quan hiệu suất",
+      "session_history": "Lịch sử phiên",
+      "criteria_score": "Điểm tiêu chí",
+      "no_sessions": "Không tìm thấy phiên nào",
+      "no_sessions_desc": "Hoàn thành một phiên nói để xem lịch sử của bạn",
+      "no_sessions_filter": "Không có phiên nào với đánh giá \"{rating}\"",
+      "filters": {
+        "all": "Tất cả",
+        "excellent": "Xuất sắc",
+        "good": "Khá",
+        "average": "Trung bình",
+        "needs_work": "Cần cải thiện"
+      },
+      "criteria": {
+        "accuracy": "Độ chính xác",
+        "fluency": "Độ trôi chảy",
+        "prosody": "Ngữ điệu",
+        "grammar": "Ngữ pháp",
+        "topic": "Chủ đề"
+      }
+    },
+    "bookmarks": {
+      "empty_title": "Chưa có mục đã lưu",
+      "empty_desc": "Nhấp vào biểu tượng dấu trang trên bất kỳ thẻ chủ đề nào để lưu nó tại đây để truy cập nhanh.",
+      "browse_topics": "Duyệt qua các chủ đề",
+      "your_bookmarks": "Các chủ đề đã lưu của bạn"
+    },
+    "custom": {
+      "create_title": "Tạo chủ đề tùy chỉnh",
+      "create_desc": "Thiết kế kịch bản nói của riêng bạn để thực hành cá nhân hóa",
+      "free_talk": "Nói tự do",
+      "free_talk_desc": "Nói về bất cứ điều gì bạn thích — không có giới hạn về chủ đề",
+      "create_scenario": "Tạo kịch bản của riêng bạn",
+      "create_scenario_desc": "Tạo một kịch bản từ mô tả của bạn",
+      "surprise_me": "Làm tôi ngạc nhiên",
+      "surprise_me_desc": "Nhận một kịch bản ngẫu nhiên dựa trên cấp độ của bạn",
+      "your_scenarios": "Các kịch bản tùy chỉnh của bạn",
+      "no_scenarios": "Bạn chưa tạo bất kỳ kịch bản tùy chỉnh nào."
+    }
+  },
+  "speaking_session": {
+    "preparation": {
+      "learning_goals": "Mục tiêu học tập",
+      "goal_practice": "Thực hành kỹ năng giao tiếp",
+      "goal_vocab": "Cải thiện từ vựng",
+      "goal_fluency": "Tăng cường độ trôi chảy",
+      "context": "Ngữ cảnh",
+      "assessment_mode": "Chế độ đánh giá",
+      "free_speaking": "Nói tự do",
+      "read_aloud": "Đọc to",
+      "desc_read_aloud": "Đọc to các gợi ý của AI — được chấm điểm dựa trên độ chính xác, mức độ hoàn thành và phát âm.",
+      "desc_free_speaking": "Nói tự do sử dụng gợi ý của AI làm tham khảo — được chấm điểm dựa trên độ chính xác, trôi chảy và ngữ điệu.",
+      "start_speaking": "Bắt đầu nói"
+    },
+    "active": {
+      "option": "Tùy chọn",
+      "continue": "Tiếp tục",
+      "finish": "Kết thúc",
+      "back_to_home": "Về trang chủ",
+      "finish_confirm": "Bạn có chắc chắn muốn kết thúc cuộc hội thoại này không?",
+      "yes": "Có",
+      "no": "Không",
+      "thinking": "Đang suy nghĩ...",
+      "suggested_response": "Phản hồi gợi ý",
+      "read_aloud_hint": "Đọc to",
+      "tap_stop_recording": "Nhấn để dừng ghi âm",
+      "tap_mic_speak": "Chạm vào micrô để nói · Bóng đèn để xem gợi ý"
+    },
+    "analyzing": {
+      "title": "Đang phân tích phiên của bạn...",
+      "desc": "AI đang xem xét cuộc hội thoại của bạn, kiểm tra ngữ pháp và tính điểm. Vui lòng đợi.",
+      "loading_assessment": "Đang tải đánh giá...",
+      "loading_desc": "Đang truy xuất kết quả đánh giá phát âm và nội dung của bạn."
+    }
+  }
+}

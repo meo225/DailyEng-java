@@ -512,7 +512,7 @@ export default function BuildPlanPageClient({ questions, allCourses }: BuildPlan
                   onClick={() => toggleCourse(course.id)}
                 >
                   <div className="relative h-40">
-                    <Image src={course.image || "/placeholder.svg"} alt={course.title} fill className="object-cover" />
+                    <Image src={course.image || "/placeholder.svg"} alt={course.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw" className="object-cover" />
                     <div className="absolute top-3 right-3 bg-primary-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                       {course.matchScore}% Match
                     </div>
@@ -558,7 +558,7 @@ export default function BuildPlanPageClient({ questions, allCourses }: BuildPlan
                 >
                   <div className="flex gap-3">
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                      <Image src={course.image || "/placeholder.svg"} alt={course.title} fill className="object-cover" />
+                      <Image src={course.image || "/placeholder.svg"} alt={course.title} fill sizes="64px" className="object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-sm text-slate-900 mb-1 truncate">

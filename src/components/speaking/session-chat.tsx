@@ -11,7 +11,7 @@ interface Turn {
   text: string
   timestamp: Date
   scores?: {
-    pronunciation?: number
+    accuracy?: number
     fluency?: number
     grammar?: number
     content?: number
@@ -72,10 +72,10 @@ export function SessionChat({ turns, isRecording, onToggleRecording, onSendMessa
               {/* Scores */}
               {turn.scores && (
                 <div className="mt-2 pt-2 border-t border-current/20 grid grid-cols-4 gap-1 text-xs">
-                  {turn.scores.pronunciation && (
+                  {turn.scores.accuracy && (
                     <div>
-                      <p className="font-semibold">{turn.scores.pronunciation}</p>
-                      <p className="opacity-75">Pron.</p>
+                      <p className="font-semibold">{turn.scores.accuracy}</p>
+                      <p className="opacity-75">Acc.</p>
                     </div>
                   )}
                   {turn.scores.fluency && (

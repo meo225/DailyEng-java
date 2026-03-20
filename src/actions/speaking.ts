@@ -82,14 +82,24 @@ export interface SpeechMetrics {
   azureFluencyScore?: number;
   azureProsodyScore?: number;
   azureOverallScore?: number;
+  // Per-word pronunciation assessment data from Azure Speech SDK
+  wordAssessments?: WordAssessmentResult[];
+}
+
+export interface WordAssessmentResult {
+  word: string;
+  accuracyScore: number;
+  errorType: string;
+  phonemes?: { phoneme: string; accuracyScore: number }[];
+  syllables?: { syllable: string; accuracyScore: number }[];
 }
 
 export interface SessionScores {
   grammar: number;
-  relevance: number;
+  topic: number;
   fluency: number;
-  pronunciation: number;
-  intonation: number;
+  accuracy: number;
+  prosody: number;
   overall: number;
 }
 
@@ -111,8 +121,9 @@ export interface ConversationTurn {
   text: string;
   turnId: string;
   userErrors?: TurnError[];
-  pronunciationScore?: number;
+  accuracyScore?: number;
   fluencyScore?: number;
+  wordAssessments?: WordAssessmentResult[];
 }
 
 export interface SessionAnalysisResponse {
@@ -132,10 +143,10 @@ export interface SessionInfo {
   duration?: number;
   overallScore?: number;
   grammarScore?: number;
-  relevanceScore?: number;
+  topicScore?: number;
   fluencyScore?: number;
-  pronunciationScore?: number;
-  intonationScore?: number;
+  accuracyScore?: number;
+  prosodyScore?: number;
   feedbackTitle?: string;
   feedbackSummary?: string;
   feedbackRating?: string;
@@ -177,10 +188,10 @@ export interface HistorySessionItem {
   scenarioTitle: string;
   overallScore: number;
   grammarScore: number;
-  relevanceScore: number;
+  topicScore: number;
   fluencyScore: number;
-  pronunciationScore: number;
-  intonationScore: number;
+  accuracyScore: number;
+  prosodyScore: number;
   feedbackRating: string;
   createdAt: string;
 }
@@ -192,9 +203,9 @@ export interface HistorySessionsResponse {
 }
 
 export interface CriteriaAverages {
-  relevance: number;
-  pronunciation: number;
-  intonation: number;
+  topic: number;
+  accuracy: number;
+  prosody: number;
   fluency: number;
   grammar: number;
 }
@@ -211,10 +222,10 @@ export interface LearningRecordItem {
   id: string;
   overallScore: number;
   grammarScore: number;
-  relevanceScore: number;
+  topicScore: number;
   fluencyScore: number;
-  pronunciationScore: number;
-  intonationScore: number;
+  accuracyScore: number;
+  prosodyScore: number;
   date: string;
 }
 
@@ -285,6 +296,16 @@ export async function createRandomScenario(
   return apiClient.post<CustomScenarioResponse>("/speaking/scenarios/random");
 }
 
+export async function createFreeTalkScenario(
+  _userId: string
+): Promise<CustomScenarioResponse> {
+  return apiClient.post<CustomScenarioResponse>("/speaking/scenarios/free-talk");
+}
+
+export async function deleteCustomScenario(scenarioId: string): Promise<void> {
+  await apiClient.delete(`/speaking/scenarios/${scenarioId}`);
+}
+
 // ======================== Sessions ========================
 
 export async function startSessionWithGreeting(
@@ -338,6 +359,10 @@ export async function getSessionDetailsById(
   } catch {
     return null;
   }
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  await apiClient.delete(`/speaking/sessions/${sessionId}`);
 }
 
 // ======================== History ========================

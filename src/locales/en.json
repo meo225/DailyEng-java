@@ -1,0 +1,110 @@
+{
+  "nav": {
+    "home": "Home",
+    "speaking_room": "Speaking Room",
+    "vocabulary_hub": "Vocabulary Hub",
+    "grammar_hub": "Grammar Hub",
+    "study_plan": "Study Plan",
+    "notebook": "Notebook"
+  },
+  "auth": {
+    "sign_in": "Sign in",
+    "register": "Register",
+    "sign_out": "Sign out"
+  },
+  "common": {
+    "language": "Language"
+  },
+  "speaking_hub": {
+    "title": "SPEAKING ROOM",
+    "description": "Practice real conversations with AI tutors and get instant feedback on your pronunciation, fluency, grammar, and content.",
+    "page_name": "Speaking Room",
+    "page_description": "Practice your speaking skills with AI-powered conversations and get instant feedback.",
+    "build_study_plan": "Build Study Plan",
+    "random_topic": "Random Topic",
+    "practice_streak": "Practice streak: 7 days",
+    "continue": "Continue",
+    "tabs": {
+      "available": "Available Topics",
+      "custom": "Custom Topics",
+      "bookmarks": "Bookmarks",
+      "history": "History"
+    },
+    "search_placeholder": "Search all topics...",
+    "history": {
+      "performance_overview": "Performance Overview",
+      "session_history": "Session History",
+      "criteria_score": "Criteria Score",
+      "no_sessions": "No sessions found",
+      "no_sessions_desc": "Complete a speaking session to see your history",
+      "no_sessions_filter": "No sessions with \"{rating}\" rating",
+      "filters": {
+        "all": "All",
+        "excellent": "Excellent",
+        "good": "Good",
+        "average": "Average",
+        "needs_work": "Needs Work"
+      },
+      "criteria": {
+        "accuracy": "Accuracy",
+        "fluency": "Fluency",
+        "prosody": "Prosody",
+        "grammar": "Grammar",
+        "topic": "Topic"
+      }
+    },
+    "bookmarks": {
+      "empty_title": "No Bookmarks Yet",
+      "empty_desc": "Click the bookmark icon on any topic card to save it here for quick access.",
+      "browse_topics": "Browse Topics",
+      "your_bookmarks": "Your Bookmarked Topics"
+    },
+    "custom": {
+      "create_title": "Create Custom Topic",
+      "create_desc": "Design your own speaking scenario for personalized practice",
+      "free_talk": "Free Talk",
+      "free_talk_desc": "Talk about anything you like — no topic restrictions",
+      "create_scenario": "Create your own scenario",
+      "create_scenario_desc": "Generate a scenario from your description",
+      "surprise_me": "Surprise Me",
+      "surprise_me_desc": "Get a random scenario based on your level",
+      "your_scenarios": "Your Custom Scenarios",
+      "no_scenarios": "You haven't created any custom scenarios yet."
+    }
+  },
+  "speaking_session": {
+    "preparation": {
+      "learning_goals": "Learning Goals",
+      "goal_practice": "Practice conversation skill",
+      "goal_vocab": "Improve vocabulary",
+      "goal_fluency": "Enhance fluency",
+      "context": "Context",
+      "assessment_mode": "Assessment Mode",
+      "free_speaking": "Free Speaking",
+      "read_aloud": "Read Aloud",
+      "desc_read_aloud": "Read the AI suggestions aloud — scored on accuracy, completeness, and pronunciation.",
+      "desc_free_speaking": "Speak freely using AI hints as reference — scored on accuracy, fluency, and prosody.",
+      "start_speaking": "Start Speaking"
+    },
+    "active": {
+      "option": "Option",
+      "continue": "Continue",
+      "finish": "Finish",
+      "back_to_home": "Back to Home",
+      "finish_confirm": "Are you sure you want to finish this conversation?",
+      "yes": "Yes",
+      "no": "No",
+      "thinking": "Thinking...",
+      "suggested_response": "Suggested response",
+      "read_aloud_hint": "Read aloud",
+      "tap_stop_recording": "Tap to stop recording",
+      "tap_mic_speak": "Tap mic to speak · Lightbulb for hints"
+    },
+    "analyzing": {
+      "title": "Analyzing Your Session...",
+      "desc": "AI is reviewing your conversation, checking grammar, and calculating your scores. Please wait.",
+      "loading_assessment": "Loading Assessment...",
+      "loading_desc": "Retrieving your pronunciation and content assessment results."
+    }
+  }
+}

@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 import type { ReactNode } from "react"
 
 interface HubHeroProps {
@@ -77,10 +78,13 @@ export function HubHero({
                 - Bên phải (black): hiển thị 100%
                 - Bên trái (transparent): mờ dần đi để hòa vào nền
             */}
-            <img 
+            <Image
                 src={imageSrc} 
                 alt="Hero background" 
-                className="h-full w-full object-cover"
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
                 style={{
                     maskImage: "linear-gradient(to left, black 50%, transparent 100%)",
                     WebkitMaskImage: "linear-gradient(to left, black 50%, transparent 100%)"

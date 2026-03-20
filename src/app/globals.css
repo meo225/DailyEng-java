@@ -130,6 +130,7 @@
 @theme inline {
   /* Font variables */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-jakarta), "Plus Jakarta Sans", "Inter", sans-serif;
   --font-mono: "Fira Code", monospace;
 
   /* Color mappings */
@@ -499,4 +500,272 @@
 /* Scroll-based animation columns — paused on hover via Tailwind hover:paused */
 .hover\:paused:hover {
   animation-play-state: paused;
+}
+
+/* ================================================================
+   Scroll animations — merged from scroll-animations.css
+   to reduce render-blocking CSS requests
+   ================================================================ */
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes scroll-up {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+@keyframes scroll-down {
+  0% { transform: translateY(-50%); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-scroll-left {
+  animation: scroll-left 40s linear infinite;
+}
+
+.animate-scroll-up {
+  animation: scroll-up 40s linear infinite;
+}
+
+.animate-scroll-down {
+  animation: scroll-down 40s linear infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+/* Mask for marquee edges */
+.mask-linear-fade {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 10%,
+    black 90%,
+    transparent
+  );
+}
+
+/* ================================================================
+   RevealOnScroll — CSS-only scroll reveal (replaces animejs)
+   Spring-like easing via cubic-bezier approximation
+   ================================================================ */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(48px);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ================================================================
+   content-visibility: auto — skip rendering for below-fold sections
+   Saves Style & Layout time for off-screen content
+   ================================================================ */
+.content-lazy {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
+}
+
+/* Hide scrollbar for cleaner UI */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ================================================================
+   NOTEBOOK PAGE — Scholarly Depth Design System
+   Editorial + Luxury Minimal aesthetic for the learning interface
+   ================================================================ */
+
+/* Display heading using Plus Jakarta Sans */
+.notebook-heading {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+/* Elevated card with subtle depth layering */
+.notebook-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid var(--primary-100);
+  border-radius: 1rem;
+  box-shadow:
+    0 1px 3px rgba(79, 70, 229, 0.04),
+    0 4px 12px rgba(79, 70, 229, 0.06);
+  transition: box-shadow 0.2s ease-out, border-color 0.2s ease-out;
+}
+
+.notebook-card:hover {
+  box-shadow:
+    0 2px 6px rgba(79, 70, 229, 0.06),
+    0 8px 24px rgba(79, 70, 229, 0.1);
+}
+
+/* Sidebar glassmorphic panel */
+.notebook-sidebar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid var(--primary-100);
+  border-radius: 1.25rem;
+  box-shadow:
+    0 1px 3px rgba(79, 70, 229, 0.04),
+    0 4px 16px rgba(79, 70, 229, 0.08);
+}
+
+/* Tab pill active state */
+.notebook-tab {
+  position: relative;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 9999px;
+  transition: all 0.2s ease-out;
+  cursor: pointer;
+  color: var(--gray-500);
+}
+
+.notebook-tab:hover {
+  color: var(--primary-600);
+  background: var(--primary-50);
+}
+
+.notebook-tab-active {
+  color: white;
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+}
+
+/* CEFR Level badge color system */
+.level-badge-a1, .level-badge-a2 {
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
+  color: white;
+}
+.level-badge-b1, .level-badge-b2 {
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
+  color: white;
+}
+.level-badge-c1, .level-badge-c2 {
+  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  color: white;
+}
+
+/* Mastery progress bar */
+.mastery-bar {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--gray-100);
+  overflow: hidden;
+}
+
+.mastery-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mastery-bar-fill[data-level="low"] {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+}
+.mastery-bar-fill[data-level="mid"] {
+  background: linear-gradient(90deg, #f59e0b, #eab308);
+}
+.mastery-bar-fill[data-level="high"] {
+  background: linear-gradient(90deg, #22c55e, #10b981);
+}
+.mastery-bar-fill[data-level="mastered"] {
+  background: linear-gradient(90deg, #10b981, #0d9488);
+}
+
+/* Entrance animation for content transitions */
+@keyframes notebook-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notebook-enter {
+  animation: notebook-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Staggered entrance for list items */
+.notebook-enter-stagger > * {
+  opacity: 0;
+  animation: notebook-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.notebook-enter-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.notebook-enter-stagger > *:nth-child(2) { animation-delay: 40ms; }
+.notebook-enter-stagger > *:nth-child(3) { animation-delay: 80ms; }
+.notebook-enter-stagger > *:nth-child(4) { animation-delay: 120ms; }
+.notebook-enter-stagger > *:nth-child(5) { animation-delay: 160ms; }
+.notebook-enter-stagger > *:nth-child(6) { animation-delay: 200ms; }
+.notebook-enter-stagger > *:nth-child(n+7) { animation-delay: 240ms; }
+
+/* Gradient text effect for flashcard display */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-600) 50%, var(--primary-400) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Sidebar collection item with left accent */
+.collection-item {
+  position: relative;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease-out;
+  cursor: pointer;
+}
+
+.collection-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  border-radius: 9999px;
+  background: var(--primary-500);
+  transition: height 0.2s ease-out;
+}
+
+.collection-item:hover::before,
+.collection-item-active::before {
+  height: 60%;
+}
+
+.collection-item-active {
+  background: linear-gradient(135deg, var(--primary-50), rgba(79, 70, 229, 0.08));
+}
+
+.collection-item:hover:not(.collection-item-active) {
+  background: var(--gray-50);
 }

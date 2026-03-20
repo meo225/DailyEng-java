@@ -5,6 +5,7 @@ import { NotificationDropdown } from "./notification-dropdown"
 import { ProfileDropdown } from "./profile-dropdown"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useTranslation } from "@/hooks/use-translation"
 
 /**
  * Auth-dependent section of the navbar.
@@ -13,6 +14,7 @@ import Link from "next/link"
  */
 export function NavbarAuthSection() {
   const { user, status } = useAuth()
+  const { t } = useTranslation()
   const isAuthenticated = status === "authenticated" && !!user
 
   if (status === "loading") {
@@ -41,7 +43,7 @@ export function NavbarAuthSection() {
           size="sm"
           className="hidden sm:flex text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-8 cursor-pointer"
         >
-          Sign in
+          {t("auth.sign_in")}
         </Button>
       </Link>
       <Link href="/auth/signup">
@@ -49,7 +51,7 @@ export function NavbarAuthSection() {
           size="sm"
           className="h-8 px-4 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-semibold shadow-sm cursor-pointer"
         >
-          Register
+          {t("auth.register")}
         </Button>
       </Link>
     </>

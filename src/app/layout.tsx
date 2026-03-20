@@ -1,9 +1,10 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { UserProfileProvider } from "@/contexts/UserProfileContext";
+import { NavigationProvider } from "@/contexts/NavigationContext";
 import { LazyLayoutComponents } from "@/components/layout/lazy-layout-components";
 import "@/app/globals.css";
 import { Suspense } from "react";
@@ -14,6 +15,13 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+});
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  display: "swap",
+  weight: ["500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -33,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.className} bg-background text-foreground`}
+        className={`${inter.className} ${jakarta.variable} bg-background text-foreground`}
         suppressHydrationWarning
       >
         <SessionProvider>
@@ -45,9 +53,11 @@ export default function RootLayout({
           >
             <UserProfileProvider>
               <Suspense fallback={<div>Loading...</div>}>
-                <ConditionalLayout>
-                  <main className="min-h-screen">{children}</main>
-                </ConditionalLayout>
+                <NavigationProvider>
+                  <ConditionalLayout>
+                    <main className="min-h-screen">{children}</main>
+                  </ConditionalLayout>
+                </NavigationProvider>
                 <LazyLayoutComponents />
               </Suspense>
             </UserProfileProvider>
@@ -57,4 +67,5 @@ export default function RootLayout({
     </html>
   );
 }
+
 

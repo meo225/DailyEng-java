@@ -32,7 +32,9 @@ public final class SpeakingDtos {
             Double azureAccuracyScore,
             Double azureFluencyScore,
             Double azureProsodyScore,
-            Double azureOverallScore
+            Double azureOverallScore,
+            // Per-word pronunciation assessment data from Azure Speech SDK
+            List<WordAssessmentDto> wordAssessments
     ) {}
 
     // ============================== Responses ==============================
@@ -67,8 +69,8 @@ public final class SpeakingDtos {
     public record CustomScenarioResponse(ScenarioDetailResponse scenario, String sessionId) {}
 
     public record SessionScores(
-            int grammar, int relevance, int fluency,
-            int pronunciation, int intonation, int overall
+            int grammar, int topic, int fluency,
+            int accuracy, int prosody, int overall
     ) {}
 
     public record ErrorCategory(String name, int count) {}
@@ -76,7 +78,8 @@ public final class SpeakingDtos {
     public record ConversationTurn(
             String role, String text, String turnId,
             List<TurnErrorDto> userErrors,
-            Integer pronunciationScore, Integer fluencyScore
+            Integer accuracyScore, Integer fluencyScore,
+            List<WordAssessmentDto> wordAssessments
     ) {}
 
     public record TurnErrorDto(
@@ -98,8 +101,8 @@ public final class SpeakingDtos {
 
     public record SessionInfo(
             String id, String createdAt, String endedAt, Integer duration,
-            Integer overallScore, Integer grammarScore, Integer relevanceScore,
-            Integer fluencyScore, Integer pronunciationScore, Integer intonationScore,
+            Integer overallScore, Integer grammarScore, Integer topicScore,
+            Integer fluencyScore, Integer accuracyScore, Integer prosodyScore,
             String feedbackTitle, String feedbackSummary,
             String feedbackRating, String feedbackTip
     ) {}
@@ -115,8 +118,8 @@ public final class SpeakingDtos {
 
     public record HistorySessionItem(
             String id, String scenarioId, String scenarioTitle,
-            int overallScore, int grammarScore, int relevanceScore,
-            int fluencyScore, int pronunciationScore, int intonationScore,
+            int overallScore, int grammarScore, int topicScore,
+            int fluencyScore, int accuracyScore, int prosodyScore,
             String feedbackRating, String createdAt
     ) {}
 
@@ -130,10 +133,23 @@ public final class SpeakingDtos {
             int totalSessions, int highestScore, int averageScore
     ) {}
 
-    public record CriteriaAverages(int relevance, int pronunciation, int intonation, int fluency, int grammar) {}
+    public record CriteriaAverages(int topic, int accuracy, int prosody, int fluency, int grammar) {}
 
     public record LearningRecordItem(
-            String id, int overallScore, int grammarScore, int relevanceScore,
-            int fluencyScore, int pronunciationScore, int intonationScore, String date
+            String id, int overallScore, int grammarScore, int topicScore,
+            int fluencyScore, int accuracyScore, int prosodyScore, String date
     ) {}
+
+    // ============================== Word Assessment ==============================
+
+    public record WordAssessmentDto(
+            String word,
+            double accuracyScore,
+            String errorType,
+            List<PhonemeDto> phonemes,
+            List<SyllableDto> syllables
+    ) {}
+
+    public record PhonemeDto(String phoneme, double accuracyScore) {}
+    public record SyllableDto(String syllable, double accuracyScore) {}
 }

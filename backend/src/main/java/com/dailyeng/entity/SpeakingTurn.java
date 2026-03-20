@@ -2,6 +2,7 @@ package com.dailyeng.entity;
 
 import com.dailyeng.entity.enums.Role;
 import io.hypersistence.utils.hibernate.type.array.ListArrayType;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -27,7 +28,7 @@ public class SpeakingTurn extends BaseEntity {
     @CreationTimestamp @Column(updatable = false) private LocalDateTime timestamp;
 
     // Scores
-    private Integer pronunciationScore;
+    private Integer accuracyScore;
     private Integer fluencyScore;
 
     // Raw metrics — Prisma stores Float[] as PostgreSQL DOUBLE PRECISION[]
@@ -44,6 +45,11 @@ public class SpeakingTurn extends BaseEntity {
     private Double pitchVariance;
     private Double avgPitch;
     private Integer pitchSamplesCount;
+
+    // Per-word pronunciation assessment data from Azure Speech SDK (JSONB)
+    @Type(JsonType.class)
+    @Column(name = "\"wordAssessmentsJson\"", columnDefinition = "jsonb")
+    private Object wordAssessmentsJson;
 
     @OneToMany(mappedBy = "turn", cascade = CascadeType.ALL, orphanRemoval = true) @Builder.Default
     private List<SpeakingTurnError> errors = new ArrayList<>();

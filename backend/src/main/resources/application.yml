@@ -3,22 +3,19 @@ spring:
     name: dailyeng-api
 
   # ========================
-  # Database (PostgreSQL)
+  # Database logic managed by com.dailyeng.config.DatabaseConfig
+  # Schema migrations managed by Flyway
   # ========================
-  datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/dailyeng}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      idle-timeout: 300000
-      connection-timeout: 20000
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 3        # V1 (init), V2 (renames), V3 (reconcile) already applied
+    locations: classpath:db/migration
 
   jpa:
     hibernate:
-      ddl-auto: none  # Skip validation — Prisma manages the schema
+      ddl-auto: none  # Flyway manages the schema
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
@@ -114,9 +111,9 @@ app:
   # ========================
   # External APIs
   # ========================
-  openai:
-    api-key: ${OPENAI_API_KEY:}
-    model: ${OPENAI_MODEL:gpt-4o}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-2.5-flash}
     temperature: 0.7
     max-tokens: 4096
 

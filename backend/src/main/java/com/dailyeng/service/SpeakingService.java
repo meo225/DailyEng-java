@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -37,7 +38,7 @@ public class SpeakingService {
     private final SpeakingTurnRepository turnRepo;
     private final SpeakingTurnErrorRepository turnErrorRepo;
     private final UserRepository userRepo;
-    private final OpenAiService openAiService;
+    private final GeminiService geminiService;
     private final PexelsService pexelsService;
     private final SpeechMetricsCalculator metricsCalculator;
 
@@ -156,7 +157,7 @@ public class SpeakingService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var userLevel = user.getLevel() != null ? user.getLevel().name() : "B1";
 
-        var generated = openAiService.generateScenario(topicPrompt, userLevel);
+        var generated = geminiService.generateScenario(topicPrompt, userLevel);
         var imageUrl = pexelsService.fetchImage(generated.imageKeyword());
 
         var scenario = SpeakingScenario.builder()
@@ -171,7 +172,9 @@ public class SpeakingService {
         scenarioRepo.save(scenario);
 
         var session = SpeakingSession.builder()
-                .userId(userId).scenarioId(scenario.getId()).build();
+                .userId(userId).scenarioId(scenario.getId())
+                .variationSeed(ThreadLocalRandom.current().nextInt(1, 10000))
+                .build();
         sessionRepo.save(session);
 
         if (generated.openingLine() != null) {
@@ -197,6 +200,58 @@ public class SpeakingService {
     }
 
     // ========================================================================
+    // 6b. createFreeTalkScenario — open-ended conversation
+    // ========================================================================
+
+    @Transactional
+    public CustomScenarioResponse createFreeTalkScenario(String userId) {
+        var user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var userLevel = user.getLevel() != null ? user.getLevel().name() : "B1";
+
+        var openingLine = "Hi there! I'm your English conversation partner. " +
+                "Today we can talk about absolutely anything you'd like — " +
+                "your hobbies, a movie you watched, your day, travel dreams, or anything else. " +
+                "So, what's on your mind?";
+
+        var scenario = SpeakingScenario.builder()
+                .title("Free Talk")
+                .description("Practice speaking English freely about any topic you choose.")
+                .goal("Have a natural English conversation about any topic.")
+                .context("This is a free conversation session. The user can talk about anything they want. " +
+                        "As a tutor, follow the user's lead, ask follow-up questions, and keep the conversation engaging.")
+                .difficulty(safeLevel(userLevel))
+                .image("/learning.png")
+                .userRole("English Learner")
+                .botRole("Friendly English Tutor")
+                .openingLine(openingLine)
+                .objectives(List.of(
+                        "Practice natural conversation",
+                        "Build confidence in speaking",
+                        "Expand vocabulary on topics you enjoy"))
+                .isCustom(false)   // Not a saved custom scenario — free mode only
+                .build();
+        scenarioRepo.save(scenario);
+
+        var session = SpeakingSession.builder()
+                .userId(userId).scenarioId(scenario.getId())
+                .variationSeed(ThreadLocalRandom.current().nextInt(1, 10000))
+                .build();
+        sessionRepo.save(session);
+
+        turnRepo.save(SpeakingTurn.builder()
+                .sessionId(session.getId()).role(Role.tutor)
+                .text(openingLine).build());
+
+        var detail = new ScenarioDetailResponse(scenario.getId(), scenario.getTitle(),
+                scenario.getDescription(), scenario.getContext(), scenario.getGoal(),
+                List.of("Practice natural conversation", "Build confidence in speaking", "Expand vocabulary on topics you enjoy"),
+                scenario.getUserRole(), scenario.getBotRole(),
+                scenario.getOpeningLine(), scenario.getImage());
+        return new CustomScenarioResponse(detail, session.getId());
+    }
+
+    // ========================================================================
     // 7. startSessionWithGreeting
     // ========================================================================
 
@@ -206,8 +261,11 @@ public class SpeakingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Scenario not found: " + scenarioId));
 
         var session = SpeakingSession.builder()
-                .userId(userId).scenarioId(scenarioId).build();
+                .userId(userId).scenarioId(scenarioId)
+                .variationSeed(ThreadLocalRandom.current().nextInt(1, 10000))
+                .build();
         sessionRepo.save(session);
+        log.info("🎲 Session started with variationSeed={}", session.getVariationSeed());
 
         String greetingTurnId = null;
         if (scenario.getOpeningLine() != null && !scenario.getOpeningLine().isBlank()) {
@@ -240,10 +298,11 @@ public class SpeakingService {
                 .collect(Collectors.toList());
 
         // Call AI
-        var config = new OpenAiService.ScenarioConfig(
+        var config = new GeminiService.ScenarioConfig(
                 scenario.getContext(), scenario.getUserRole(), scenario.getBotRole(),
-                scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null);
-        var aiResult = openAiService.generateSpeakingResponse(config, history, req.userText());
+                scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null,
+                session.getVariationSeed());
+        var aiResult = geminiService.generateSpeakingResponse(config, history, req.userText());
 
         // Calculate speech metrics — prefer Azure SDK scores when available
         Integer pronunciationScore = null;
@@ -278,7 +337,7 @@ public class SpeakingService {
         var userTurn = SpeakingTurn.builder()
                 .sessionId(sessionId).role(Role.user).text(req.userText())
                 .audioUrl(req.audioUrl())
-                .pronunciationScore(pronunciationScore).fluencyScore(fluencyScore)
+                .accuracyScore(pronunciationScore).fluencyScore(fluencyScore)
                 .confidenceScores(metrics != null ? metrics.confidenceScores() : List.of())
                 .wordCount(metrics != null ? metrics.wordCount() : null)
                 .speakingDurationMs(metrics != null ? (int) metrics.speakingDurationMs() : null)
@@ -286,6 +345,7 @@ public class SpeakingService {
                 .pitchVariance(storedPitchVariance)
                 .avgPitch(metrics != null ? metrics.avgPitch() : null)
                 .pitchSamplesCount(metrics != null ? metrics.pitchSamplesCount() : null)
+                .wordAssessmentsJson(metrics != null ? metrics.wordAssessments() : null)
                 .build();
         turnRepo.save(userTurn);
 
@@ -313,11 +373,12 @@ public class SpeakingService {
                 .map(t -> Map.of("role", t.getRole() == Role.user ? "user" : "assistant", "text", t.getText()))
                 .collect(Collectors.toList());
 
-        var config = new OpenAiService.ScenarioConfig(
+        var config = new GeminiService.ScenarioConfig(
                 scenario.getContext(), scenario.getUserRole(), scenario.getBotRole(),
-                scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null);
+                scenario.getGoal(), scenario.getDifficulty() != null ? scenario.getDifficulty().name() : null,
+                session.getVariationSeed());
 
-        return openAiService.generateSpeakingHint(config, history).hint();
+        return geminiService.generateSpeakingHint(config, history).hint();
     }
 
     // ========================================================================
@@ -338,7 +399,7 @@ public class SpeakingService {
                 .map(t -> Map.of("role", t.getRole() == Role.user ? "user" : "tutor",
                         "text", t.getText(), "id", t.getId()))
                 .collect(Collectors.toList());
-        var analysis = openAiService.analyzeSessionConversation(scenario.getContext(), turnsForAnalysis);
+        var analysis = geminiService.analyzeSessionConversation(scenario.getContext(), turnsForAnalysis);
 
         // Save errors per turn
         for (var ta : analysis.turnAnalyses()) {
@@ -357,11 +418,11 @@ public class SpeakingService {
         // Calculate session-level scores from turn averages
         var turnsWithScores = turns.stream()
                 .filter(t -> t.getRole() == Role.user && t.getWordCount() != null
-                        && t.getWordCount() > 0 && t.getPronunciationScore() != null)
+                        && t.getWordCount() > 0 && t.getAccuracyScore() != null)
                 .toList();
 
         int pronScore = turnsWithScores.isEmpty() ? 70
-                : (int) Math.round(turnsWithScores.stream().mapToInt(SpeakingTurn::getPronunciationScore).average().orElse(70));
+                : (int) Math.round(turnsWithScores.stream().mapToInt(SpeakingTurn::getAccuracyScore).average().orElse(70));
         int fluScore = turnsWithScores.isEmpty() ? 70
                 : (int) Math.round(turnsWithScores.stream().mapToInt(t -> t.getFluencyScore() != null ? t.getFluencyScore() : 0).average().orElse(70));
 
@@ -369,7 +430,7 @@ public class SpeakingService {
         int intoScore;
         // Check if turns have Azure-derived pronunciation scores (> 0 and reasonable)
         boolean hasAzureScores = turnsWithScores.stream()
-                .anyMatch(t -> t.getPronunciationScore() != null && t.getPronunciationScore() > 0
+                .anyMatch(t -> t.getAccuracyScore() != null && t.getAccuracyScore() > 0
                         && t.getFluencyScore() != null && t.getFluencyScore() > 0);
 
         if (hasAzureScores) {
@@ -408,10 +469,10 @@ public class SpeakingService {
                 ? (int) ChronoUnit.SECONDS.between(session.getCreatedAt(), LocalDateTime.now()) : 0);
         session.setOverallScore(overallScore);
         session.setGrammarScore(analysis.grammarScore());
-        session.setRelevanceScore(analysis.relevanceScore());
+        session.setTopicScore(analysis.relevanceScore());
         session.setFluencyScore(fluScore);
-        session.setPronunciationScore(pronScore);
-        session.setIntonationScore(intoScore);
+        session.setAccuracyScore(pronScore);
+        session.setProsodyScore(intoScore);
         session.setFeedbackTitle(analysis.feedbackTitle());
         session.setFeedbackSummary(analysis.feedbackSummary());
         session.setFeedbackRating(analysis.feedbackRating());
@@ -438,8 +499,9 @@ public class SpeakingService {
                     .toList();
             return new ConversationTurn(t.getRole().name(), t.getText(), t.getId(),
                     turnErrors.isEmpty() ? null : turnErrors,
-                    t.getRole() == Role.user ? t.getPronunciationScore() : null,
-                    t.getRole() == Role.user ? t.getFluencyScore() : null);
+                    t.getRole() == Role.user ? t.getAccuracyScore() : null,
+                    t.getRole() == Role.user ? t.getFluencyScore() : null,
+                    t.getRole() == Role.user ? parseWordAssessments(t.getWordAssessmentsJson()) : null);
         }).toList();
 
         var scores = new SessionScores(analysis.grammarScore(), analysis.relevanceScore(),
@@ -473,8 +535,9 @@ public class SpeakingService {
             }
             return new ConversationTurn(t.getRole().name(), t.getText(), t.getId(),
                     errors.isEmpty() ? null : errors,
-                    t.getRole() == Role.user ? t.getPronunciationScore() : null,
-                    t.getRole() == Role.user ? t.getFluencyScore() : null);
+                    t.getRole() == Role.user ? t.getAccuracyScore() : null,
+                    t.getRole() == Role.user ? t.getFluencyScore() : null,
+                    t.getRole() == Role.user ? parseWordAssessments(t.getWordAssessmentsJson()) : null);
         }).toList();
 
         var errorCategories = errorMap.entrySet().stream()
@@ -485,20 +548,41 @@ public class SpeakingService {
                 session.getCreatedAt() != null ? session.getCreatedAt().toString() : null,
                 session.getEndedAt() != null ? session.getEndedAt().toString() : null,
                 session.getDuration(), session.getOverallScore(),
-                session.getGrammarScore(), session.getRelevanceScore(),
-                session.getFluencyScore(), session.getPronunciationScore(),
-                session.getIntonationScore(), session.getFeedbackTitle(),
+                session.getGrammarScore(), session.getTopicScore(),
+                session.getFluencyScore(), session.getAccuracyScore(),
+                session.getProsodyScore(), session.getFeedbackTitle(),
                 session.getFeedbackSummary(), session.getFeedbackRating(), session.getFeedbackTip());
 
         var scores = new SessionScores(
                 session.getGrammarScore() != null ? session.getGrammarScore() : 0,
-                session.getRelevanceScore() != null ? session.getRelevanceScore() : 0,
+                session.getTopicScore() != null ? session.getTopicScore() : 0,
                 session.getFluencyScore() != null ? session.getFluencyScore() : 0,
-                session.getPronunciationScore() != null ? session.getPronunciationScore() : 0,
-                session.getIntonationScore() != null ? session.getIntonationScore() : 0,
+                session.getAccuracyScore() != null ? session.getAccuracyScore() : 0,
+                session.getProsodyScore() != null ? session.getProsodyScore() : 0,
                 session.getOverallScore() != null ? session.getOverallScore() : 0);
 
         return new SessionDetailResponse(info, scores, errorCategories, conversation);
+    }
+
+    // ========================================================================
+    // 10b. deleteSession
+    // ========================================================================
+
+    @Transactional
+    public void deleteSession(String sessionId, String userId) {
+        var session = sessionRepo.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found: " + sessionId));
+        if (!userId.equals(session.getUserId())) {
+            throw new com.dailyeng.exception.UnauthorizedException("You can only delete your own sessions");
+        }
+        // Cascade delete turns + errors (handled by JPA cascade or explicit delete)
+        var turns = turnRepo.findBySessionIdOrderByTimestampAsc(sessionId);
+        for (var turn : turns) {
+            turnErrorRepo.deleteByTurnId(turn.getId());
+        }
+        turnRepo.deleteAll(turns);
+        sessionRepo.delete(session);
+        log.info("🗑️ Deleted session {} for user {}", sessionId, userId);
     }
 
     // ========================================================================
@@ -552,10 +636,10 @@ public class SpeakingService {
                     scenario != null ? scenario.getTitle() : "Unknown",
                     s.getOverallScore() != null ? s.getOverallScore() : 0,
                     s.getGrammarScore() != null ? s.getGrammarScore() : 0,
-                    s.getRelevanceScore() != null ? s.getRelevanceScore() : 0,
+                    s.getTopicScore() != null ? s.getTopicScore() : 0,
                     s.getFluencyScore() != null ? s.getFluencyScore() : 0,
-                    s.getPronunciationScore() != null ? s.getPronunciationScore() : 0,
-                    s.getIntonationScore() != null ? s.getIntonationScore() : 0,
+                    s.getAccuracyScore() != null ? s.getAccuracyScore() : 0,
+                    s.getProsodyScore() != null ? s.getProsodyScore() : 0,
                     s.getFeedbackRating() != null ? s.getFeedbackRating() : "N/A",
                     s.getCreatedAt() != null ? s.getCreatedAt().toString() : null);
         }).toList();
@@ -590,9 +674,9 @@ public class SpeakingService {
         int avg = (int) Math.round(recent20.stream().mapToInt(s -> s.getOverallScore() != null ? s.getOverallScore() : 0).average().orElse(0));
 
         var criteria = new CriteriaAverages(
-                avg(recent20, SpeakingSession::getRelevanceScore),
-                avg(recent20, SpeakingSession::getPronunciationScore),
-                avg(recent20, SpeakingSession::getIntonationScore),
+                avg(recent20, SpeakingSession::getTopicScore),
+                avg(recent20, SpeakingSession::getAccuracyScore),
+                avg(recent20, SpeakingSession::getProsodyScore),
                 avg(recent20, SpeakingSession::getFluencyScore),
                 avg(recent20, SpeakingSession::getGrammarScore));
 
@@ -616,6 +700,24 @@ public class SpeakingService {
     }
 
     // ========================================================================
+    // 14b. deleteCustomScenario
+    // ========================================================================
+
+    @Transactional
+    public void deleteCustomScenario(String scenarioId, String userId) {
+        var scenario = scenarioRepo.findById(scenarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Scenario not found: " + scenarioId));
+        if (!scenario.isCustom()) {
+            throw new BadRequestException("Only custom scenarios can be deleted");
+        }
+        if (!userId.equals(scenario.getCreatedById())) {
+            throw new com.dailyeng.exception.UnauthorizedException("You can only delete your own scenarios");
+        }
+        scenarioRepo.delete(scenario);
+        log.info("🗑️ Deleted custom scenario {} by user {}", scenarioId, userId);
+    }
+
+    // ========================================================================
     // 15. getLearningRecordsForScenario
     // ========================================================================
 
@@ -626,10 +728,10 @@ public class SpeakingService {
                 s.getId(),
                 s.getOverallScore() != null ? s.getOverallScore() : 0,
                 s.getGrammarScore() != null ? s.getGrammarScore() : 0,
-                s.getRelevanceScore() != null ? s.getRelevanceScore() : 0,
+                s.getTopicScore() != null ? s.getTopicScore() : 0,
                 s.getFluencyScore() != null ? s.getFluencyScore() : 0,
-                s.getPronunciationScore() != null ? s.getPronunciationScore() : 0,
-                s.getIntonationScore() != null ? s.getIntonationScore() : 0,
+                s.getAccuracyScore() != null ? s.getAccuracyScore() : 0,
+                s.getProsodyScore() != null ? s.getProsodyScore() : 0,
                 s.getCreatedAt() != null ? s.getCreatedAt().toLocalDate().toString() : null
         )).toList();
     }
@@ -654,5 +756,47 @@ public class SpeakingService {
         return (int) Math.round(sessions.stream()
                 .mapToInt(s -> { var v = getter.apply(s); return v != null ? v : 0; })
                 .average().orElse(0));
+    }
+
+    /**
+     * Parse stored JSONB word assessments back into DTOs for API response.
+     */
+    @SuppressWarnings("unchecked")
+    private List<WordAssessmentDto> parseWordAssessments(Object jsonData) {
+        if (jsonData == null) return null;
+        try {
+            if (jsonData instanceof List<?> list) {
+                return list.stream()
+                        .filter(item -> item instanceof Map)
+                        .map(item -> {
+                            var map = (Map<String, Object>) item;
+                            var phonemes = map.get("phonemes") instanceof List<?> pList
+                                    ? pList.stream().filter(p -> p instanceof Map).map(p -> {
+                                        var pm = (Map<String, Object>) p;
+                                        return new PhonemeDto(
+                                                (String) pm.get("phoneme"),
+                                                ((Number) pm.getOrDefault("accuracyScore", 0)).doubleValue());
+                                    }).toList()
+                                    : List.<PhonemeDto>of();
+                            var syllables = map.get("syllables") instanceof List<?> sList
+                                    ? sList.stream().filter(s -> s instanceof Map).map(s -> {
+                                        var sm = (Map<String, Object>) s;
+                                        return new SyllableDto(
+                                                (String) sm.get("syllable"),
+                                                ((Number) sm.getOrDefault("accuracyScore", 0)).doubleValue());
+                                    }).toList()
+                                    : List.<SyllableDto>of();
+                            return new WordAssessmentDto(
+                                    (String) map.get("word"),
+                                    ((Number) map.getOrDefault("accuracyScore", 0)).doubleValue(),
+                                    (String) map.getOrDefault("errorType", "None"),
+                                    phonemes, syllables);
+                        }).toList();
+            }
+            return null;
+        } catch (Exception e) {
+            log.warn("Failed to parse word assessments: {}", e.getMessage());
+            return null;
+        }
     }
 }
