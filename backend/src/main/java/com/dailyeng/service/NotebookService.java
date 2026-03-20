@@ -1,135 +1,232 @@
 package com.dailyeng.service;
 
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import com.dailyeng.dto.notebook.NotebookDtos.*;
+import com.dailyeng.entity.Notebook;
+import com.dailyeng.entity.NotebookItem;
+import com.dailyeng.exception.BadRequestException;
+import com.dailyeng.exception.ResourceNotFoundException;
 import com.dailyeng.repository.NotebookItemRepository;
 import com.dailyeng.repository.NotebookRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
-import com.dailyeng.dto.NotebookDTO;
-import com.dailyeng.entity.Notebook;
-import com.dailyeng.entity.NotebookItem;
-@SuppressWarnings("null") 
+
+/**
+ * Notebook module service — manages user notebooks and vocabulary items.
+ * Handles: notebook CRUD, item CRUD, mastery tracking, and star toggles.
+ */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotebookService {
 
+    private static final int MASTERY_THRESHOLD = 80;
+
     private final NotebookRepository notebookRepo;
     private final NotebookItemRepository itemRepo;
 
-    // 1. Lấy danh sách Notebook (Có Cache 5 phút giống Next.js)
-    @Cacheable(value = "notebooks", key = "#userId")
-    public List<NotebookDTO.NotebookResponse> getNotebooks(String userId) {
-        List<Notebook> notebooks = notebookRepo.findAllByUserIdOrderByCreatedAtAsc(userId);
-        return notebooks.stream().map(nb -> {
-            int count = nb.getItems().size();
-            int mastered = (int) nb.getItems().stream().filter(item -> item.getMasteryLevel() >= 80).count();
-            return new NotebookDTO.NotebookResponse(
-                    nb.getId(), nb.getName(), nb.getType(), nb.getColor(), count, mastered
-            );
-        }).collect(Collectors.toList());
+    // ========================================================================
+    // 1. getNotebooks
+    // ========================================================================
+
+    @Transactional(readOnly = true)
+    public NotebookListResponse getNotebooks(String userId) {
+        var notebooks = notebookRepo.findAllByUserIdOrderByCreatedAtAsc(userId);
+        var responses = notebooks.stream().map(this::toNotebookResponse).toList();
+        return new NotebookListResponse(responses, responses.size());
     }
 
-    // 2. Tạo Notebook mới
+    // ========================================================================
+    // 2. createNotebook
+    // ========================================================================
+
     @Transactional
-    @CacheEvict(value = "notebooks", key = "#userId")
-    public NotebookDTO.NotebookResponse createNotebook(String userId, NotebookDTO.CreateNotebookRequest req) {
+    public NotebookResponse createNotebook(String userId, CreateNotebookRequest req) {
         if (notebookRepo.existsByUserIdAndName(userId, req.name())) {
-            throw new IllegalArgumentException("Notebook with this name already exists");
+            throw new BadRequestException("Notebook with name '" + req.name() + "' already exists");
         }
 
-        Notebook notebook = new Notebook();
-        notebook.setUserId(userId);
-        notebook.setName(req.name());
-        notebook.setType(req.type());
-        notebook.setColor(req.color() != null ? req.color() : "primary");
-        
-        Notebook saved = notebookRepo.save(notebook);
-        return new NotebookDTO.NotebookResponse(saved.getId(), saved.getName(), saved.getType(), saved.getColor(), 0, 0);
+        var notebook = Notebook.builder()
+                .userId(userId)
+                .name(req.name())
+                .type(req.type())
+                .color(req.color() != null ? req.color() : "primary")
+                .build();
+        notebookRepo.save(notebook);
+
+        log.info("📓 Created notebook '{}' for user {}", req.name(), userId);
+        return new NotebookResponse(notebook.getId(), notebook.getName(),
+                notebook.getType(), notebook.getColor(), 0, 0);
     }
 
-    // 3. Xóa Notebook
-    @Transactional
-    @CacheEvict(value = {"notebooks", "notebookItems"}, key = "#userId", allEntries = true)
-    public void deleteNotebook(String userId, String notebookId) {
-        Notebook notebook = notebookRepo.findByIdAndUserId(notebookId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Notebook not found"));
-        notebookRepo.delete(notebook);
-    }
+    // ========================================================================
+    // 3. updateNotebook
+    // ========================================================================
 
-    // 4. Cập nhật Notebook
     @Transactional
-    @CacheEvict(value = "notebooks", key = "#userId")
-    public void updateNotebook(String userId, String notebookId, NotebookDTO.UpdateNotebookRequest req) {
-        Notebook notebook = notebookRepo.findByIdAndUserId(notebookId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Notebook not found"));
-        
+    public NotebookResponse updateNotebook(String userId, String notebookId, UpdateNotebookRequest req) {
+        var notebook = findNotebookByIdAndUser(notebookId, userId);
+
         if (req.name() != null) notebook.setName(req.name());
         if (req.color() != null) notebook.setColor(req.color());
-        
         notebookRepo.save(notebook);
+
+        log.info("📓 Updated notebook {} for user {}", notebookId, userId);
+        return toNotebookResponse(notebook);
     }
 
-    // 5. Lấy danh sách Items trong Notebook
-    @Cacheable(value = "notebookItems", key = "#notebookId + '-' + #userId")
-    public List<NotebookDTO.NotebookItemResponse> getNotebookItems(String userId, String notebookId) {
-        List<NotebookItem> items = itemRepo.findAllByNotebookIdAndUserIdOrderByCreatedAtDesc(notebookId, userId);
-        return items.stream().map(this::mapToItemResponse).collect(Collectors.toList());
-    }
+    // ========================================================================
+    // 4. deleteNotebook
+    // ========================================================================
 
-    // 6. Tạo Item mới
     @Transactional
-    @CacheEvict(value = {"notebooks", "notebookItems"}, allEntries = true)
-    public NotebookDTO.NotebookItemResponse createNotebookItem(String userId, NotebookDTO.CreateItemRequest req) {
-        NotebookItem item = new NotebookItem();
-        item.setUserId(userId);
-        item.setNotebookId(req.notebookId());
-        item.setWord(req.word());
-        // ... Set các field khác từ req tương tự Prisma data
-        item.setMasteryLevel(0);
-        item.setNextReview(LocalDateTime.now());
-        
-        NotebookItem saved = itemRepo.save(item);
-        return mapToItemResponse(saved);
+    public void deleteNotebook(String userId, String notebookId) {
+        var notebook = findNotebookByIdAndUser(notebookId, userId);
+        notebookRepo.delete(notebook);
+        log.info("🗑️ Deleted notebook {} for user {}", notebookId, userId);
     }
 
-    // 7. Xóa Item
+    // ========================================================================
+    // 5. getNotebookItems
+    // ========================================================================
+
+    @Transactional(readOnly = true)
+    public List<NotebookItemResponse> getNotebookItems(String userId, String notebookId) {
+        var items = itemRepo.findAllByNotebookIdAndUserIdOrderByCreatedAtDesc(notebookId, userId);
+        return items.stream().map(this::toItemResponse).toList();
+    }
+
+    // ========================================================================
+    // 6. createNotebookItem
+    // ========================================================================
+
     @Transactional
-    @CacheEvict(value = {"notebooks", "notebookItems"}, allEntries = true)
+    public NotebookItemResponse createNotebookItem(String userId, CreateItemRequest req) {
+        // Validate notebook exists and belongs to user
+        findNotebookByIdAndUser(req.notebookId(), userId);
+
+        var item = NotebookItem.builder()
+                .userId(userId)
+                .notebookId(req.notebookId())
+                .word(req.word())
+                .pronunciation(req.pronunciation())
+                .meaning(req.meaning() != null ? req.meaning() : List.of())
+                .vietnamese(req.vietnamese() != null ? req.vietnamese() : List.of())
+                .examples(req.examples() != null ? req.examples() : List.of())
+                .partOfSpeech(req.partOfSpeech())
+                .level(req.level())
+                .note(req.note())
+                .tags(req.tags() != null ? req.tags() : List.of())
+                .masteryLevel(0)
+                .nextReview(LocalDateTime.now())
+                .build();
+        itemRepo.save(item);
+
+        log.info("📝 Created item '{}' in notebook {} for user {}", req.word(), req.notebookId(), userId);
+        return toItemResponse(item);
+    }
+
+    // ========================================================================
+    // 7. updateNotebookItem
+    // ========================================================================
+
+    @Transactional
+    public NotebookItemResponse updateNotebookItem(String userId, String itemId, UpdateItemRequest req) {
+        var item = findItemByIdAndUser(itemId, userId);
+
+        if (req.pronunciation() != null) item.setPronunciation(req.pronunciation());
+        if (req.meaning() != null) item.setMeaning(req.meaning());
+        if (req.vietnamese() != null) item.setVietnamese(req.vietnamese());
+        if (req.examples() != null) item.setExamples(req.examples());
+        if (req.partOfSpeech() != null) item.setPartOfSpeech(req.partOfSpeech());
+        if (req.level() != null) item.setLevel(req.level());
+        if (req.note() != null) item.setNote(req.note());
+        if (req.tags() != null) item.setTags(req.tags());
+        itemRepo.save(item);
+
+        log.info("📝 Updated item {} for user {}", itemId, userId);
+        return toItemResponse(item);
+    }
+
+    // ========================================================================
+    // 8. deleteNotebookItem
+    // ========================================================================
+
+    @Transactional
     public void deleteNotebookItem(String userId, String itemId) {
-        NotebookItem item = itemRepo.findByIdAndUserId(itemId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+        var item = findItemByIdAndUser(itemId, userId);
         itemRepo.delete(item);
+        log.info("🗑️ Deleted item {} for user {}", itemId, userId);
     }
 
-    // 8. Cập nhật Mastery Level
+    // ========================================================================
+    // 9. updateMastery
+    // ========================================================================
+
     @Transactional
-    @CacheEvict(value = {"notebooks", "notebookItems"}, allEntries = true)
-    public void updateNotebookItemMastery(String userId, String itemId, int masteryLevel) {
-        NotebookItem item = itemRepo.findByIdAndUserId(itemId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
-        
+    public NotebookItemResponse updateMastery(String userId, String itemId, int masteryLevel) {
+        var item = findItemByIdAndUser(itemId, userId);
+
         int safeMastery = Math.max(0, Math.min(100, masteryLevel));
         item.setMasteryLevel(safeMastery);
         item.setLastReviewed(LocalDateTime.now());
-        
         itemRepo.save(item);
+
+        log.info("📊 Updated mastery for item {} to {} for user {}", itemId, safeMastery, userId);
+        return toItemResponse(item);
     }
 
-    // Hàm phụ trợ map Entity sang DTO
-    private NotebookDTO.NotebookItemResponse mapToItemResponse(NotebookItem item) {
-        return new NotebookDTO.NotebookItemResponse(
-                item.getId(), item.getWord(), item.getPronunciation(), item.getMeaning(),
-                item.getVietnamese(), item.getExamples(), item.getPartOfSpeech(),
-                item.getLevel(), item.getNote(), item.getTags(), item.getNotebookId(),
-                item.getMasteryLevel(), 
+    // ========================================================================
+    // 10. toggleStar
+    // ========================================================================
+
+    @Transactional
+    public NotebookItemResponse toggleStar(String userId, String itemId) {
+        var item = findItemByIdAndUser(itemId, userId);
+        item.setStarred(!item.isStarred());
+        itemRepo.save(item);
+
+        log.info("⭐ Toggled star for item {} to {} for user {}", itemId, item.isStarred(), userId);
+        return toItemResponse(item);
+    }
+
+    // ========================================================================
+    // Private helpers
+    // ========================================================================
+
+    private Notebook findNotebookByIdAndUser(String notebookId, String userId) {
+        return notebookRepo.findByIdAndUserId(notebookId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notebook not found: " + notebookId));
+    }
+
+    private NotebookItem findItemByIdAndUser(String itemId, String userId) {
+        return itemRepo.findByIdAndUserId(itemId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notebook item not found: " + itemId));
+    }
+
+    private NotebookResponse toNotebookResponse(Notebook notebook) {
+        int count = notebook.getItems() != null ? notebook.getItems().size() : 0;
+        int mastered = notebook.getItems() != null
+                ? (int) notebook.getItems().stream().filter(i -> i.getMasteryLevel() >= MASTERY_THRESHOLD).count()
+                : 0;
+        return new NotebookResponse(
+                notebook.getId(), notebook.getName(), notebook.getType(),
+                notebook.getColor(), count, mastered);
+    }
+
+    private NotebookItemResponse toItemResponse(NotebookItem item) {
+        return new NotebookItemResponse(
+                item.getId(), item.getWord(), item.getPronunciation(),
+                item.getMeaning(), item.getVietnamese(), item.getExamples(),
+                item.getPartOfSpeech(), item.getLevel(), item.getNote(),
+                item.getTags(), item.getNotebookId(), item.getMasteryLevel(),
+                item.isStarred(),
                 item.getLastReviewed() != null ? item.getLastReviewed().toString() : null,
-                item.getNextReview() != null ? item.getNextReview().toString() : null
-        );
+                item.getNextReview() != null ? item.getNextReview().toString() : null,
+                item.getCreatedAt() != null ? item.getCreatedAt().toString() : null);
     }
 }
