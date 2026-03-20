@@ -39,6 +39,8 @@ export function useAudioRecording({
   cancelTts,
 }: UseAudioRecordingOptions) {
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -66,6 +68,7 @@ export function useAudioRecording({
     async (audioBlob: Blob) => {
       if (isTranscribingRef.current) return;
       isTranscribingRef.current = true;
+      setIsTranscribing(true);
 
       try {
         const formData = new FormData();
@@ -122,6 +125,7 @@ export function useAudioRecording({
         }
       } finally {
         isTranscribingRef.current = false;
+        setIsTranscribing(false);
         setIsRecording(false);
       }
     },
@@ -152,6 +156,7 @@ export function useAudioRecording({
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((t) => t.stop());
       mediaStreamRef.current = null;
+      setMediaStream(null);
     }
 
     if (pitchAnalyzerRef.current) {
@@ -197,6 +202,7 @@ export function useAudioRecording({
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach((t) => t.stop());
         mediaStreamRef.current = null;
+        setMediaStream(null);
       }
     } else {
       // START recording
@@ -207,6 +213,7 @@ export function useAudioRecording({
           audio: true,
         });
         mediaStreamRef.current = stream;
+        setMediaStream(stream);
         audioChunksRef.current = [];
         speechStartTimeRef.current = Date.now();
 
@@ -332,6 +339,8 @@ export function useAudioRecording({
 
   return {
     isRecording,
+    isTranscribing,
+    mediaStream,
     handleToggleRecording,
     stopMicrophone,
     collectSpeechMetrics,

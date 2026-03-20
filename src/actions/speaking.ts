@@ -62,6 +62,7 @@ export interface SubmitTurnResponse {
   aiResponse: string;
   userTurnId: string;
   aiTurnId: string;
+  sessionComplete: boolean;
 }
 
 export interface CustomScenarioResponse {
@@ -414,3 +415,38 @@ export async function getLearningRecordsForScenario(
     `/speaking/scenarios/${scenarioId}/records`
   );
 }
+
+// ======================== Bookmarks ========================
+
+export async function toggleSpeakingBookmark(
+  _userId: string,
+  scenarioId: string
+): Promise<{ bookmarked: boolean }> {
+  return apiClient.post<{ bookmarked: boolean }>("/speaking/bookmarks/toggle", {
+    scenarioId,
+  });
+}
+
+export async function getSpeakingBookmarks(
+  _userId: string,
+  page: number = 1,
+  limit: number = 8
+): Promise<{
+  bookmarks: ScenarioListItem[];
+  bookmarkIds: string[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+}> {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+  return apiClient.get(`/speaking/bookmarks?${params.toString()}`);
+}
+
+export async function getSpeakingBookmarkIds(
+  _userId: string
+): Promise<string[]> {
+  return apiClient.get<string[]>("/speaking/bookmarks/ids");
+}
+

@@ -64,7 +64,7 @@ public final class SpeakingDtos {
             String contextMessage, String greetingMessage, String greetingTurnId
     ) {}
 
-    public record SubmitTurnResponse(String aiResponse, String userTurnId, String aiTurnId) {}
+    public record SubmitTurnResponse(String aiResponse, String userTurnId, String aiTurnId, boolean sessionComplete) {}
 
     public record CustomScenarioResponse(ScenarioDetailResponse scenario, String sessionId) {}
 
@@ -152,4 +152,16 @@ public final class SpeakingDtos {
 
     public record PhonemeDto(String phoneme, double accuracyScore) {}
     public record SyllableDto(String syllable, double accuracyScore) {}
+
+    // ============================== Bookmarks ==============================
+
+    public record ToggleBookmarkRequest(String scenarioId) {}
+    public record ToggleBookmarkResponse(boolean bookmarked) {}
+    public record BookmarkListResponse(
+            List<ScenarioListItem> bookmarks,
+            List<String> bookmarkIds,
+            long total,
+            int totalPages,
+            int currentPage
+    ) {}
 }
