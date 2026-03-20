@@ -10,6 +10,7 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    baseline-version: 3        # V1 (init), V2 (renames), V3 (reconcile) already applied
     locations: classpath:db/migration
 
   jpa:
