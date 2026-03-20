@@ -11,7 +11,8 @@ import {
 import { Languages } from "lucide-react"
 
 export function LanguageSwitcher() {
-  const { language, setLanguage } = useAppStore()
+  const language = useAppStore((state) => state.language)
+  const setLanguage = useAppStore((state) => state.setLanguage)
   const { t } = useTranslation()
 
   return (

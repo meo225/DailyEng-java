@@ -17,7 +17,7 @@ interface WrongItem {
 }
 
 export function QuizSection({ items, topicId }: QuizSectionProps) {
-  const { addXP } = useAppStore();
+  const addXP = useAppStore((state) => state.addXP);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
