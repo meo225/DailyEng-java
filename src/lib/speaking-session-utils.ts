@@ -47,11 +47,11 @@ export function generateCorrectedSentence(
 
 export function getScoreIcon(label: string): React.ReactNode {
   switch (label) {
-    case "Relevance":
+    case "Topic":
       return React.createElement(Target, { className: "h-4 w-4" });
-    case "Pronunciation":
+    case "Accuracy":
       return React.createElement(Mic2, { className: "h-4 w-4" });
-    case "Intonation & Stress":
+    case "Prosody":
       return React.createElement(Waveform, { className: "h-4 w-4" });
     case "Fluency":
       return React.createElement(Zap, { className: "h-4 w-4" });
@@ -67,10 +67,10 @@ export function getScoreIcon(label: string): React.ReactNode {
 interface SessionDataForFeedback {
   scores: {
     grammar: number;
-    relevance: number;
+    topic: number;
     fluency: number;
-    pronunciation: number;
-    intonation: number;
+    accuracy: number;
+    prosody: number;
   };
   errorCategories: { name: string; count: number }[];
   conversation: {
@@ -87,11 +87,11 @@ export function buildDetailedFeedbackData(
 ): DetailedFeedbackData {
   return {
     scores: [
-      { label: "Relevance", value: data.scores.relevance },
-      { label: "Pronunciation", value: data.scores.pronunciation },
-      { label: "Intonation & Stress", value: data.scores.intonation },
+      { label: "Accuracy", value: data.scores.accuracy },
       { label: "Fluency", value: data.scores.fluency },
+      { label: "Prosody", value: data.scores.prosody },
       { label: "Grammar", value: data.scores.grammar },
+      { label: "Topic", value: data.scores.topic },
     ],
     errorCategories: data.errorCategories,
     conversation: data.conversation.map((c) => {
@@ -130,11 +130,11 @@ export function buildScoresWithIcons(
 // ─── Build AssessmentData from turns ────────────────
 
 interface ScoresInput {
-  pronunciation: number;
+  accuracy: number;
   fluency: number;
-  intonation: number;
+  prosody: number;
   grammar: number;
-  relevance: number;
+  topic: number;
 }
 
 export function buildAssessmentData(
@@ -147,11 +147,11 @@ export function buildAssessmentData(
     text: t.text,
     words: t.wordAssessments ?? [],
     accuracyScore:
-      t.pronunciationScores?.accuracyScore ?? scores.pronunciation,
+      t.pronunciationScores?.accuracyScore ?? scores.accuracy,
     fluencyScore: t.pronunciationScores?.fluencyScore ?? scores.fluency,
-    prosodyScore: t.pronunciationScores?.prosodyScore ?? scores.intonation,
+    prosodyScore: t.pronunciationScores?.prosodyScore ?? scores.prosody,
     overallScore:
-      t.pronunciationScores?.overallScore ?? scores.pronunciation,
+      t.pronunciationScores?.overallScore ?? scores.accuracy,
     completenessScore: t.pronunciationScores?.completenessScore ?? 0,
   }));
 
@@ -178,17 +178,17 @@ export function buildAssessmentData(
     turns: turnAssessments,
     fullText,
     pronunciationScore: Math.round(
-      avg((t) => t.overallScore, scores.pronunciation)
+      avg((t) => t.overallScore, scores.accuracy)
     ),
     accuracyScore: Math.round(
-      avg((t) => t.accuracyScore, scores.pronunciation)
+      avg((t) => t.accuracyScore, scores.accuracy)
     ),
     fluencyScore: Math.round(avg((t) => t.fluencyScore, scores.fluency)),
-    prosodyScore: Math.round(avg((t) => t.prosodyScore, scores.intonation)),
+    prosodyScore: Math.round(avg((t) => t.prosodyScore, scores.prosody)),
     completenessScore: Math.round(avgCompleteness),
-    contentScore: Math.round((scores.grammar + scores.relevance) / 2),
+    contentScore: Math.round((scores.grammar + scores.topic) / 2),
     grammarScore: scores.grammar,
-    relevanceScore: scores.relevance,
+    relevanceScore: scores.topic,
     vocabularyScore: scores.grammar,
   };
 }

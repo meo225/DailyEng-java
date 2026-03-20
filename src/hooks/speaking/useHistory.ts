@@ -1,8 +1,10 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { toast } from "sonner";
 import {
   getSpeakingHistorySessions,
   getSpeakingHistoryStats,
+  deleteSession,
 } from "@/actions/speaking";
 import type { HistorySession, HistoryStats } from "./types";
 
@@ -58,6 +60,22 @@ export function useHistory({ userId, activeTab }: UseHistoryParams) {
       .finally(() => setHistoryLoading(false));
   }, [userId, activeTab, historyPage, historyRatingFilter]);
 
+  // ── Delete a session (optimistic) ──
+  const handleDeleteSession = useCallback(
+    async (sessionId: string) => {
+      const prev = historySessions;
+      setHistorySessions((s) => s.filter((x) => x.id !== sessionId));
+      try {
+        await deleteSession(sessionId);
+      } catch (error) {
+        console.error("Failed to delete session:", error);
+        toast.error("Failed to delete session");
+        setHistorySessions(prev);
+      }
+    },
+    [historySessions]
+  );
+
   return {
     historySessions,
     historyStats,
@@ -68,5 +86,6 @@ export function useHistory({ userId, activeTab }: UseHistoryParams) {
     setHistoryPage,
     historyRatingFilter,
     setHistoryRatingFilter,
+    handleDeleteSession,
   };
 }

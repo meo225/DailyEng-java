@@ -390,3 +390,100 @@ export async function updateNotebookItemMastery(
     return { success: false, error: "Failed to update mastery" };
   }
 }
+
+// ─── Dictionary Search ─────────────────────────────
+
+export type DictionaryWordResult = {
+  id: string;
+  word: string;
+  pronunciation: string | null;
+  meaning: string;
+  vietnameseMeaning: string;
+  partOfSpeech: string;
+  level: string;
+  exampleSentence: string;
+  exampleTranslation: string;
+};
+
+export async function searchDictionaryWords(
+  query: string,
+  limit: number = 10
+): Promise<DictionaryWordResult[]> {
+  if (!query.trim() || query.length < 2) return [];
+
+  try {
+    const words = await prisma.vocabItem.findMany({
+      where: {
+        OR: [
+          { word: { contains: query, mode: "insensitive" } },
+          { meaning: { contains: query, mode: "insensitive" } },
+          { vietnameseMeaning: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      include: {
+        topic: { select: { level: true } },
+      },
+      take: limit,
+      orderBy: { word: "asc" },
+    });
+
+    return words.map((w) => ({
+      id: w.id,
+      word: w.word,
+      pronunciation: w.pronunciation || w.phonBr || w.phonNAm || null,
+      meaning: w.meaning,
+      vietnameseMeaning: w.vietnameseMeaning,
+      partOfSpeech: w.partOfSpeech,
+      level: w.topic.level,
+      exampleSentence: w.exampleSentence,
+      exampleTranslation: w.exampleTranslation,
+    }));
+  } catch (error) {
+    console.error("Error searching dictionary words:", error);
+    return [];
+  }
+}
+
+export type DictionaryGrammarResult = {
+  id: string;
+  title: string;
+  explanation: string;
+  examples: { en: string; vi: string }[];
+  level: string;
+  category: string;
+};
+
+export async function searchDictionaryGrammar(
+  query: string,
+  limit: number = 10
+): Promise<DictionaryGrammarResult[]> {
+  if (!query.trim() || query.length < 2) return [];
+
+  try {
+    const notes = await prisma.grammarNote.findMany({
+      where: {
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { explanation: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      include: {
+        topic: { select: { level: true, category: true } },
+      },
+      take: limit,
+      orderBy: { title: "asc" },
+    });
+
+    return notes.map((n) => ({
+      id: n.id,
+      title: n.title,
+      explanation: n.explanation,
+      examples: (n.examples as { en: string; vi: string }[]) || [],
+      level: n.topic.level,
+      category: n.topic.category || "Other",
+    }));
+  } catch (error) {
+    console.error("Error searching dictionary grammar:", error);
+    return [];
+  }
+}

@@ -1,27 +1,9 @@
 import SpeakingSessionClient from "@/components/page/SpeakingSessionClient";
 import type {
   InitialTurn,
-  DetailedFeedbackData,
   LearningRecord,
 } from "@/components/page/SpeakingSessionClient";
-import {
-  getScenarioById,
-} from "@/actions/speaking";
-
-// Mock data for fallback or initial props
-const mockDetailedFeedback: DetailedFeedbackData = {
-  scores: [
-    { label: "Relevance", value: 0 },
-    { label: "Pronunciation", value: 0 },
-    { label: "Intonation & Stress", value: 0 },
-    { label: "Fluency", value: 0 },
-    { label: "Grammar", value: 0 },
-  ],
-  errorCategories: [],
-  conversation: [],
-  overallRating: "N/A",
-  tip: "Start speaking to get feedback!",
-};
+import { getScenarioById } from "@/actions/speaking";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -42,7 +24,6 @@ export default async function SpeakingSessionPage({ params }: PageProps) {
       scenario={scenario}
       initialTurns={initialTurns}
       learningRecords={[]}
-      detailedFeedback={mockDetailedFeedback}
       scenarioId={scenario ? scenario.id : id}
     />
   );

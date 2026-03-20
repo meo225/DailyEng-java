@@ -1,6 +1,6 @@
 import PronunciationAssessmentReview from "@/components/speaking/pronunciation-assessment";
 import type { AssessmentData } from "@/components/speaking/pronunciation-assessment";
-import type { LoadedSessionData, WordAssessment } from "@/hooks/speaking-session/types";
+import type { LoadedSessionData } from "@/hooks/speaking-session/types";
 import AnalyzingSpinner from "./AnalyzingSpinner";
 
 interface RecordReviewViewProps {
@@ -10,7 +10,6 @@ interface RecordReviewViewProps {
   backUrl: string;
   onBack: () => void;
   onRetry: () => void;
-  onDetailedFeedback: () => void;
   router: { push: (url: string) => void };
   t: (key: string) => string;
 }
@@ -22,7 +21,6 @@ export default function RecordReviewView({
   backUrl,
   onBack,
   onRetry,
-  onDetailedFeedback,
   router,
   t,
 }: RecordReviewViewProps) {
@@ -50,7 +48,6 @@ export default function RecordReviewView({
         onBack();
       }}
       onRetry={onRetry}
-      onDetailedFeedback={onDetailedFeedback}
     />
   );
 }
@@ -70,21 +67,21 @@ function buildRecordAssessmentData(
         phonemes: w.phonemes,
         syllables: w.syllables,
       })),
-      accuracyScore: c.pronunciationScore ?? data.scores.pronunciation,
+      accuracyScore: c.accuracyScore ?? data.scores.accuracy,
       fluencyScore: c.fluencyScore ?? data.scores.fluency,
-      prosodyScore: data.scores.intonation,
-      overallScore: c.pronunciationScore ?? data.scores.pronunciation,
+      prosodyScore: data.scores.prosody,
+      overallScore: c.accuracyScore ?? data.scores.accuracy,
     })),
     fullText: userConvTurns.map((c) => c.text).join(" "),
-    pronunciationScore: data.scores.pronunciation,
-    accuracyScore: data.scores.pronunciation,
+    pronunciationScore: data.scores.accuracy,
+    accuracyScore: data.scores.accuracy,
     fluencyScore: data.scores.fluency,
-    prosodyScore: data.scores.intonation,
+    prosodyScore: data.scores.prosody,
     contentScore: Math.round(
-      (data.scores.grammar + data.scores.relevance) / 2
+      (data.scores.grammar + data.scores.topic) / 2
     ),
     grammarScore: data.scores.grammar,
-    relevanceScore: data.scores.relevance,
+    relevanceScore: data.scores.topic,
     vocabularyScore: data.scores.grammar,
   };
 }

@@ -1,9 +1,20 @@
-import { Gift, MessageSquarePlus, MessageCircle } from "lucide-react";
+import { useState } from "react";
+import { Gift, MessageSquarePlus, MessageCircle, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { TopicCard } from "@/components/hub";
 import type { Scenario } from "@/hooks/speaking/types";
 import { TopicCardGridSkeleton } from "./topic-card-grid-skeleton";
 import { useTranslation } from "@/hooks/use-translation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CustomTopicsTabProps {
   onFreeTalk: () => void;
@@ -14,6 +25,7 @@ interface CustomTopicsTabProps {
   bookmarkedTopics: string[];
   onBookmarkToggle: (topicId: string) => void;
   onScenarioClick?: (id: string) => void;
+  onDeleteScenario?: (id: string) => void;
 }
 
 export function CustomTopicsTab({
@@ -25,8 +37,17 @@ export function CustomTopicsTab({
   bookmarkedTopics,
   onBookmarkToggle,
   onScenarioClick,
+  onDeleteScenario,
 }: CustomTopicsTabProps) {
   const { t } = useTranslation();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  const handleConfirmDelete = () => {
+    if (pendingDeleteId) {
+      onDeleteScenario?.(pendingDeleteId);
+      setPendingDeleteId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -70,23 +91,38 @@ export function CustomTopicsTab({
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pb-4">
           {customScenarios.map((topic) => (
-            <TopicCard
-              key={topic.id}
-              id={topic.id}
-              title={topic.title}
-              description={topic.description}
-              level={topic.level}
-              wordCount={7}
-              thumbnail={topic.image}
-              progress={topic.progress}
-              href={`/speaking/session/${topic.id}`}
-              onNotYet={() => {}}
-              type="speaking"
-              subcategory={topic.subcategory}
-              isBookmarked={bookmarkedTopics.includes(topic.id)}
-              onBookmarkToggle={onBookmarkToggle}
-              onClick={(id) => onScenarioClick?.(id)}
-            />
+            <div key={topic.id} className="relative group/card">
+              <TopicCard
+                id={topic.id}
+                title={topic.title}
+                description={topic.description}
+                level={topic.level}
+                wordCount={7}
+                thumbnail={topic.image}
+                progress={topic.progress}
+                href={`/speaking/session/${topic.id}`}
+                onNotYet={() => {}}
+                type="speaking"
+                subcategory={topic.subcategory}
+                isBookmarked={bookmarkedTopics.includes(topic.id)}
+                onBookmarkToggle={onBookmarkToggle}
+                onClick={(id) => onScenarioClick?.(id)}
+              />
+              {/* Delete button — visible on hover */}
+              {onDeleteScenario && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setPendingDeleteId(topic.id);
+                  }}
+                  title="Delete scenario"
+                  className="absolute top-3 left-3 z-20 p-2 rounded-full bg-white/90 text-red-500 shadow-md border border-red-100 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 hover:bg-red-50 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           ))}
           {customScenarios.length === 0 && (
             <p className="text-muted-foreground col-span-full text-center py-8">
@@ -95,6 +131,27 @@ export function CustomTopicsTab({
           )}
         </div>
       )}
+
+      {/* Confirm delete dialog */}
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete custom scenario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the scenario and all associated sessions. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,9 +1,8 @@
 "use client"
 
 import {
-  BookOpen, Zap, Award, Flame, Target, BarChart3,
+  BookOpen, Zap, Award, Flame, Target, BarChart3, Lightbulb, Crosshair, TrendingUp,
 } from "lucide-react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { NotebookItem, GrammarItem, CollectionType } from "@/hooks/notebook/types"
 
@@ -23,141 +22,141 @@ export function StatisticsView({
   stats, dueCount, onStartReview,
 }: StatisticsViewProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 notebook-enter">
       {/* Due for review Banner */}
       {dueCount > 0 && currentCollectionType === "vocabulary" && (
-        <Card className="p-5 rounded-2xl border-2 border-primary-200 shadow-md bg-gradient-to-r from-primary-50 via-white to-primary-50">
+        <div className="notebook-card p-5 !border-primary-200/80 bg-gradient-to-r from-primary-50/80 via-white to-primary-50/80">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/25">
               <Zap className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1">
-              <h2 className="text-lg font-bold text-slate-800">Ready to Practice!</h2>
-              <p className="text-sm text-slate-600">You have <span className="font-bold text-primary-600">{dueCount} words</span> ready for review today.</p>
+              <h2 className="notebook-heading text-lg font-bold text-gray-900">Ready to Practice!</h2>
+              <p className="text-sm text-gray-500">You have <span className="font-bold text-primary-600">{dueCount} words</span> ready for review today.</p>
             </div>
-            <Button onClick={onStartReview} className="gap-2 h-10 px-5 rounded-xl bg-primary-500 hover:bg-primary-600 shadow-sm">
+            <Button onClick={onStartReview}
+              className="gap-2 h-10 px-5 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 shadow-md shadow-primary-500/20 cursor-pointer font-semibold">
               <Zap className="h-4 w-4" /> Start Review
             </Button>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Overview Stats */}
-      <Card className="p-5 rounded-2xl border-2 border-primary-200 shadow-md bg-white">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-            <BarChart3 className="w-5 h-5 text-primary-600" />
+      <div className="notebook-card p-5">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-9 h-9 bg-primary-50 rounded-full flex items-center justify-center border border-primary-100">
+            <BarChart3 className="w-4 h-4 text-primary-500" />
           </div>
-          <h3 className="text-lg font-bold text-slate-800">Learning Overview</h3>
+          <h3 className="notebook-heading text-lg font-bold text-gray-900">Learning Overview</h3>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-xl border-2 border-primary-100 bg-primary-50/50 p-4 text-center">
-            <div className="w-9 h-9 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <BookOpen className="h-4 w-4 text-primary-600" />
+          {[
+            { icon: <BookOpen className="h-4 w-4" />, value: stats.total, label: `Total ${currentCollectionType === "vocabulary" ? "Words" : "Rules"}`, gradient: "from-primary-500 to-primary-400", bg: "bg-primary-50/60", border: "border-primary-100/60", textColor: "text-primary-600" },
+            { icon: <Award className="h-4 w-4" />, value: stats.mastered, label: "Mastered", gradient: "from-emerald-500 to-emerald-400", bg: "bg-emerald-50/60", border: "border-emerald-100/60", textColor: "text-emerald-600" },
+            { icon: <Flame className="h-4 w-4" />, value: stats.learning, label: "Learning", gradient: "from-amber-500 to-amber-400", bg: "bg-amber-50/60", border: "border-amber-100/60", textColor: "text-amber-600" },
+            { icon: <Target className="h-4 w-4" />, value: `${stats.avgMastery}%`, label: "Avg. Mastery", gradient: "from-violet-500 to-violet-400", bg: "bg-violet-50/60", border: "border-violet-100/60", textColor: "text-violet-600" },
+          ].map((stat) => (
+            <div key={stat.label} className={`rounded-xl ${stat.bg} border ${stat.border} p-4 text-center transition-all duration-200 hover:shadow-sm`}>
+              <div className={`w-8 h-8 bg-gradient-to-br ${stat.gradient} rounded-lg flex items-center justify-center mx-auto mb-2 text-white shadow-sm`}>
+                {stat.icon}
+              </div>
+              <p className={`text-xl font-extrabold ${stat.textColor} notebook-heading`}>{stat.value}</p>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-0.5">{stat.label}</p>
             </div>
-            <p className="text-xl font-bold text-primary-700">{stats.total}</p>
-            <p className="text-xs text-slate-600 font-medium">Total {currentCollectionType === "vocabulary" ? "Words" : "Rules"}</p>
-          </div>
-          <div className="rounded-xl border-2 border-success-100 bg-success-50/50 p-4 text-center">
-            <div className="w-9 h-9 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Award className="h-4 w-4 text-success-600" />
-            </div>
-            <p className="text-xl font-bold text-success-700">{stats.mastered}</p>
-            <p className="text-xs text-slate-600 font-medium">Mastered</p>
-          </div>
-          <div className="rounded-xl border-2 border-warning-100 bg-warning-50/50 p-4 text-center">
-            <div className="w-9 h-9 bg-warning-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Flame className="h-4 w-4 text-warning-600" />
-            </div>
-            <p className="text-xl font-bold text-warning-700">{stats.learning}</p>
-            <p className="text-xs text-slate-600 font-medium">Learning</p>
-          </div>
-          <div className="rounded-xl border-2 border-secondary-100 bg-secondary-50/50 p-4 text-center">
-            <div className="w-9 h-9 bg-secondary-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Target className="h-4 w-4 text-secondary-600" />
-            </div>
-            <p className="text-xl font-bold text-secondary-700">{stats.avgMastery}%</p>
-            <p className="text-xs text-slate-600 font-medium">Avg. Mastery</p>
-          </div>
+          ))}
         </div>
-        <div className="mt-4 p-3 bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl border border-primary-100">
-          <p className="text-sm text-slate-600 text-center">
-            💡 Practice daily to maintain your mastery. Consistency is key!
-          </p>
+        <div className="mt-4 p-3 bg-gradient-to-r from-primary-50/60 to-blue-50/40 rounded-xl border border-primary-100/40 flex items-center gap-2 justify-center">
+          <Lightbulb className="h-4 w-4 text-primary-400 flex-shrink-0" />
+          <p className="text-sm text-gray-500">Practice daily to maintain your mastery. Consistency is key!</p>
         </div>
-      </Card>
+      </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Learning Status - Donut Chart */}
-        <Card className="p-5 rounded-2xl border-2 border-primary-200 shadow-md bg-white">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-success-100 rounded-full flex items-center justify-center">
-              <Target className="w-5 h-5 text-success-600" />
+        <div className="notebook-card p-5">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-9 h-9 bg-emerald-50 rounded-full flex items-center justify-center border border-emerald-100">
+              <Crosshair className="w-4 h-4 text-emerald-500" />
             </div>
-            <h3 className="text-lg font-bold text-slate-800">Learning Status</h3>
+            <h3 className="notebook-heading text-lg font-bold text-gray-900">Learning Status</h3>
           </div>
-          <div className="flex items-center justify-center gap-6 py-2">
+          <div className="flex items-center justify-center gap-8 py-2">
             <div className="relative">
               <svg width="120" height="120" viewBox="0 0 160 160">
                 <circle cx="80" cy="80" r="60" fill="none" stroke="#f1f5f9" strokeWidth="14" />
-                <circle cx="80" cy="80" r="60" fill="none" stroke="#22c55e" strokeWidth="14"
+                <circle cx="80" cy="80" r="60" fill="none" stroke="#10b981" strokeWidth="14"
                   strokeDasharray={`${(stats.mastered / Math.max(stats.total, 1)) * 377} 377`} strokeDashoffset="94.25" strokeLinecap="round" />
                 <circle cx="80" cy="80" r="60" fill="none" stroke="#f59e0b" strokeWidth="14"
                   strokeDasharray={`${(stats.learning / Math.max(stats.total, 1)) * 377} 377`}
                   strokeDashoffset={`${94.25 - (stats.mastered / Math.max(stats.total, 1)) * 377}`} strokeLinecap="round" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xl font-bold text-slate-800">{stats.total > 0 ? Math.round((stats.mastered / stats.total) * 100) : 0}%</span>
-                <span className="text-[10px] text-slate-500">Mastered</span>
+                <span className="notebook-heading text-2xl font-extrabold text-gray-900">{stats.total > 0 ? Math.round((stats.mastered / stats.total) * 100) : 0}%</span>
+                <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Mastered</span>
               </div>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-success-500" /><span className="text-xs font-medium text-slate-700">{stats.mastered} Mastered</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-warning-500" /><span className="text-xs font-medium text-slate-700">{stats.learning} Learning</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-slate-300" /><span className="text-xs font-medium text-slate-700">{stats.newItems} New</span></div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                <span className="text-xs font-semibold text-gray-600">{stats.mastered} Mastered</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-3 h-3 rounded-full bg-amber-500" />
+                <span className="text-xs font-semibold text-gray-600">{stats.learning} Learning</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-3 h-3 rounded-full bg-gray-300" />
+                <span className="text-xs font-semibold text-gray-600">{stats.newItems} New</span>
+              </div>
             </div>
           </div>
-          <div className="mt-3 p-3 bg-gradient-to-r from-success-50 to-emerald-50 rounded-xl border border-success-100">
-            <p className="text-sm text-success-700 text-center">🎯 Goal: reach 80% mastery! Keep practicing! 💪</p>
+          <div className="mt-4 p-3 bg-gradient-to-r from-emerald-50/60 to-teal-50/40 rounded-xl border border-emerald-100/40 flex items-center gap-2 justify-center">
+            <Crosshair className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+            <p className="text-sm text-emerald-600 font-medium">Goal: reach 80% mastery! Keep practicing!</p>
           </div>
-        </Card>
+        </div>
 
         {/* Level Distribution */}
-        <Card className="p-5 rounded-2xl border-2 border-primary-200 shadow-md bg-white">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-secondary-100 rounded-full flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-secondary-600" />
+        <div className="notebook-card p-5">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-9 h-9 bg-violet-50 rounded-full flex items-center justify-center border border-violet-100">
+              <TrendingUp className="w-4 h-4 text-violet-500" />
             </div>
-            <h3 className="text-lg font-bold text-slate-800">Level Distribution</h3>
+            <h3 className="notebook-heading text-lg font-bold text-gray-900">Level Distribution</h3>
           </div>
-          <div className="space-y-2 py-1">
+          <div className="space-y-2.5 py-1">
             {["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => {
               const items = currentCollectionType === "vocabulary"
                 ? vocabularyItems.filter(i => i.collectionId === selectedCollection && i.level === level)
                 : grammarItems.filter(i => i.collectionId === selectedCollection && i.level === level)
               const count = items.length
               const percentage = stats.total > 0 ? (count / stats.total) * 100 : 0
+              const barGradient = level.startsWith("A") ? "from-teal-400 to-teal-500"
+                : level.startsWith("B") ? "from-primary-400 to-primary-500"
+                : "from-violet-400 to-violet-500"
               return (
-                <div key={level} className="flex items-center gap-2">
-                  <span className="w-8 text-xs font-bold text-slate-600 bg-slate-100 rounded px-1.5 py-0.5 text-center">{level}</span>
-                  <div className="flex-1 h-5 bg-slate-100 rounded-lg overflow-hidden">
+                <div key={level} className="flex items-center gap-2.5">
+                  <span className="w-8 text-xs font-bold text-white bg-gradient-to-r from-gray-500 to-gray-600 rounded-md px-1.5 py-0.5 text-center">{level}</span>
+                  <div className="flex-1 h-5 bg-gray-100 rounded-lg overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-primary-400 to-primary-500 rounded-lg flex items-center justify-end pr-2 transition-all duration-500"
-                      style={{ width: `${Math.max(percentage, 5)}%` }}
+                      className={`h-full bg-gradient-to-r ${barGradient} rounded-lg flex items-center justify-end pr-2 transition-all duration-500`}
+                      style={{ width: `${Math.max(percentage, count > 0 ? 8 : 0)}%` }}
                     >
                       {percentage > 15 && <span className="text-[10px] font-bold text-white">{count}</span>}
                     </div>
                   </div>
-                  {percentage <= 15 && <span className="text-xs font-bold text-slate-500 w-5 text-right">{count}</span>}
+                  {percentage <= 15 && <span className="text-xs font-bold text-gray-400 w-5 text-right">{count}</span>}
                 </div>
               )
             })}
           </div>
-          <div className="mt-3 p-3 bg-gradient-to-r from-secondary-50 to-purple-50 rounded-xl border border-secondary-100">
-            <p className="text-sm text-secondary-700 text-center">📊 CEFR: A1-A2 (Basic) → B1-B2 (Intermediate) → C1-C2 (Advanced)</p>
+          <div className="mt-4 p-3 bg-gradient-to-r from-violet-50/60 to-purple-50/40 rounded-xl border border-violet-100/40 flex items-center gap-2 justify-center">
+            <BarChart3 className="h-4 w-4 text-violet-400 flex-shrink-0" />
+            <p className="text-sm text-violet-600 font-medium">CEFR: A1-A2 (Basic) → B1-B2 (Intermediate) → C1-C2 (Advanced)</p>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   )

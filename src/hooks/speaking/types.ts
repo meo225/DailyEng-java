@@ -25,10 +25,10 @@ export interface HistorySession {
   scenarioTitle: string;
   overallScore: number;
   grammarScore: number;
-  relevanceScore: number;
+  topicScore: number;
   fluencyScore: number;
-  pronunciationScore: number;
-  intonationScore: number;
+  accuracyScore: number;
+  prosodyScore: number;
   feedbackRating: string;
   createdAt: Date;
 }
@@ -36,9 +36,9 @@ export interface HistorySession {
 export interface HistoryStats {
   performanceData: { session: number; score: number }[];
   criteriaAverages: {
-    relevance: number;
-    pronunciation: number;
-    intonation: number;
+    topic: number;
+    accuracy: number;
+    prosody: number;
     fluency: number;
     grammar: number;
   };

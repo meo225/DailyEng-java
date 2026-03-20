@@ -205,18 +205,26 @@ const VoiceCard = React.memo(function VoiceCard({
         {/* Bottom: waveform + play */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 8 }}>
           <MiniWaveform bars={voice.waveform} color={voice.accent} isPlaying={isPlaying} />
-          <button
-            type="button"
+          <div
+            role="button"
+            tabIndex={0}
             onClick={(e) => {
               e.stopPropagation();
               onPreview();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                onPreview();
+              }
             }}
             style={playBtnStyle}
             aria-label={isPlaying ? `Stop ${voice.label} preview` : `Preview ${voice.label}`}
             title={isPlaying ? "Stop" : "Preview"}
           >
             {isPlaying ? <Pause style={{ width: 11, height: 11 }} /> : <Volume2 style={{ width: 11, height: 11 }} />}
-          </button>
+          </div>
         </div>
       </div>
     </button>

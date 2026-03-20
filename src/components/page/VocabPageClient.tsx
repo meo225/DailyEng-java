@@ -7,7 +7,7 @@ import { VocabTabBar } from "@/components/vocab/tab-bar";
 import { SearchResults } from "@/components/vocab/search-results";
 import { AvailableTopicsTab } from "@/components/vocab/available-topics-tab";
 import { BookmarksTab } from "@/components/vocab/bookmarks-tab";
-import { MindmapTab } from "@/components/vocab/mindmap-tab";
+import { KnowledgeGraphTab } from "@/components/vocab/mindmap-tab";
 import { DictionaryTab } from "@/components/vocab/dictionary-tab";
 
 // ─── Props ─────────────────────────────────────────
@@ -130,7 +130,7 @@ function TabContent({
       );
 
     case "mindmap":
-      return <MindmapTab />;
+      return <KnowledgeGraphTab />;
 
     case "dictionary":
       return (

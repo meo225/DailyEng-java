@@ -32,7 +32,7 @@ export const DICT_ITEMS_PER_PAGE = 50;
 export const VOCAB_TABS = [
   { id: "topics", label: "Available Topics" },
   { id: "bookmarks", label: "Bookmarks" },
-  { id: "mindmap", label: "Mindmap" },
+  { id: "mindmap", label: "Knowledge Graph" },
   { id: "dictionary", label: "Dictionary" },
 ] as const;
 
@@ -172,36 +172,4 @@ export const MOCK_DICTIONARY_WORDS: DictionaryWord[] = [
   { id: "101", word: "Zealous", pronunciation: "/ˈzeləs/", meaning: "Having great energy for a cause", partOfSpeech: "Adjective", level: "C1" },
 ];
 
-// ─── Mock Mindmap Data ─────────────────────────────
 
-import { mockVocab } from "@/lib/mock-data";
-
-export const MOCK_MINDMAP_DATA = [
-  {
-    id: "daily-life",
-    name: "Daily Life",
-    color: "primary" as const,
-    topics: [
-      { id: "1", title: "Travel", words: mockVocab["1"] || [] },
-      { id: "2", title: "Food & Dining", words: mockVocab["2"] || [] },
-    ],
-  },
-  {
-    id: "professional",
-    name: "Professional",
-    color: "secondary" as const,
-    topics: [{ id: "3", title: "Job Interview", words: mockVocab["3"] || [] }],
-  },
-  {
-    id: "academic",
-    name: "Academic",
-    color: "accent" as const,
-    topics: [
-      {
-        id: "academic-1",
-        title: "Science",
-        words: mockVocab["1"]?.slice(0, 3) || [],
-      },
-    ],
-  },
-];

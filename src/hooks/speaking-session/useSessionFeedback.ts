@@ -6,12 +6,11 @@ import { toast } from "sonner";
 import {
   getSessionDetailsById,
   getLearningRecordsForScenario,
+  deleteSession,
 } from "@/actions/speaking";
 import { useAuth } from "@/contexts/AuthContext";
-import { buildDetailedFeedbackData } from "@/lib/speaking-session-utils";
 import type {
   AnalysisResult,
-  DetailedFeedbackData,
   LearningRecord,
   LoadedSessionData,
   ViewState,
@@ -19,17 +18,15 @@ import type {
 
 interface UseSessionFeedbackOptions {
   scenarioId: string;
-  detailedFeedback: DetailedFeedbackData;
   setViewState: (state: ViewState) => void;
 }
 
 /**
  * Manages session feedback data: analysis results, dynamic records,
- * history loading, detailed feedback, and URL-based session loading.
+ * history loading, and URL-based session loading.
  */
 export function useSessionFeedback({
   scenarioId,
-  detailedFeedback,
   setViewState,
 }: UseSessionFeedbackOptions) {
   const searchParams = useSearchParams();
@@ -39,22 +36,20 @@ export function useSessionFeedback({
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const [dynamicRecords, setDynamicRecords] = useState<LearningRecord[]>([]);
-  const [dynamicFeedback, setDynamicFeedback] =
-    useState<DetailedFeedbackData | null>(null);
   const [loadedSessionData, setLoadedSessionData] =
     useState<LoadedSessionData | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null
   );
 
-  const feedbackToUse = dynamicFeedback || detailedFeedback;
-
-  // Auto-load session detail when navigated from History tab with ?session= param
+  // Auto-load session detail ONLY when navigated from History tab (?session=...&from=history)
+  // Without from=history, ?session= is a newly-created active session and should be ignored here
   const sessionParamHandled = useRef(false);
   useEffect(() => {
     if (sessionParamHandled.current) return;
     const sessionParam = searchParams.get("session");
-    if (sessionParam) {
+    const fromParam = searchParams.get("from");
+    if (sessionParam && fromParam === "history") {
       sessionParamHandled.current = true;
       loadSessionFromUrl(sessionParam);
     }
@@ -72,21 +67,11 @@ export function useSessionFeedback({
           conversation: sessionData.conversation.map((c) => ({
             role: c.role,
             text: c.text,
-            pronunciationScore: c.pronunciationScore ?? undefined,
+            accuracyScore: c.accuracyScore ?? undefined,
             fluencyScore: c.fluencyScore ?? undefined,
             wordAssessments: c.wordAssessments ?? undefined,
           })),
         });
-
-        setDynamicFeedback(
-          buildDetailedFeedbackData({
-            scores: sessionData.scores,
-            errorCategories: sessionData.errorCategories,
-            conversation: sessionData.conversation,
-            feedbackRating: sessionData.session.feedbackRating || "N/A",
-            feedbackTip: sessionData.session.feedbackTip || "Great effort!",
-          })
-        );
       } else {
         setViewState("preparation");
       }
@@ -113,21 +98,11 @@ export function useSessionFeedback({
             conversation: sessionData.conversation.map((c) => ({
               role: c.role,
               text: c.text,
-              pronunciationScore: c.pronunciationScore ?? undefined,
+              accuracyScore: c.accuracyScore ?? undefined,
               fluencyScore: c.fluencyScore ?? undefined,
               wordAssessments: c.wordAssessments ?? undefined,
             })),
           });
-
-          setDynamicFeedback(
-            buildDetailedFeedbackData({
-              scores: sessionData.scores,
-              errorCategories: sessionData.errorCategories,
-              conversation: sessionData.conversation,
-              feedbackRating: sessionData.session.feedbackRating || "N/A",
-              feedbackTip: sessionData.session.feedbackTip || "Great effort!",
-            })
-          );
         } else {
           toast.error("Session not found");
           setViewState("history");
@@ -143,23 +118,34 @@ export function useSessionFeedback({
     [setViewState]
   );
 
-  const handleViewDetailedFeedback = useCallback(() => {
-    if (!analysisResult) {
-      toast.error("No analysis data available");
-      return;
-    }
-
-    setDynamicFeedback(
-      buildDetailedFeedbackData({
-        scores: analysisResult.scores,
-        errorCategories: analysisResult.errorCategories,
-        conversation: analysisResult.conversation,
-        feedbackRating: analysisResult.sessionAnalysis.feedbackRating,
-        feedbackTip: analysisResult.sessionAnalysis.feedbackTip,
-      })
-    );
-    setViewState("detail");
-  }, [analysisResult, setViewState]);
+  const handleDeleteRecord = useCallback(
+    async (recordId: string) => {
+      // Optimistic removal
+      setDynamicRecords((prev) => prev.filter((r) => r.id !== recordId));
+      try {
+        await deleteSession(recordId);
+      } catch (error) {
+        console.error("Failed to delete session:", error);
+        toast.error("Failed to delete session");
+        // Restore by re-fetching
+        const userId = user?.id || "user-1";
+        const records = await getLearningRecordsForScenario(userId, scenarioId);
+        setDynamicRecords(
+          records.map((r) => ({
+            id: r.id,
+            overallScore: r.overallScore,
+            grammarScore: r.grammarScore,
+            topicScore: r.topicScore,
+            fluencyScore: r.fluencyScore,
+            accuracyScore: r.accuracyScore,
+            prosodyScore: r.prosodyScore,
+            date: new Date(r.date),
+          }))
+        );
+      }
+    },
+    [scenarioId, user?.id]
+  );
 
   const loadLearningRecords = useCallback(async () => {
     setViewState("history");
@@ -172,10 +158,10 @@ export function useSessionFeedback({
           id: r.id,
           overallScore: r.overallScore,
           grammarScore: r.grammarScore,
-          relevanceScore: r.relevanceScore,
+          topicScore: r.topicScore,
           fluencyScore: r.fluencyScore,
-          pronunciationScore: r.pronunciationScore,
-          intonationScore: r.intonationScore,
+          accuracyScore: r.accuracyScore,
+          prosodyScore: r.prosodyScore,
           date: new Date(r.date),
         }))
       );
@@ -189,7 +175,6 @@ export function useSessionFeedback({
 
   const resetFeedbackState = useCallback(() => {
     setAnalysisResult(null);
-    setDynamicFeedback(null);
     setLoadedSessionData(null);
     setSelectedRecordId(null);
   }, []);
@@ -200,15 +185,12 @@ export function useSessionFeedback({
     isLoadingFeedback,
     isLoadingRecords,
     dynamicRecords,
-    dynamicFeedback,
-    setDynamicFeedback,
     loadedSessionData,
     setLoadedSessionData,
     analysisResult,
     setAnalysisResult,
-    feedbackToUse,
     handleSelectRecord,
-    handleViewDetailedFeedback,
+    handleDeleteRecord,
     loadLearningRecords,
     resetFeedbackState,
   };

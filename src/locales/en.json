@@ -46,11 +46,11 @@
         "needs_work": "Needs Work"
       },
       "criteria": {
-        "relevance": "Relevance",
-        "pronunciation": "Pronunciation",
-        "intonation": "Intonation",
+        "accuracy": "Accuracy",
         "fluency": "Fluency",
-        "grammar": "Grammar"
+        "prosody": "Prosody",
+        "grammar": "Grammar",
+        "topic": "Topic"
       }
     },
     "bookmarks": {

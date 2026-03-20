@@ -21,6 +21,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Azure Speech Service — REST API for STT/TTS + SDK for Pronunciation Assessment.
@@ -86,63 +87,70 @@ public class AzureSpeechService {
             speechConfig.setSpeechRecognitionLanguage(config.getSttLanguage());
             // Request detailed output for word-level timing and confidence
             speechConfig.setOutputFormat(OutputFormat.Detailed);
+            // Allow up to 3s of silence mid-sentence before segmenting
+            speechConfig.setProperty("SpeechServiceConnection_InitialSilenceTimeoutMs", "5000");
+            speechConfig.setProperty("SpeechServiceConnection_EndSilenceTimeoutMs", "3000");
 
             // Configure audio input from WAV file
             var audioConfig = AudioConfig.fromWavFileInput(tempFile.getAbsolutePath());
 
-            // Create recognizer
+            // Use continuous recognition so the full audio (not just up to first pause) is processed
             var recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+            var latch = new CountDownLatch(1);
+            var sbText = new StringBuilder();
+            var allWords = new ArrayList<WordResult>();
+            var firstConfidence = new double[]{0.0};
+            final boolean[] hadSpeech = {false};
 
-            // Recognize
-            var result = recognizer.recognizeOnceAsync().get();
+            recognizer.recognized.addEventListener((o, e) -> {
+                if (e.getResult().getReason() == ResultReason.RecognizedSpeech) {
+                    hadSpeech[0] = true;
+                    try {
+                        var jsonStr = e.getResult().getProperties().getProperty(
+                                PropertyId.SpeechServiceResponse_JsonResult);
+                        var json = objectMapper.readTree(jsonStr);
+                        var nBest = json.path("NBest");
+                        if (nBest.isArray() && !nBest.isEmpty()) {
+                            var best = nBest.get(0);
+                            if (sbText.length() > 0) sbText.append(" ");
+                            sbText.append(best.path("Display").asText(e.getResult().getText()));
+                            if (firstConfidence[0] == 0.0) firstConfidence[0] = best.path("Confidence").asDouble(0.9);
+                            var wordsNode = best.path("Words");
+                            if (wordsNode.isArray()) {
+                                for (var w : wordsNode) {
+                                    allWords.add(new WordResult(
+                                            w.path("Word").asText(),
+                                            w.path("Confidence").asDouble(0.0),
+                                            w.path("Offset").asLong(0),
+                                            w.path("Duration").asLong(0)));
+                                }
+                            }
+                        } else {
+                            if (sbText.length() > 0) sbText.append(" ");
+                            sbText.append(e.getResult().getText());
+                        }
+                    } catch (Exception ex) {
+                        log.warn("STT JSON parse error: {}", ex.getMessage());
+                        if (sbText.length() > 0) sbText.append(" ");
+                        sbText.append(e.getResult().getText());
+                    }
+                }
+            });
+
+            recognizer.sessionStopped.addEventListener((o, e) -> latch.countDown());
+            recognizer.canceled.addEventListener((o, e) -> latch.countDown());
+
+            recognizer.startContinuousRecognitionAsync().get();
+            latch.await(60, java.util.concurrent.TimeUnit.SECONDS);
+            recognizer.stopContinuousRecognitionAsync().get();
 
             TranscriptionResult transcriptionResult;
-
-            if (result.getReason() == ResultReason.RecognizedSpeech) {
-                // Parse detailed JSON for word-level info
-                var jsonStr = result.getProperties().getProperty(
-                        PropertyId.SpeechServiceResponse_JsonResult);
-                var json = objectMapper.readTree(jsonStr);
-
-                var nBest = json.path("NBest");
-                if (nBest.isArray() && !nBest.isEmpty()) {
-                    var best = nBest.get(0);
-                    var displayText = best.path("Display").asText(result.getText());
-                    var confidence = best.path("Confidence").asDouble(0.0);
-
-                    List<WordResult> words = new ArrayList<>();
-                    var wordsNode = best.path("Words");
-                    if (wordsNode.isArray()) {
-                        for (var w : wordsNode) {
-                            words.add(new WordResult(
-                                    w.path("Word").asText(),
-                                    w.path("Confidence").asDouble(0.0),
-                                    w.path("Offset").asLong(0),
-                                    w.path("Duration").asLong(0)));
-                        }
-                    }
-
-                    log.info("🎤 SDK STT: \"{}\" (confidence: {}, words: {})",
-                            displayText, confidence, words.size());
-                    transcriptionResult = new TranscriptionResult(displayText, confidence, words, "Success");
-                } else {
-                    // Fallback: use result.getText() directly
-                    log.info("🎤 SDK STT (basic): \"{}\"", result.getText());
-                    transcriptionResult = new TranscriptionResult(
-                            result.getText(), 0.9, List.of(), "Success");
-                }
-
-            } else if (result.getReason() == ResultReason.NoMatch) {
-                log.warn("🎤 SDK STT: No speech recognized in audio");
-                transcriptionResult = TranscriptionResult.empty();
-
+            if (hadSpeech[0] && sbText.length() > 0) {
+                var displayText = sbText.toString().trim();
+                log.info("🎤 SDK STT: \"{}\" (words: {})", displayText, allWords.size());
+                transcriptionResult = new TranscriptionResult(displayText, firstConfidence[0], allWords, "Success");
             } else {
-                // Cancellation or error
-                var cancellation = CancellationDetails.fromResult(result);
-                log.error("🎤 SDK STT failed: reason={}, code={}, details={}",
-                        cancellation.getReason(),
-                        cancellation.getErrorCode(),
-                        cancellation.getErrorDetails());
+                log.warn("🎤 SDK STT: No speech recognized in audio");
                 transcriptionResult = TranscriptionResult.empty();
             }
 
@@ -328,6 +336,9 @@ public class AzureSpeechService {
             var speechConfig = SpeechConfig.fromSubscription(
                     config.getSubscriptionKey(), config.getRegion());
             speechConfig.setSpeechRecognitionLanguage(config.getSttLanguage());
+            // Allow longer pauses mid-sentence before segmenting
+            speechConfig.setProperty("SpeechServiceConnection_InitialSilenceTimeoutMs", "5000");
+            speechConfig.setProperty("SpeechServiceConnection_EndSilenceTimeoutMs", "3000");
 
             // Configure Pronunciation Assessment
             var pronConfig = new PronunciationAssessmentConfig(
@@ -343,48 +354,49 @@ public class AzureSpeechService {
             // Configure audio input from file
             var audioConfig = AudioConfig.fromWavFileInput(tempFile.getAbsolutePath());
 
-            // Create recognizer and apply pronunciation config
+            // Use continuous recognition to capture full sentence without early cutoff
             var recognizer = new SpeechRecognizer(speechConfig, audioConfig);
             pronConfig.applyTo(recognizer);
 
-            // Recognize
-            var result = recognizer.recognizeOnceAsync().get();
+            var latch = new CountDownLatch(1);
+            // Accumulate results from all segments
+            var segmentJsons = new ArrayList<JsonNode>();
 
-            if (result.getReason() == ResultReason.RecognizedSpeech) {
-                // Get the full JSON result (JRE: phoneme/word details only via JSON)
-                var jsonStr = result.getProperties().getProperty(
-                        PropertyId.SpeechServiceResponse_JsonResult);
-                var json = objectMapper.readTree(jsonStr);
+            recognizer.recognized.addEventListener((o, e) -> {
+                if (e.getResult().getReason() == ResultReason.RecognizedSpeech) {
+                    try {
+                        var jsonStr = e.getResult().getProperties().getProperty(
+                                PropertyId.SpeechServiceResponse_JsonResult);
+                        segmentJsons.add(objectMapper.readTree(jsonStr));
+                    } catch (Exception ex) {
+                        log.warn("Pronunciation JSON parse error: {}", ex.getMessage());
+                    }
+                }
+            });
 
-                var pronResult = parsePronunciationJson(json);
+            recognizer.sessionStopped.addEventListener((o, e) -> latch.countDown());
+            recognizer.canceled.addEventListener((o, e) -> latch.countDown());
 
-                log.info("📝 SDK Pronunciation: accuracy={}, fluency={}, completeness={}, prosody={}, overall={}",
-                        pronResult.accuracyScore(), pronResult.fluencyScore(),
-                        pronResult.completenessScore(), pronResult.prosodyScore(),
-                        pronResult.overallScore());
+            recognizer.startContinuousRecognitionAsync().get();
+            latch.await(60, java.util.concurrent.TimeUnit.SECONDS);
+            recognizer.stopContinuousRecognitionAsync().get();
 
-                // Cleanup SDK resources
-                recognizer.close();
-                audioConfig.close();
-                speechConfig.close();
+            recognizer.close();
+            audioConfig.close();
+            speechConfig.close();
 
-                return pronResult;
-
-            } else if (result.getReason() == ResultReason.NoMatch) {
+            if (segmentJsons.isEmpty()) {
                 log.warn("Azure Pronunciation Assessment: no speech recognized");
-                recognizer.close();
-                audioConfig.close();
-                speechConfig.close();
-                return PronunciationResult.empty();
-            } else {
-                log.error("Azure Pronunciation Assessment failed: reason={}, errorDetails={}",
-                        result.getReason(), result.getProperties().getProperty(
-                                PropertyId.CancellationDetails_ReasonDetailedText));
-                recognizer.close();
-                audioConfig.close();
-                speechConfig.close();
                 return PronunciationResult.empty();
             }
+
+            // Merge all segments into a single PronunciationResult
+            var pronResult = mergePronunciationResults(segmentJsons);
+            log.info("📝 SDK Pronunciation: accuracy={}, fluency={}, completeness={}, prosody={}, overall={}, segments={}",
+                    pronResult.accuracyScore(), pronResult.fluencyScore(),
+                    pronResult.completenessScore(), pronResult.prosodyScore(),
+                    pronResult.overallScore(), segmentJsons.size());
+            return pronResult;
 
         } catch (Exception e) {
             log.error("Azure Pronunciation Assessment SDK error: {}", e.getMessage(), e);
@@ -419,13 +431,16 @@ public class AzureSpeechService {
             var speechConfig = SpeechConfig.fromSubscription(
                     config.getSubscriptionKey(), config.getRegion());
             speechConfig.setSpeechRecognitionLanguage(config.getSttLanguage());
+            // Allow longer pauses mid-sentence before segmenting
+            speechConfig.setProperty("SpeechServiceConnection_InitialSilenceTimeoutMs", "5000");
+            speechConfig.setProperty("SpeechServiceConnection_EndSilenceTimeoutMs", "3000");
 
-            // Unscripted: empty reference text
+            // Unscripted: no reference text, no miscue detection
             var pronConfig = new PronunciationAssessmentConfig(
                     "",
                     PronunciationAssessmentGradingSystem.HundredMark,
                     PronunciationAssessmentGranularity.Phoneme,
-                    false  // no miscue for unscripted
+                    false
             );
             pronConfig.enableProsodyAssessment();
             pronConfig.setPhonemeAlphabet("IPA");
@@ -434,30 +449,43 @@ public class AzureSpeechService {
             var recognizer = new SpeechRecognizer(speechConfig, audioConfig);
             pronConfig.applyTo(recognizer);
 
-            var result = recognizer.recognizeOnceAsync().get();
+            // Use continuous recognition to capture full sentence without early cutoff
+            var latch = new CountDownLatch(1);
+            var segmentJsons = new ArrayList<JsonNode>();
 
-            if (result.getReason() == ResultReason.RecognizedSpeech) {
-                var jsonStr = result.getProperties().getProperty(
-                        PropertyId.SpeechServiceResponse_JsonResult);
-                var json = objectMapper.readTree(jsonStr);
-                var pronResult = parsePronunciationJson(json);
+            recognizer.recognized.addEventListener((o, e) -> {
+                if (e.getResult().getReason() == ResultReason.RecognizedSpeech) {
+                    try {
+                        var jsonStr = e.getResult().getProperties().getProperty(
+                                PropertyId.SpeechServiceResponse_JsonResult);
+                        segmentJsons.add(objectMapper.readTree(jsonStr));
+                    } catch (Exception ex) {
+                        log.warn("Unscripted Pronunciation JSON parse error: {}", ex.getMessage());
+                    }
+                }
+            });
 
-                log.info("📝 SDK Unscripted Pronunciation: accuracy={}, fluency={}, prosody={}, overall={}",
-                        pronResult.accuracyScore(), pronResult.fluencyScore(),
-                        pronResult.prosodyScore(), pronResult.overallScore());
+            recognizer.sessionStopped.addEventListener((o, e) -> latch.countDown());
+            recognizer.canceled.addEventListener((o, e) -> latch.countDown());
 
-                recognizer.close();
-                audioConfig.close();
-                speechConfig.close();
+            recognizer.startContinuousRecognitionAsync().get();
+            latch.await(60, java.util.concurrent.TimeUnit.SECONDS);
+            recognizer.stopContinuousRecognitionAsync().get();
 
-                return pronResult;
-            } else {
-                log.warn("Azure Unscripted Assessment: reason={}", result.getReason());
-                recognizer.close();
-                audioConfig.close();
-                speechConfig.close();
+            recognizer.close();
+            audioConfig.close();
+            speechConfig.close();
+
+            if (segmentJsons.isEmpty()) {
+                log.warn("Azure Unscripted Assessment: no speech recognized");
                 return PronunciationResult.empty();
             }
+
+            var pronResult = mergePronunciationResults(segmentJsons);
+            log.info("📝 SDK Unscripted Pronunciation: accuracy={}, fluency={}, prosody={}, overall={}, segments={}",
+                    pronResult.accuracyScore(), pronResult.fluencyScore(),
+                    pronResult.prosodyScore(), pronResult.overallScore(), segmentJsons.size());
+            return pronResult;
 
         } catch (Exception e) {
             log.error("Azure Unscripted Assessment error: {}", e.getMessage(), e);
@@ -470,9 +498,49 @@ public class AzureSpeechService {
     }
 
     /**
-     * Parse the SDK JSON result into PronunciationResult with per-word and per-phoneme detail.
+     * Merge multiple segment PronunciationResults into one by averaging scores
+     * and concatenating word lists.
+     */
+    private PronunciationResult mergePronunciationResults(List<JsonNode> segmentJsons) {
+        double sumAccuracy = 0, sumFluency = 0, sumCompleteness = 0, sumProsody = 0, sumOverall = 0;
+        var allWords = new ArrayList<WordPronunciation>();
+        var sbText = new StringBuilder();
+        int count = 0;
+
+        for (var json : segmentJsons) {
+            var partial = parsePronunciationJson(json);
+            if (partial.recognizedText().isBlank()) continue;
+            sumAccuracy += partial.accuracyScore();
+            sumFluency += partial.fluencyScore();
+            sumCompleteness += partial.completenessScore();
+            sumProsody += partial.prosodyScore();
+            sumOverall += partial.overallScore();
+            allWords.addAll(partial.words());
+            if (sbText.length() > 0) sbText.append(" ");
+            sbText.append(partial.recognizedText());
+            count++;
+        }
+
+        if (count == 0) return PronunciationResult.empty();
+
+        return new PronunciationResult(
+                sumAccuracy / count,
+                sumFluency / count,
+                sumCompleteness / count,
+                sumProsody / count,
+                sumOverall / count,
+                sbText.toString().trim(),
+                allWords
+        );
+    }
+
+    /**
+     * Parse a single SDK JSON segment into PronunciationResult.
      */
     private PronunciationResult parsePronunciationJson(JsonNode json) {
+        // Log the full raw JSON so we can inspect the actual Azure response structure
+        log.debug("🔍 Azure pronunciation JSON: {}", json);
+
         var nBest = json.path("NBest");
         if (!nBest.isArray() || nBest.isEmpty()) return PronunciationResult.empty();
 
@@ -528,6 +596,56 @@ public class AzureSpeechService {
                         phonemes,
                         syllables
                 ));
+            }
+        }
+
+        // ── Prosody assessment — parse Break and Intonation errors ───────────
+        // Azure reports UnexpectedBreak / MissingBreak / Monotone under
+        // PronunciationAssessment.ProsodyAssessment (utterance-level), NOT on individual words.
+        // We convert these into synthetic word entries so the frontend can display them.
+        var prosodyAssessment = assessment.path("ProsodyAssessment");
+        if (!prosodyAssessment.isMissingNode()) {
+            // Break errors: each break entry references a word index where the break issue occurs
+            var breaksNode = prosodyAssessment.path("Breaks");
+            if (breaksNode.isArray()) {
+                for (var brk : breaksNode) {
+                    var errorType = brk.path("ErrorType").asText("None");
+                    if (!"None".equals(errorType) && !errorType.isBlank()) {
+                        // Find the word at the break index and annotate it
+                        var breakIdx = brk.path("WordIndex").asInt(-1);
+                        if (breakIdx >= 0 && breakIdx < wordScores.size()) {
+                            var orig = wordScores.get(breakIdx);
+                            wordScores.set(breakIdx, new WordPronunciation(
+                                    orig.word(), orig.accuracyScore(), errorType,
+                                    orig.phonemes(), orig.syllables()));
+                        } else {
+                            // No word index — add as a standalone break marker
+                            wordScores.add(new WordPronunciation(
+                                    brk.path("BreakLength").asText("..."),
+                                    0, errorType, List.of(), List.of()));
+                        }
+                        log.debug("🔍 Break error detected: type={}, wordIndex={}", errorType, breakIdx);
+                    }
+                }
+            }
+
+            // Intonation/Monotone errors: these span the entire utterance
+            var intonationNode = prosodyAssessment.path("Intonation");
+            if (!intonationNode.isMissingNode()) {
+                var errorType = intonationNode.path("ErrorType").asText("None");
+                if ("Monotone".equals(errorType)) {
+                    // Tag the first word as monotone (or add a marker)
+                    if (!wordScores.isEmpty()) {
+                        var orig = wordScores.get(0);
+                        // Only override if it has no other error
+                        if ("None".equals(orig.errorType())) {
+                            wordScores.set(0, new WordPronunciation(
+                                    orig.word(), orig.accuracyScore(), "Monotone",
+                                    orig.phonemes(), orig.syllables()));
+                        }
+                    }
+                    log.debug("🔍 Monotone error detected for utterance");
+                }
             }
         }
 

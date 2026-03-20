@@ -62,6 +62,17 @@ public class SpeakingController {
         return ResponseEntity.ok(speakingService.getScenarioById(id));
     }
 
+    /** DELETE /speaking/scenarios/{id} — deleteCustomScenario() */
+    @DeleteMapping("/scenarios/{id}")
+    public ResponseEntity<Void> deleteScenario(
+            @PathVariable String id,
+            HttpServletRequest request
+    ) {
+        var userId = requireUserId(request);
+        speakingService.deleteCustomScenario(id, userId);
+        return ResponseEntity.noContent().build();
+    }
+
     /** POST /speaking/scenarios/custom — createCustomScenario() */
     @PostMapping("/scenarios/custom")
     public ResponseEntity<CustomScenarioResponse> createCustomScenario(
@@ -124,6 +135,17 @@ public class SpeakingController {
     @GetMapping("/sessions/{id}")
     public ResponseEntity<SessionDetailResponse> getSessionDetails(@PathVariable String id) {
         return ResponseEntity.ok(speakingService.getSessionDetails(id));
+    }
+
+    /** DELETE /speaking/sessions/{id} — deleteSession() */
+    @DeleteMapping("/sessions/{id}")
+    public ResponseEntity<Void> deleteSession(
+            @PathVariable String id,
+            HttpServletRequest request
+    ) {
+        var userId = requireUserId(request);
+        speakingService.deleteSession(id, userId);
+        return ResponseEntity.noContent().build();
     }
 
     // ======================== History ========================

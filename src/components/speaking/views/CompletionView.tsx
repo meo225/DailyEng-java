@@ -6,7 +6,6 @@ interface CompletionViewProps {
   sessionMode?: "scripted" | "unscripted";
   backUrl: string;
   onRetry: () => void;
-  onDetailedFeedback: () => void;
   router: { push: (url: string) => void };
 }
 
@@ -15,7 +14,6 @@ export default function CompletionView({
   sessionMode,
   backUrl,
   onRetry,
-  onDetailedFeedback,
   router,
 }: CompletionViewProps) {
   return (
@@ -24,7 +22,6 @@ export default function CompletionView({
       mode={sessionMode}
       onBack={() => router.push(backUrl)}
       onRetry={onRetry}
-      onDetailedFeedback={onDetailedFeedback}
     />
   );
 }

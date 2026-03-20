@@ -201,6 +201,7 @@ function TabContent({
           bookmarkedTopics={bookmarks.bookmarkedTopics}
           onBookmarkToggle={bookmarks.handleBookmarkToggle}
           onScenarioClick={(id) => setNavigatingToSessionId(id)}
+          onDeleteScenario={customTopics.handleDeleteScenario}
         />
       );
 
@@ -221,6 +222,7 @@ function TabContent({
               `/speaking/session/${scenarioId}?session=${sessionId}&from=history`
             )
           }
+          onDeleteSession={history.handleDeleteSession}
         />
       );
 
