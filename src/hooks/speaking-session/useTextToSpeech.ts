@@ -8,7 +8,7 @@ import { useAppStore } from "@/lib/store";
  * Manages audio element, speaking state, and cleanup.
  */
 export function useTextToSpeech() {
-  const { ttsVoice } = useAppStore();
+  const ttsVoice = useAppStore((state) => state.ttsVoice);
   const isSpeakingRef = useRef(false);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
 
