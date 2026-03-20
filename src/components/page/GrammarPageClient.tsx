@@ -34,29 +34,32 @@ interface GrammarTopic {
   thumbnail?: string;
 }
 
-// Helper to map database Topic to UI GrammarTopic
+// Helper to map database Topic or BookmarkItem to UI GrammarTopic
 function mapDbTopicToGrammarTopic(dbTopic: {
   id: string;
   title: string;
   description: string;
   level: string;
-  category: string | null;
-  subcategory: string | null;
-  wordCount: number;
-  estimatedTime: number;
-  thumbnail: string | null;
+  category?: string | null;
+  subcategory?: string | null;
+  wordCount?: number;
+  estimatedTime?: number;
+  thumbnail?: string | null;
+  // BookmarkItem fields (from backend API)
+  topicId?: string;
+  image?: string | null;
 }): GrammarTopic {
   return {
-    id: dbTopic.id,
+    id: dbTopic.topicId || dbTopic.id,
     title: dbTopic.title,
     description: dbTopic.description,
     level: dbTopic.level,
     category: dbTopic.category || "Tenses",
     subcategory: dbTopic.subcategory || "All",
-    lessonCount: dbTopic.wordCount,
-    estimatedTime: dbTopic.estimatedTime,
+    lessonCount: dbTopic.wordCount || 0,
+    estimatedTime: dbTopic.estimatedTime || 0,
     progress: 0,
-    thumbnail: dbTopic.thumbnail || undefined,
+    thumbnail: dbTopic.thumbnail || dbTopic.image || undefined,
   };
 }
 

@@ -1,130 +1,102 @@
-"use server";
+/**
+ * Bookmark module API client — calls Spring Boot BookmarkController.
+ *
+ * Replaces the old Prisma-based server actions with apiClient calls.
+ * All functions are plain async functions (no "use server") since they
+ * run in the browser and call the backend directly via httpOnly cookies.
+ */
 
-import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { apiClient } from "@/lib/api-client";
+
+// ======================== Types ========================
+
+interface BookmarkItem {
+  id: string;
+  topicId: string;
+  title: string;
+  description: string;
+  level: string;
+  image: string | null;
+  category: string | null;
+  createdAt: string | null;
+}
 
 // ============================================
 // VOCABULARY BOOKMARKS
 // ============================================
 
-export async function toggleVocabBookmark(userId: string, topicId: string) {
-  const existing = await prisma.vocabBookmark.findUnique({
-    where: {
-      userId_topicId: { userId, topicId },
-    },
+export async function toggleVocabBookmark(
+  _userId: string,
+  topicId: string
+): Promise<{ bookmarked: boolean }> {
+  return apiClient.post<{ bookmarked: boolean }>("/bookmarks/vocab/toggle", {
+    topicId,
   });
-
-  if (existing) {
-    await prisma.vocabBookmark.delete({
-      where: { id: existing.id },
-    });
-    revalidatePath("/vocab");
-    return { bookmarked: false };
-  } else {
-    await prisma.vocabBookmark.create({
-      data: { userId, topicId },
-    });
-    revalidatePath("/vocab");
-    return { bookmarked: true };
-  }
 }
 
 export async function getVocabBookmarks(
-  userId: string,
-  page: number = 1,
-  limit: number = 8
-) {
-  const skip = (page - 1) * limit;
-  
-  const [bookmarks, total] = await Promise.all([
-    prisma.vocabBookmark.findMany({
-      where: { userId },
-      include: {
-        topic: true,
-      },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
-    }),
-    prisma.vocabBookmark.count({ where: { userId } }),
-  ]);
-
+  _userId: string,
+  _page: number = 1,
+  _limit: number = 8
+): Promise<{
+  bookmarks: BookmarkItem[];
+  bookmarkIds: string[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+}> {
+  const bookmarks = await apiClient.get<BookmarkItem[]>("/bookmarks/vocab");
+  const bookmarkIds = bookmarks.map((b) => b.topicId);
   return {
-    bookmarks: bookmarks.map((b) => b.topic),
-    bookmarkIds: bookmarks.map((b) => b.topicId),
-    total,
-    totalPages: Math.ceil(total / limit),
-    currentPage: page,
+    bookmarks,
+    bookmarkIds,
+    total: bookmarks.length,
+    totalPages: 1,
+    currentPage: 1,
   };
 }
 
-export async function getVocabBookmarkIds(userId: string) {
-  const bookmarks = await prisma.vocabBookmark.findMany({
-    where: { userId },
-    select: { topicId: true },
-  });
-  return bookmarks.map((b) => b.topicId);
+export async function getVocabBookmarkIds(_userId: string): Promise<string[]> {
+  return apiClient.get<string[]>("/bookmarks/vocab/ids");
 }
 
 // ============================================
 // GRAMMAR BOOKMARKS
 // ============================================
 
-export async function toggleGrammarBookmark(userId: string, topicId: string) {
-  const existing = await prisma.grammarBookmark.findUnique({
-    where: {
-      userId_topicId: { userId, topicId },
-    },
+export async function toggleGrammarBookmark(
+  _userId: string,
+  topicId: string
+): Promise<{ bookmarked: boolean }> {
+  return apiClient.post<{ bookmarked: boolean }>("/bookmarks/grammar/toggle", {
+    topicId,
   });
-
-  if (existing) {
-    await prisma.grammarBookmark.delete({
-      where: { id: existing.id },
-    });
-    revalidatePath("/grammar");
-    return { bookmarked: false };
-  } else {
-    await prisma.grammarBookmark.create({
-      data: { userId, topicId },
-    });
-    revalidatePath("/grammar");
-    return { bookmarked: true };
-  }
 }
 
 export async function getGrammarBookmarks(
-  userId: string,
-  page: number = 1,
-  limit: number = 8
-) {
-  const skip = (page - 1) * limit;
-  
-  const [bookmarks, total] = await Promise.all([
-    prisma.grammarBookmark.findMany({
-      where: { userId },
-      include: {
-        topic: true,
-      },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
-    }),
-    prisma.grammarBookmark.count({ where: { userId } }),
-  ]);
-
+  _userId: string,
+  _page: number = 1,
+  _limit: number = 8
+): Promise<{
+  bookmarks: BookmarkItem[];
+  bookmarkIds: string[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+}> {
+  const bookmarks = await apiClient.get<BookmarkItem[]>("/bookmarks/grammar");
+  const bookmarkIds = bookmarks.map((b) => b.topicId);
   return {
-    bookmarks: bookmarks.map((b) => b.topic),
-    bookmarkIds: bookmarks.map((b) => b.topicId),
-    total,
-    totalPages: Math.ceil(total / limit),
-    currentPage: page,
+    bookmarks,
+    bookmarkIds,
+    total: bookmarks.length,
+    totalPages: 1,
+    currentPage: 1,
   };
 }
 
-export async function getGrammarBookmarkIds(userId: string) {
-  const bookmarks = await prisma.grammarBookmark.findMany({
-    where: { userId },
-    select: { topicId: true },
-  });
-  return bookmarks.map((b) => b.topicId);
+export async function getGrammarBookmarkIds(
+  _userId: string
+): Promise<string[]> {
+  return apiClient.get<string[]>("/bookmarks/grammar/ids");
 }

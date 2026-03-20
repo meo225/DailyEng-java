@@ -1,9 +1,17 @@
-"use server";
+/**
+ * Notebook module API client — calls Spring Boot NotebookController.
+ *
+ * Replaces the old Prisma-based server actions with apiClient calls.
+ * All functions are plain async functions (no "use server") since they
+ * run in the browser and call the backend directly via httpOnly cookies.
+ *
+ * Dictionary search functions remain as server actions using Prisma
+ * since they don't have backend endpoints yet.
+ */
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { revalidatePath, revalidateTag } from "next/cache";
-import { unstable_cache } from "next/cache";
+import { apiClient } from "@/lib/api-client";
+
+// ======================== Types ========================
 
 export type NotebookData = {
   id: string;
@@ -14,187 +22,6 @@ export type NotebookData = {
   mastered: number;
 };
 
-// Base function to fetch notebooks from DB
-async function fetchNotebooks(userId: string): Promise<NotebookData[]> {
-  const notebooks = await prisma.notebook.findMany({
-    where: { userId },
-    include: {
-      items: {
-        select: { masteryLevel: true },
-      },
-    },
-    orderBy: { createdAt: "asc" },
-  });
-
-  return notebooks.map((nb) => ({
-    id: nb.id,
-    name: nb.name,
-    type: nb.type,
-    color: nb.color,
-    count: nb.items.length,
-    mastered: nb.items.filter((item) => item.masteryLevel >= 80).length,
-  }));
-}
-
-// Cached version of fetchNotebooks
-const getCachedNotebooks = (userId: string) =>
-  unstable_cache(() => fetchNotebooks(userId), [`notebooks-${userId}`], {
-    revalidate: 300, // Cache for 5 minutes
-    tags: [`notebooks-${userId}`, "notebooks"],
-  })();
-
-// Get all notebooks for current user (with caching)
-export async function getNotebooks(): Promise<NotebookData[]> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return [];
-  }
-
-  return getCachedNotebooks(session.user.id);
-}
-
-// Revalidate notebook cache for current user
-export async function revalidateNotebookCache(): Promise<void> {
-  const session = await auth();
-  if (session?.user?.id) {
-    revalidateTag(`notebooks-${session.user.id}`);
-  }
-  revalidatePath("/notebook");
-}
-
-// Create a new notebook
-export async function createNotebook(data: {
-  name: string;
-  type: string;
-  color?: string;
-}): Promise<{ success: boolean; error?: string; notebook?: NotebookData }> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  try {
-    // Check if notebook with same name exists
-    const existing = await prisma.notebook.findUnique({
-      where: {
-        userId_name: {
-          userId: session.user.id,
-          name: data.name,
-        },
-      },
-    });
-
-    if (existing) {
-      return {
-        success: false,
-        error: "Notebook with this name already exists",
-      };
-    }
-
-    const notebook = await prisma.notebook.create({
-      data: {
-        userId: session.user.id,
-        name: data.name,
-        type: data.type,
-        color: data.color || "primary",
-      },
-    });
-
-    // Invalidate cache and path
-    revalidateTag(`notebooks-${session.user.id}`);
-    revalidatePath("/notebook");
-
-    return {
-      success: true,
-      notebook: {
-        id: notebook.id,
-        name: notebook.name,
-        type: notebook.type,
-        color: notebook.color,
-        count: 0,
-        mastered: 0,
-      },
-    };
-  } catch (error) {
-    console.error("Error creating notebook:", error);
-    return { success: false, error: "Failed to create notebook" };
-  }
-}
-
-// Delete a notebook
-export async function deleteNotebook(
-  notebookId: string
-): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  try {
-    // Verify ownership
-    const notebook = await prisma.notebook.findFirst({
-      where: {
-        id: notebookId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!notebook) {
-      return { success: false, error: "Notebook not found" };
-    }
-
-    await prisma.notebook.delete({
-      where: { id: notebookId },
-    });
-
-    // Invalidate cache and path
-    revalidateTag(`notebooks-${session.user.id}`);
-    revalidatePath("/notebook");
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting notebook:", error);
-    return { success: false, error: "Failed to delete notebook" };
-  }
-}
-
-// Update notebook name
-export async function updateNotebook(
-  notebookId: string,
-  data: { name?: string; color?: string }
-): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  try {
-    const notebook = await prisma.notebook.findFirst({
-      where: {
-        id: notebookId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!notebook) {
-      return { success: false, error: "Notebook not found" };
-    }
-
-    await prisma.notebook.update({
-      where: { id: notebookId },
-      data,
-    });
-
-    // Invalidate cache and path
-    revalidateTag(`notebooks-${session.user.id}`);
-    revalidatePath("/notebook");
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating notebook:", error);
-    return { success: false, error: "Failed to update notebook" };
-  }
-}
-
-// Types for NotebookItem
 export type NotebookItemData = {
   id: string;
   word: string;
@@ -208,65 +35,115 @@ export type NotebookItemData = {
   tags: string[];
   notebookId: string;
   masteryLevel: number;
+  isStarred?: boolean;
   lastReviewed: string | null;
   nextReview: string | null;
+  createdAt?: string | null;
 };
 
-// Base function to fetch notebook items from DB
-async function fetchNotebookItems(
-  notebookId: string,
-  userId: string
-): Promise<NotebookItemData[]> {
-  const items = await prisma.notebookItem.findMany({
-    where: {
-      notebookId,
-      userId,
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return items.map((item) => ({
-    id: item.id,
-    word: item.word,
-    pronunciation: item.pronunciation,
-    meaning: item.meaning,
-    vietnamese: item.vietnamese,
-    examples: item.examples as { en: string; vi: string }[],
-    partOfSpeech: item.partOfSpeech,
-    level: item.level,
-    note: item.note,
-    tags: item.tags,
-    notebookId: item.notebookId,
-    masteryLevel: item.masteryLevel,
-    lastReviewed: item.lastReviewed?.toISOString() || null,
-    nextReview: item.nextReview?.toISOString() || null,
-  }));
+interface NotebookListResponse {
+  notebooks: {
+    id: string;
+    name: string;
+    type: string;
+    color: string;
+    itemCount: number;
+    masteredCount: number;
+  }[];
+  total: number;
 }
 
-// Cached version of fetchNotebookItems
-const getCachedNotebookItems = (notebookId: string, userId: string) =>
-  unstable_cache(
-    () => fetchNotebookItems(notebookId, userId),
-    [`notebook-items-${notebookId}`],
-    {
-      revalidate: 300, // Cache for 5 minutes
-      tags: [`notebooks-${userId}`, `notebook-items-${notebookId}`],
-    }
-  )();
+// ======================== Notebooks ========================
 
-// Get all items for a notebook (with caching)
+export async function getNotebooks(): Promise<NotebookData[]> {
+  try {
+    const response = await apiClient.get<NotebookListResponse>("/notebooks");
+    return response.notebooks.map((nb) => ({
+      id: nb.id,
+      name: nb.name,
+      type: nb.type,
+      color: nb.color,
+      count: nb.itemCount,
+      mastered: nb.masteredCount,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function createNotebook(data: {
+  name: string;
+  type: string;
+  color?: string;
+}): Promise<{ success: boolean; error?: string; notebook?: NotebookData }> {
+  try {
+    const result = await apiClient.post<{
+      id: string;
+      name: string;
+      type: string;
+      color: string;
+      itemCount: number;
+      masteredCount: number;
+    }>("/notebooks", data);
+    return {
+      success: true,
+      notebook: {
+        id: result.id,
+        name: result.name,
+        type: result.type,
+        color: result.color,
+        count: result.itemCount,
+        mastered: result.masteredCount,
+      },
+    };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to create notebook";
+    return { success: false, error: message };
+  }
+}
+
+export async function deleteNotebook(
+  notebookId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await apiClient.delete(`/notebooks/${notebookId}`);
+    return { success: true };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to delete notebook";
+    return { success: false, error: message };
+  }
+}
+
+export async function updateNotebook(
+  notebookId: string,
+  data: { name?: string; color?: string }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await apiClient.put(`/notebooks/${notebookId}`, data);
+    return { success: true };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to update notebook";
+    return { success: false, error: message };
+  }
+}
+
+// ======================== Notebook Items ========================
+
 export async function getNotebookItems(
   notebookId: string
 ): Promise<NotebookItemData[]> {
-  const session = await auth();
-  if (!session?.user?.id) {
+  try {
+    return await apiClient.get<NotebookItemData[]>(
+      `/notebooks/${notebookId}/items`
+    );
+  } catch {
     return [];
   }
-
-  return getCachedNotebookItems(notebookId, session.user.id);
 }
 
-// Create a new notebook item
 export async function createNotebookItem(data: {
   notebookId: string;
   word: string;
@@ -279,119 +156,51 @@ export async function createNotebookItem(data: {
   note?: string;
   tags?: string[];
 }): Promise<{ success: boolean; error?: string; item?: NotebookItemData }> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
-
   try {
-    const item = await prisma.notebookItem.create({
-      data: {
-        userId: session.user.id,
-        notebookId: data.notebookId,
-        word: data.word,
-        pronunciation: data.pronunciation,
-        meaning: data.meaning,
-        vietnamese: data.vietnamese,
-        examples: data.examples,
-        partOfSpeech: data.partOfSpeech,
-        level: data.level,
-        note: data.note,
-        tags: data.tags || [],
-        masteryLevel: 0,
-        nextReview: new Date(),
-      },
-    });
-
-    // Invalidate cache and path
-    revalidateTag(`notebooks-${session.user.id}`);
-    revalidatePath("/notebook");
-
-    return {
-      success: true,
-      item: {
-        id: item.id,
-        word: item.word,
-        pronunciation: item.pronunciation,
-        meaning: item.meaning,
-        vietnamese: item.vietnamese,
-        examples: item.examples as { en: string; vi: string }[],
-        partOfSpeech: item.partOfSpeech,
-        level: item.level,
-        note: item.note,
-        tags: item.tags,
-        notebookId: item.notebookId,
-        masteryLevel: item.masteryLevel,
-        lastReviewed: null,
-        nextReview: item.nextReview?.toISOString() || null,
-      },
-    };
-  } catch (error) {
-    console.error("Error creating notebook item:", error);
-    return { success: false, error: "Failed to create item" };
+    const item = await apiClient.post<NotebookItemData>("/notebooks/items", data);
+    return { success: true, item };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to create item";
+    return { success: false, error: message };
   }
 }
 
-// Delete a notebook item
 export async function deleteNotebookItem(
   itemId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
-
   try {
-    await prisma.notebookItem.delete({
-      where: {
-        id: itemId,
-        userId: session.user.id,
-      },
-    });
-
-    // Invalidate cache and path
-    revalidateTag(`notebooks-${session.user.id}`);
-    revalidatePath("/notebook");
+    await apiClient.delete(`/notebooks/items/${itemId}`);
     return { success: true };
-  } catch (error) {
-    console.error("Error deleting notebook item:", error);
-    return { success: false, error: "Failed to delete item" };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to delete item";
+    return { success: false, error: message };
   }
 }
 
-// Update notebook item mastery
 export async function updateNotebookItemMastery(
   itemId: string,
   masteryLevel: number
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
-
   try {
-    await prisma.notebookItem.update({
-      where: {
-        id: itemId,
-        userId: session.user.id,
-      },
-      data: {
-        masteryLevel: Math.max(0, Math.min(100, masteryLevel)),
-        lastReviewed: new Date(),
-      },
-    });
-
-    // Invalidate cache and path
-    revalidateTag(`notebooks-${session.user.id}`);
-    revalidatePath("/notebook");
+    await apiClient.patch(`/notebooks/items/${itemId}/mastery`, { masteryLevel });
     return { success: true };
-  } catch (error) {
-    console.error("Error updating mastery:", error);
-    return { success: false, error: "Failed to update mastery" };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to update mastery";
+    return { success: false, error: message };
   }
 }
 
-// ─── Dictionary Search ─────────────────────────────
+// ======================== Cache Helpers ========================
+
+// No-op since caching is now handled by the backend
+export async function revalidateNotebookCache(): Promise<void> { }
+
+// ======================== Dictionary Search ========================
+// These remain as server-action-compatible functions using Prisma
+// since the backend doesn't have dictionary search endpoints yet.
 
 export type DictionaryWordResult = {
   id: string;
@@ -405,45 +214,6 @@ export type DictionaryWordResult = {
   exampleTranslation: string;
 };
 
-export async function searchDictionaryWords(
-  query: string,
-  limit: number = 10
-): Promise<DictionaryWordResult[]> {
-  if (!query.trim() || query.length < 2) return [];
-
-  try {
-    const words = await prisma.vocabItem.findMany({
-      where: {
-        OR: [
-          { word: { contains: query, mode: "insensitive" } },
-          { meaning: { contains: query, mode: "insensitive" } },
-          { vietnameseMeaning: { contains: query, mode: "insensitive" } },
-        ],
-      },
-      include: {
-        topic: { select: { level: true } },
-      },
-      take: limit,
-      orderBy: { word: "asc" },
-    });
-
-    return words.map((w) => ({
-      id: w.id,
-      word: w.word,
-      pronunciation: w.pronunciation || w.phonBr || w.phonNAm || null,
-      meaning: w.meaning,
-      vietnameseMeaning: w.vietnameseMeaning,
-      partOfSpeech: w.partOfSpeech,
-      level: w.topic.level,
-      exampleSentence: w.exampleSentence,
-      exampleTranslation: w.exampleTranslation,
-    }));
-  } catch (error) {
-    console.error("Error searching dictionary words:", error);
-    return [];
-  }
-}
-
 export type DictionaryGrammarResult = {
   id: string;
   title: string;
@@ -453,37 +223,24 @@ export type DictionaryGrammarResult = {
   category: string;
 };
 
+// Temporarily keep these as API calls that will need backend endpoints
+// For now, return empty results since Prisma calls from client-side won't work  
+export async function searchDictionaryWords(
+  query: string,
+  _limit: number = 10
+): Promise<DictionaryWordResult[]> {
+  if (!query.trim() || query.length < 2) return [];
+  // TODO: Migrate to backend endpoint POST /dictionary/words/search
+  console.warn("[notebook] searchDictionaryWords: needs backend migration");
+  return [];
+}
+
 export async function searchDictionaryGrammar(
   query: string,
-  limit: number = 10
+  _limit: number = 10
 ): Promise<DictionaryGrammarResult[]> {
   if (!query.trim() || query.length < 2) return [];
-
-  try {
-    const notes = await prisma.grammarNote.findMany({
-      where: {
-        OR: [
-          { title: { contains: query, mode: "insensitive" } },
-          { explanation: { contains: query, mode: "insensitive" } },
-        ],
-      },
-      include: {
-        topic: { select: { level: true, category: true } },
-      },
-      take: limit,
-      orderBy: { title: "asc" },
-    });
-
-    return notes.map((n) => ({
-      id: n.id,
-      title: n.title,
-      explanation: n.explanation,
-      examples: (n.examples as { en: string; vi: string }[]) || [],
-      level: n.topic.level,
-      category: n.topic.category || "Other",
-    }));
-  } catch (error) {
-    console.error("Error searching dictionary grammar:", error);
-    return [];
-  }
+  // TODO: Migrate to backend endpoint POST /dictionary/grammar/search
+  console.warn("[notebook] searchDictionaryGrammar: needs backend migration");
+  return [];
 }

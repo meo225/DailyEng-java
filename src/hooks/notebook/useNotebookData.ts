@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect, useMemo, useTransition } from "react"
-import { createNotebook, deleteNotebook, createNotebookItem, deleteNotebookItem } from "@/actions/notebook"
+import { useState, useEffect, useMemo, useTransition, useCallback } from "react"
+import { createNotebook, deleteNotebook, createNotebookItem, deleteNotebookItem, getNotebooks, getNotebookItems } from "@/actions/notebook"
+import { useAuth } from "@/contexts/AuthContext"
 import type {
   NotebookItem, GrammarItem, CollectionData, CollectionWithIcon, CollectionType,
 } from "./types"
@@ -20,6 +21,7 @@ export function useNotebookData({
   initialVocab,
   initialGrammar,
 }: UseNotebookDataParams) {
+  const { user } = useAuth()
   // ── Data state ──
   const [vocabularyItems, setVocabularyItems] = useState<NotebookItem[]>(initialVocab)
   const [grammarItems, setGrammarItems] = useState<GrammarItem[]>(initialGrammar)
@@ -28,6 +30,59 @@ export function useNotebookData({
   )
 
   const [isPending, startTransition] = useTransition()
+
+  // ── Fetch real notebook data from backend on mount ──
+  useEffect(() => {
+    if (!user?.id) return
+
+    getNotebooks().then(async (notebooks) => {
+      if (notebooks.length === 0) return
+
+      // Add user notebooks to collections
+      const userCollections: CollectionWithIcon[] = notebooks.map(nb => ({
+        id: nb.id,
+        name: nb.name,
+        count: nb.count,
+        mastered: nb.mastered,
+        color: nb.color,
+        type: nb.type as CollectionType,
+        icon: getCollectionIcon(nb.type as CollectionType),
+      }))
+      setCollections(prev => {
+        const existingIds = new Set(prev.map(c => c.id))
+        const newOnes = userCollections.filter(c => !existingIds.has(c.id))
+        return [...prev, ...newOnes]
+      })
+
+      // Fetch items for each vocabulary notebook
+      const vocabNotebooks = notebooks.filter(nb => nb.type === "vocabulary")
+      const allItems: NotebookItem[] = []
+      for (const nb of vocabNotebooks) {
+        const items = await getNotebookItems(nb.id)
+        allItems.push(...items.map(item => ({
+          id: item.id,
+          word: item.word,
+          pronunciation: item.pronunciation || "/.../",
+          meaning: item.meaning,
+          vietnamese: item.vietnamese,
+          examples: item.examples,
+          partOfSpeech: item.partOfSpeech || "noun",
+          level: item.level || "A2",
+          note: item.note || undefined,
+          tags: item.tags,
+          collectionId: item.notebookId,
+          masteryLevel: item.masteryLevel,
+          lastReviewed: item.lastReviewed || undefined,
+          nextReview: item.nextReview || undefined,
+        })))
+      }
+      if (allItems.length > 0) {
+        setVocabularyItems(prev => [...prev, ...allItems])
+      }
+    }).catch(err => {
+      console.warn("[useNotebookData] Failed to fetch notebooks:", err)
+    })
+  }, [user?.id])
 
   // ── Update collection counts when items change ──
   useEffect(() => {

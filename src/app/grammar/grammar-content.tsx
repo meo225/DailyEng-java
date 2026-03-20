@@ -3,7 +3,6 @@ import {
   getGrammarTopicsWithProgress,
   getCurrentGrammarTopic,
 } from "@/actions/grammar";
-import { getGrammarBookmarkIds } from "@/actions/bookmark";
 import GrammarPageClient from "@/components/page/GrammarPageClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
@@ -14,13 +13,12 @@ interface GrammarContentProps {
 
 // Server Component that fetches data
 export async function GrammarContent({ userId }: GrammarContentProps) {
-  // Fetch data in parallel
-  const [grammarGroups, grammarTopicsResult, currentTopic, bookmarkIds] =
+  // Fetch data in parallel (bookmark IDs are fetched client-side via apiClient)
+  const [grammarGroups, grammarTopicsResult, currentTopic] =
     await Promise.all([
       getGrammarTopicGroups(),
       getGrammarTopicsWithProgress(userId),
       userId ? getCurrentGrammarTopic(userId) : null,
-      userId ? getGrammarBookmarkIds(userId) : [],
     ]);
 
   // Default current topic if user has no progress
@@ -35,7 +33,7 @@ export async function GrammarContent({ userId }: GrammarContentProps) {
       grammarGroups={grammarGroups}
       grammarTopics={grammarTopicsResult.topics}
       currentGrammarTopic={currentGrammarTopic}
-      initialBookmarkIds={bookmarkIds}
+      initialBookmarkIds={[]}
       showHero={false}
     />
   );
