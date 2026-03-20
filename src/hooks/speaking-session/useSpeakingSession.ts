@@ -29,7 +29,7 @@ import type {
  * Composes useTextToSpeech, useAudioRecording, and useSessionFeedback.
  */
 export function useSpeakingSession(props: SpeakingSessionClientProps) {
-  const { scenarioId, scenario, initialTurns, detailedFeedback } = props;
+  const { scenarioId, scenario, initialTurns } = props;
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,7 +64,6 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
 
   const feedback = useSessionFeedback({
     scenarioId,
-    detailedFeedback,
     setViewState,
   });
 
@@ -339,33 +338,28 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
 
   const scores: SessionScores = feedback.analysisResult?.scores || {
     grammar: 0,
-    relevance: 0,
+    topic: 0,
     fluency: 70,
-    pronunciation: 70,
-    intonation: 70,
+    accuracy: 70,
+    prosody: 70,
     overall: 0,
   };
 
   const radarData = useMemo(
     () => [
-      { label: "Relevance", value: scores.relevance },
-      { label: "Pronunciation", value: scores.pronunciation },
-      { label: "Intonation & Stress", value: scores.intonation },
+      { label: "Accuracy", value: scores.accuracy },
       { label: "Fluency", value: scores.fluency },
+      { label: "Prosody", value: scores.prosody },
       { label: "Grammar", value: scores.grammar },
+      { label: "Topic", value: scores.topic },
     ],
     [
-      scores.relevance,
-      scores.pronunciation,
-      scores.intonation,
+      scores.accuracy,
       scores.fluency,
+      scores.prosody,
       scores.grammar,
+      scores.topic,
     ]
-  );
-
-  const detailScoresWithIcons = useMemo(
-    () => buildScoresWithIcons(feedback.feedbackToUse.scores),
-    [feedback.feedbackToUse.scores]
   );
 
   const assessmentData = useMemo(
@@ -399,7 +393,6 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
     fromParam,
     scores,
     radarData,
-    detailScoresWithIcons,
     assessmentData,
     t,
     router,

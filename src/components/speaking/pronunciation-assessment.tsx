@@ -121,14 +121,9 @@ const MetricBar = React.memo(function MetricBar({
 
 // ============================== Error Config ==============================
 
-const ERROR_TYPES_UNSCRIPTED = [
-  { key: "Mispronunciation", label: "Mispronunciations", color: "bg-red-500", dot: "bg-red-400" },
-  { key: "UnexpectedBreak", label: "Unexpected break", color: "bg-violet-500", dot: "bg-violet-400" },
-  { key: "MissingBreak", label: "Missing break", color: "bg-violet-500", dot: "bg-violet-400" },
-  { key: "Monotone", label: "Monotone", color: "bg-slate-400", dot: "bg-slate-400" },
-] as const;
-
-const ERROR_TYPES_SCRIPTED = [
+// All possible error types — used regardless of mode;
+// visibleErrorTypes will filter to only those present in the data.
+const ALL_ERROR_TYPES = [
   { key: "Mispronunciation", label: "Mispronunciations", color: "bg-red-500", dot: "bg-red-400" },
   { key: "Omission", label: "Omission", color: "bg-orange-500", dot: "bg-orange-400" },
   { key: "Insertion", label: "Insertion", color: "bg-cyan-500", dot: "bg-cyan-400" },
@@ -153,17 +148,14 @@ export default function PronunciationAssessmentReview({
   mode = "unscripted",
   onBack,
   onRetry,
-  onDetailedFeedback,
 }: {
   data: AssessmentData;
   mode?: "scripted" | "unscripted";
   onBack: () => void;
   onRetry: () => void;
-  onDetailedFeedback: () => void;
 }) {
-  const ERROR_TYPES = mode === "scripted" ? ERROR_TYPES_SCRIPTED : ERROR_TYPES_UNSCRIPTED;
   const [enabledErrors, setEnabledErrors] = useState<Record<string, boolean>>(
-    Object.fromEntries(ERROR_TYPES.map((e) => [e.key, true]))
+    Object.fromEntries(ALL_ERROR_TYPES.map((e) => [e.key, true]))
   );
   const [expandedTurn, setExpandedTurn] = useState<number | null>(null);
   const [selectedWord, setSelectedWord] = useState<{ turnIdx: number; wordIdx: number } | null>(null);
@@ -180,8 +172,9 @@ export default function PronunciationAssessmentReview({
     return counts;
   }, [data.turns]);
 
+  // Show only error types that actually appear in the data (regardless of mode)
   const visibleErrorTypes = useMemo(
-    () => ERROR_TYPES.filter((e) => (errorCounts[e.key] || 0) > 0),
+    () => ALL_ERROR_TYPES.filter((e) => (errorCounts[e.key] || 0) > 0),
     [errorCounts]
   );
 
@@ -231,7 +224,7 @@ export default function PronunciationAssessmentReview({
                     if (w.errorType !== "None") turnErrors[w.errorType] = (turnErrors[w.errorType] || 0) + 1;
                   });
                   const totalErrors = Object.values(turnErrors).reduce((a, b) => a + b, 0);
-                  const turnErrorList = ERROR_TYPES.filter((e) => (turnErrors[e.key] || 0) > 0);
+                  const turnErrorList = ALL_ERROR_TYPES.filter((e) => (turnErrors[e.key] || 0) > 0);
                   const sc = scoreColor(turn.overallScore);
 
                   return (
@@ -428,7 +421,7 @@ export default function PronunciationAssessmentReview({
                 Errors
               </h3>
               <div className="space-y-4">
-                {ERROR_TYPES.map((errorType) => {
+                {ALL_ERROR_TYPES.filter((e) => (errorCounts[e.key] || 0) > 0).map((errorType) => {
                   const count = errorCounts[errorType.key] || 0;
                   return (
                     <div key={errorType.key} className="flex items-center justify-between">
@@ -502,15 +495,6 @@ export default function PronunciationAssessmentReview({
 
         {/* ═══════════ Actions ═══════════ */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={onDetailedFeedback}
-            className="h-12 px-8 rounded-xl bg-indigo-600 text-white font-semibold text-sm
-              hover:bg-indigo-700 active:scale-[0.98] transition-all duration-150 cursor-pointer
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
-              shadow-md shadow-indigo-600/20"
-          >
-            Detailed Feedback
-          </button>
           <button
             onClick={onBack}
             className="h-12 px-6 rounded-xl border border-slate-200 bg-white text-slate-600 font-semibold text-sm

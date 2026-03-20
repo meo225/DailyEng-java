@@ -6,6 +6,7 @@ import {
   createCustomScenario,
   createRandomScenario,
   createFreeTalkScenario,
+  deleteCustomScenario,
   getCustomTopics,
 } from "@/actions/speaking";
 import type { Scenario } from "./types";
@@ -75,9 +76,7 @@ export function useCustomTopics({
 
     try {
       const result = await action();
-      router.push(
-        `/speaking/session/${result.scenario.id}?session=${result.sessionId}`
-      );
+      router.push(`/speaking/session/${result.scenario.id}`);
     } catch (error) {
       console.error(error);
       toast.error(errorMessage);
@@ -113,6 +112,36 @@ export function useCustomTopics({
       "Failed to start free conversation"
     );
 
+  const handleDeleteScenario = async (scenarioId: string) => {
+    // Optimistic removal
+    setCustomScenarios((prev) => prev.filter((s) => s.id !== scenarioId));
+    try {
+      await deleteCustomScenario(scenarioId);
+    } catch (error) {
+      console.error("Failed to delete scenario:", error);
+      toast.error("Failed to delete scenario");
+      // Restore on failure by re-fetching
+      if (userId) {
+        getCustomTopics(userId).then((topics) =>
+          setCustomScenarios(
+            topics.map((s) => ({
+              id: s.id,
+              title: s.title,
+              description: s.description,
+              category: s.category || "Custom",
+              level: s.level || "B1",
+              image: s.image || "/learning.png",
+              sessionsCompleted: 0,
+              totalSessions: 10,
+              progress: 0,
+              isCustom: true,
+            }))
+          )
+        );
+      }
+    }
+  };
+
   return {
     isDialogOpen,
     setIsDialogOpen,
@@ -122,6 +151,7 @@ export function useCustomTopics({
     handleCreateScenario,
     handleSurpriseMe,
     handleFreeTalk,
+    handleDeleteScenario,
     customScenarios,
     customScenariosLoading,
     isGenerating,

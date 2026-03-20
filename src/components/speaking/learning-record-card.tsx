@@ -18,20 +18,20 @@ import {
 interface LearningRecordCardProps {
   overallScore: number;
   grammarScore: number;
-  relevanceScore: number;
+  topicScore: number;
   fluencyScore: number;
-  pronunciationScore: number;
-  intonationScore: number;
+  accuracyScore: number;
+  prosodyScore: number;
   date: Date;
 }
 
 export function LearningRecordCard({
   overallScore,
   grammarScore,
-  relevanceScore,
+  topicScore,
   fluencyScore,
-  pronunciationScore,
-  intonationScore,
+  accuracyScore,
+  prosodyScore,
   date,
 }: LearningRecordCardProps) {
   const formatDate = (d: Date) => {
@@ -51,11 +51,11 @@ export function LearningRecordCard({
   };
 
   const scores = [
-    { icon: Target, value: relevanceScore, label: "Relevance" },
-    { icon: Mic2, value: pronunciationScore, label: "Pronunciation" },
-    { icon: Waveform, value: intonationScore, label: "Intonation & Stress" },
+    { icon: Mic2, value: accuracyScore, label: "Accuracy" },
     { icon: Zap, value: fluencyScore, label: "Fluency" },
+    { icon: Waveform, value: prosodyScore, label: "Prosody" },
     { icon: Languages, value: grammarScore, label: "Grammar" },
+    { icon: Target, value: topicScore, label: "Topic" },
   ];
 
   return (

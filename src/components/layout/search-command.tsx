@@ -7,7 +7,8 @@ import { useAppStore } from "@/lib/store"
 
 export function SearchCommand() {
   const pathname = usePathname()
-  const { searchOpen, setSearchOpen } = useAppStore()
+  const searchOpen = useAppStore((state) => state.searchOpen)
+  const setSearchOpen = useAppStore((state) => state.setSearchOpen)
   const [query, setQuery] = useState("")
 
   const isImmersivePage =

@@ -28,7 +28,7 @@ public class SpeakingTurn extends BaseEntity {
     @CreationTimestamp @Column(updatable = false) private LocalDateTime timestamp;
 
     // Scores
-    private Integer pronunciationScore;
+    private Integer accuracyScore;
     private Integer fluencyScore;
 
     // Raw metrics — Prisma stores Float[] as PostgreSQL DOUBLE PRECISION[]

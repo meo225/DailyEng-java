@@ -1,18 +1,29 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { LearningRecordCard } from "./learning-record-card"
-import { History, ArrowLeft, Trophy, Target, TrendingUp, Calendar } from "lucide-react"
+import { History, ArrowLeft, Trophy, Target, TrendingUp, Calendar, Trash2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface LearningRecord {
   id: string;
   overallScore: number;
   grammarScore: number;
-  relevanceScore: number;
+  topicScore: number;
   fluencyScore: number;
-  pronunciationScore: number;
-  intonationScore: number;
+  accuracyScore: number;
+  prosodyScore: number;
   date: Date;
 }
 
@@ -20,9 +31,11 @@ interface LearningHistoryProps {
   records: LearningRecord[];
   onBack: () => void;
   onSelectRecord?: (recordId: string) => void;
+  onDeleteRecord?: (recordId: string) => void;
 }
 
-export function LearningHistory({ records, onBack, onSelectRecord }: LearningHistoryProps) {
+export function LearningHistory({ records, onBack, onSelectRecord, onDeleteRecord }: LearningHistoryProps) {
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   // Calculate statistics
   const totalSessions = records.length;
   const averageScore =
@@ -119,32 +132,51 @@ export function LearningHistory({ records, onBack, onSelectRecord }: LearningHis
       {/* Horizontal Line */}
       <div className="border-t border-primary-200 mb-4" />
 
-      {/* Records List - No onClick, just hover effect */}
+      {/* Records List */}
       <div className="space-y-3 max-h-[400px] overflow-y-auto overflow-x-visible px-1 -mx-1 pr-3">
         {records.length > 0 ? (
           records.map((record) => (
             <div
               key={record.id}
-              onClick={() => onSelectRecord?.(record.id)}
-              className={onSelectRecord ? "cursor-pointer transition-transform duration-150 hover:scale-[1.01] active:scale-[0.99]" : ""}
-              role={onSelectRecord ? "button" : undefined}
-              tabIndex={onSelectRecord ? 0 : undefined}
-              onKeyDown={(e) => {
-                if (onSelectRecord && (e.key === "Enter" || e.key === " ")) {
-                  e.preventDefault();
-                  onSelectRecord(record.id);
-                }
-              }}
+              className="relative group"
             >
-              <LearningRecordCard
-                overallScore={record.overallScore}
-                grammarScore={record.grammarScore}
-                relevanceScore={record.relevanceScore}
-                fluencyScore={record.fluencyScore}
-                pronunciationScore={record.pronunciationScore}
-                intonationScore={record.intonationScore}
-                date={record.date}
-              />
+              <div
+                onClick={() => onSelectRecord?.(record.id)}
+                className={onSelectRecord ? "cursor-pointer transition-transform duration-150 hover:scale-[1.01] active:scale-[0.99]" : ""}
+                role={onSelectRecord ? "button" : undefined}
+                tabIndex={onSelectRecord ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (onSelectRecord && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    onSelectRecord(record.id);
+                  }
+                }}
+              >
+                <LearningRecordCard
+                  overallScore={record.overallScore}
+                  grammarScore={record.grammarScore}
+                  topicScore={record.topicScore}
+                  fluencyScore={record.fluencyScore}
+                  accuracyScore={record.accuracyScore}
+                  prosodyScore={record.prosodyScore}
+                  date={record.date}
+                />
+              </div>
+              {/* Delete button — shown on hover */}
+              {onDeleteRecord && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPendingDeleteId(record.id);
+                  }}
+                  title="Delete this session"
+                  className="absolute top-3 right-3 p-1.5 rounded-full bg-white/90 text-red-400 border border-red-100
+                    opacity-0 group-hover:opacity-100 transition-opacity duration-150
+                    hover:bg-red-50 hover:text-red-600 shadow-sm z-10"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
           ))
         ) : (
@@ -161,6 +193,32 @@ export function LearningHistory({ records, onBack, onSelectRecord }: LearningHis
           </div>
         )}
       </div>
+
+      {/* Confirm delete */}
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the session and all its assessment data. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDeleteId) {
+                  onDeleteRecord?.(pendingDeleteId);
+                  setPendingDeleteId(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

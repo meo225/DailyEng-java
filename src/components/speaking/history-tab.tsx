@@ -1,10 +1,21 @@
+import { useState } from "react";
 import dynamic from "next/dynamic";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadarChart } from "@/components/speaking/radar-chart";
 import { LearningRecordCard } from "@/components/speaking/learning-record-card";
 import { Pagination } from "./pagination";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { HistorySession, HistoryStats } from "@/hooks/speaking/types";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -46,6 +57,7 @@ interface HistoryTabProps {
   onPageChange: (page: number) => void;
   onRatingFilterChange: (rating: string | null) => void;
   onSessionClick: (scenarioId: string, sessionId: string) => void;
+  onDeleteSession?: (sessionId: string) => void;
 }
 
 const RATING_FILTERS = [
@@ -69,6 +81,7 @@ export function HistoryTab({
   onPageChange,
   onRatingFilterChange,
   onSessionClick,
+  onDeleteSession,
 }: HistoryTabProps) {
   const { t } = useTranslation();
 
@@ -116,6 +129,7 @@ export function HistoryTab({
           isLoading={historyLoading}
           ratingFilter={historyRatingFilter}
           onSessionClick={onSessionClick}
+          onDeleteSession={onDeleteSession}
         />
 
         <Pagination
@@ -151,17 +165,14 @@ function CriteriaRadarChart({
         ) : stats && stats.totalSessions > 0 ? (
           <RadarChart
             data={[
-              { label: t("speaking_hub.history.criteria.relevance"), value: stats.criteriaAverages.relevance },
-              {
-                label: t("speaking_hub.history.criteria.pronunciation"),
-                value: stats.criteriaAverages.pronunciation,
-              },
-              {
-                label: t("speaking_hub.history.criteria.intonation"),
-                value: stats.criteriaAverages.intonation,
-              },
+              { label: t("speaking_hub.history.criteria.accuracy"), value: stats.criteriaAverages.accuracy },
               { label: t("speaking_hub.history.criteria.fluency"), value: stats.criteriaAverages.fluency },
+              {
+                label: t("speaking_hub.history.criteria.prosody"),
+                value: stats.criteriaAverages.prosody,
+              },
               { label: t("speaking_hub.history.criteria.grammar"), value: stats.criteriaAverages.grammar },
+              { label: t("speaking_hub.history.criteria.topic"), value: stats.criteriaAverages.topic },
             ]}
             size={300}
           />
@@ -178,13 +189,16 @@ function SessionList({
   isLoading,
   ratingFilter,
   onSessionClick,
+  onDeleteSession,
 }: {
   sessions: HistorySession[];
   isLoading: boolean;
   ratingFilter: string | null;
   onSessionClick: (scenarioId: string, sessionId: string) => void;
+  onDeleteSession?: (sessionId: string) => void;
 }) {
   const { t } = useTranslation();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -236,27 +250,70 @@ function SessionList({
   }
 
   return (
-    <div className="space-y-3 mb-6">
-      {sessions.map((session) => (
-        <div
-          key={session.id}
-          className="cursor-pointer"
-          onClick={() => onSessionClick(session.scenarioId, session.id)}
-        >
-          <div className="text-xs text-muted-foreground mb-1 pl-1">
-            {session.scenarioTitle}
+    <>
+      <div className="space-y-3 mb-6">
+        {sessions.map((session) => (
+          <div key={session.id} className="relative group">
+            <div
+              className="cursor-pointer"
+              onClick={() => onSessionClick(session.scenarioId, session.id)}
+            >
+              <div className="text-xs text-muted-foreground mb-1 pl-1">
+                {session.scenarioTitle}
+              </div>
+              <LearningRecordCard
+                overallScore={session.overallScore}
+                grammarScore={session.grammarScore}
+                topicScore={session.topicScore}
+                fluencyScore={session.fluencyScore}
+                accuracyScore={session.accuracyScore}
+                prosodyScore={session.prosodyScore}
+                date={session.createdAt}
+              />
+            </div>
+            {onDeleteSession && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPendingDeleteId(session.id);
+                }}
+                title="Delete this session"
+                className="absolute top-3 right-3 p-1.5 rounded-full bg-white/90 text-red-400 border border-red-100
+                  opacity-0 group-hover:opacity-100 transition-opacity duration-150
+                  hover:bg-red-50 hover:text-red-600 shadow-sm cursor-pointer z-10"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
-          <LearningRecordCard
-            overallScore={session.overallScore}
-            grammarScore={session.grammarScore}
-            relevanceScore={session.relevanceScore}
-            fluencyScore={session.fluencyScore}
-            pronunciationScore={session.pronunciationScore}
-            intonationScore={session.intonationScore}
-            date={session.createdAt}
-          />
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {/* Confirm delete dialog */}
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the session and all its data. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDeleteId) {
+                  onDeleteSession?.(pendingDeleteId);
+                  setPendingDeleteId(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

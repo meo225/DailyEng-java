@@ -29,7 +29,8 @@ const INITIAL_MESSAGE: DoraraChatMessage = {
 
 export function Dorara() {
   const { user, status } = useAuth();
-  const { doraraOpen, setDoraraOpen } = useAppStore();
+  const doraraOpen = useAppStore((state) => state.doraraOpen);
+  const setDoraraOpen = useAppStore((state) => state.setDoraraOpen);
   const pathname = usePathname();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<DoraraChatMessage[]>([

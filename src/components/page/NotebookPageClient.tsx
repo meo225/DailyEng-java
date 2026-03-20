@@ -41,7 +41,7 @@ export default function NotebookPageClient({
 
   return (
     <ProtectedRoute pageName="Notebook" pageDescription="Save and organize your vocabulary and grammar." pageIcon={PageIcons.notebook}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <div className="flex gap-6 min-h-[calc(100vh-200px)]">
           {/* Sidebar */}
           <NotebookSidebar
@@ -59,9 +59,9 @@ export default function NotebookPageClient({
 
           {/* Main Content */}
           <div className="flex-1 flex flex-col min-w-0">
-            {/* Tabs */}
+            {/* Pill Tabs */}
             <div className="flex items-center justify-between mb-6 gap-4">
-              <div className="flex gap-8 border-b border-gray-200 pb-0">
+              <div className="flex gap-1 p-1 bg-primary-50/60 rounded-full border border-primary-100">
                 {[
                   { value: "list", label: state.collectionTypeFilter === "vocabulary" ? "List View" : "All Rules" },
                   { value: "flashcards", label: state.collectionTypeFilter === "vocabulary" ? "Flashcards" : "Quizzes" },
@@ -70,10 +70,8 @@ export default function NotebookPageClient({
                   <button
                     key={tab.value}
                     onClick={() => state.setViewMode(tab.value as "list" | "flashcards" | "statistics")}
-                    className={`pb-3 px-2 text-lg font-bold transition-colors border-b-2 whitespace-nowrap cursor-pointer ${
-                      state.viewMode === tab.value
-                        ? "border-primary text-primary"
-                        : "border-transparent text-muted-foreground hover:text-gray-900"
+                    className={`notebook-tab whitespace-nowrap ${
+                      state.viewMode === tab.value ? "notebook-tab-active" : ""
                     }`}
                   >
                     {tab.label}
@@ -83,14 +81,15 @@ export default function NotebookPageClient({
 
               <div className="flex items-center gap-2">
                 {state.viewMode === "list" && state.selectedItems.size > 0 && state.currentCollectionType === "vocabulary" && (
-                  <Button onClick={state.startPractice} className="gap-2 rounded-xl h-11 cursor-pointer">
+                  <Button onClick={state.startPractice}
+                    className="gap-2 rounded-full h-10 px-5 cursor-pointer bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 shadow-md shadow-primary-500/20 transition-all duration-200">
                     <GraduationCap className="h-4 w-4" /> Practice ({state.selectedItems.size})
                   </Button>
                 )}
               </div>
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 notebook-enter">
               <ViewContent state={state} />
             </div>
           </div>

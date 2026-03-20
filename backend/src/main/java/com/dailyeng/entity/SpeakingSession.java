@@ -26,10 +26,10 @@ public class SpeakingSession extends BaseEntity {
 
     private Integer overallScore;
     private Integer grammarScore;
-    private Integer relevanceScore;
+    private Integer topicScore;
     private Integer fluencyScore;
-    private Integer pronunciationScore;
-    private Integer intonationScore;
+    private Integer accuracyScore;
+    private Integer prosodyScore;
 
     private String feedbackTitle;
     private String feedbackSummary;

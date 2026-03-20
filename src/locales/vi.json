@@ -46,11 +46,11 @@
         "needs_work": "Cần cải thiện"
       },
       "criteria": {
-        "relevance": "Sự liên quan",
-        "pronunciation": "Phát âm",
-        "intonation": "Ngữ điệu",
+        "accuracy": "Độ chính xác",
         "fluency": "Độ trôi chảy",
-        "grammar": "Ngữ pháp"
+        "prosody": "Ngữ điệu",
+        "grammar": "Ngữ pháp",
+        "topic": "Chủ đề"
       }
     },
     "bookmarks": {

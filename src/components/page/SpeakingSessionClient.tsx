@@ -7,7 +7,6 @@ import PreparationView from "@/components/speaking/views/PreparationView";
 import ActiveSessionView from "@/components/speaking/views/ActiveSessionView";
 import HistoryView from "@/components/speaking/views/HistoryView";
 import RecordReviewView from "@/components/speaking/views/RecordReviewView";
-import DetailView from "@/components/speaking/views/DetailView";
 import CompletionView from "@/components/speaking/views/CompletionView";
 
 // Re-export types for backward compatibility
@@ -114,7 +113,6 @@ export default function SpeakingSessionClient(
           sessionMode={session.sessionMode}
           backUrl={session.backUrl}
           onRetry={session.resetSession}
-          onDetailedFeedback={session.feedback.handleViewDetailedFeedback}
           router={session.router}
         />
       );
@@ -126,6 +124,7 @@ export default function SpeakingSessionClient(
           records={session.feedback.dynamicRecords}
           onBack={() => session.setViewState("preparation")}
           onSelectRecord={session.feedback.handleSelectRecord}
+          onDeleteRecord={session.feedback.handleDeleteRecord}
         />
       );
 
@@ -142,29 +141,6 @@ export default function SpeakingSessionClient(
             session.feedback.setLoadedSessionData(null);
           }}
           onRetry={session.resetSession}
-          onDetailedFeedback={() => session.setViewState("detail")}
-          router={session.router}
-          t={session.t}
-        />
-      );
-
-    case "detail":
-      return (
-        <DetailView
-          isLoading={session.feedback.isLoadingFeedback}
-          feedbackToUse={session.feedback.feedbackToUse}
-          analysisResult={session.feedback.analysisResult}
-          selectedRecordId={session.feedback.selectedRecordId}
-          fromParam={session.fromParam}
-          backUrl={session.backUrl}
-          onBack={() => {
-            session.setViewState(
-              session.feedback.selectedRecordId ? "record-review" : "complete"
-            );
-            if (!session.feedback.selectedRecordId) {
-              session.feedback.setDynamicFeedback(null);
-            }
-          }}
           router={session.router}
           t={session.t}
         />

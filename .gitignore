@@ -54,3 +54,7 @@ backend/target/
 .classpath
 .project
 backend/.mvn/wrapper/maven-wrapper.jar
+
+# Cloud SQL Auth Proxy
+cloud-sql-proxy
+

@@ -28,12 +28,12 @@ export interface Turn {
   wordAssessments?: WordAssessment[];
   pronunciationScores?: PronunciationScores;
   scores?: {
-    pronunciation?: number;
+    accuracy?: number;
     fluency?: number;
     grammar?: number;
     content?: number;
-    relevance?: number;
-    intonation?: number;
+    topic?: number;
+    prosody?: number;
   };
 }
 
@@ -44,18 +44,17 @@ export type ViewState =
   | "analyzing"
   | "complete"
   | "history"
-  | "record-review"
-  | "detail";
+  | "record-review";
 
 // ─── Domain models ──────────────────────────────────
 export interface LearningRecord {
   id: string;
   overallScore: number;
   grammarScore: number;
-  relevanceScore: number;
+  topicScore: number;
   fluencyScore: number;
-  pronunciationScore: number;
-  intonationScore: number;
+  accuracyScore: number;
+  prosodyScore: number;
   date: Date;
 }
 
@@ -109,12 +108,12 @@ export interface InitialTurn {
   /** ISO string for serialization */
   timestamp: string;
   scores?: {
-    pronunciation?: number;
+    accuracy?: number;
     fluency?: number;
     grammar?: number;
     content?: number;
-    relevance?: number;
-    intonation?: number;
+    topic?: number;
+    prosody?: number;
   };
 }
 
@@ -124,17 +123,16 @@ export interface SpeakingSessionClientProps {
   scenario: ScenarioData | null;
   initialTurns: InitialTurn[];
   learningRecords: LearningRecord[];
-  detailedFeedback: DetailedFeedbackData;
 }
 
 // ─── Analysis result from server ────────────────────
 export interface AnalysisResult {
   scores: {
     grammar: number;
-    relevance: number;
+    topic: number;
     fluency: number;
-    pronunciation: number;
-    intonation: number;
+    accuracy: number;
+    prosody: number;
     overall: number;
   };
   sessionAnalysis: {
@@ -162,16 +160,16 @@ export interface AnalysisResult {
 export interface LoadedSessionData {
   scores: {
     grammar: number;
-    relevance: number;
+    topic: number;
     fluency: number;
-    pronunciation: number;
-    intonation: number;
+    accuracy: number;
+    prosody: number;
     overall: number;
   };
   conversation: {
     role: string;
     text: string;
-    pronunciationScore?: number;
+    accuracyScore?: number;
     fluencyScore?: number;
     wordAssessments?: WordAssessment[];
   }[];
@@ -180,9 +178,9 @@ export interface LoadedSessionData {
 // ─── Session scores (for radar chart etc.) ──────────
 export interface SessionScores {
   grammar: number;
-  relevance: number;
+  topic: number;
   fluency: number;
-  pronunciation: number;
-  intonation: number;
+  accuracy: number;
+  prosody: number;
   overall: number;
 }

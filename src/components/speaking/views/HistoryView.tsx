@@ -7,6 +7,7 @@ interface HistoryViewProps {
   records: LearningRecord[];
   onBack: () => void;
   onSelectRecord: (recordId: string) => void;
+  onDeleteRecord?: (recordId: string) => void;
 }
 
 export default function HistoryView({
@@ -14,6 +15,7 @@ export default function HistoryView({
   records,
   onBack,
   onSelectRecord,
+  onDeleteRecord,
 }: HistoryViewProps) {
   if (isLoading) {
     return <HistoryLoadingSkeleton />;
@@ -25,6 +27,7 @@ export default function HistoryView({
         records={records}
         onBack={onBack}
         onSelectRecord={onSelectRecord}
+        onDeleteRecord={onDeleteRecord}
       />
     </div>
   );
