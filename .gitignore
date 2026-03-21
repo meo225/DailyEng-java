@@ -37,6 +37,7 @@ data/
 .agent/
 
 plan
+plan.md
 
 # ========================
 # Java / Spring Boot / Maven
