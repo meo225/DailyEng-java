@@ -2,25 +2,48 @@
 
 import { cookies } from "next/headers";
 
+// ── Types ───────────────────────────────────────────────────────────────
+
 export interface DoraraChatMessage {
   id: string;
   role: "user" | "tutor";
   content: string;
+  /** Structured data from AI — only present on tutor messages */
+  suggestedActions?: string[];
+  vocabHighlights?: VocabHighlight[];
+  quizQuestion?: QuizQuestion | null;
+}
+
+export interface VocabHighlight {
+  word: string;
+  phonetic?: string;
+  meaning: string;
+  example?: string;
+}
+
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
 }
 
 export interface DoraraChatResponse {
   response: string;
+  suggestedActions?: string[];
+  vocabHighlights?: VocabHighlight[];
+  quizQuestion?: QuizQuestion | null;
   error?: string;
 }
 
-/**
- * Hàm bí mật: Tự động móc Token từ Cookie Next.js và nối dây sang Cổng 8080 của Java.
- */
+// ── Server-side fetch helper ────────────────────────────────────────────
+
 async function fetchJava(path: string, options: RequestInit = {}) {
   const cookieStore = await cookies();
   const token = cookieStore.get("access_token")?.value;
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+  const API_BASE =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
   const headers = new Headers(options.headers || {});
   headers.set("Content-Type", "application/json");
   if (token) {
@@ -29,17 +52,13 @@ async function fetchJava(path: string, options: RequestInit = {}) {
 
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!res.ok) {
-    throw new Error(`Java DB Backend Failed! Status: ${res.status}`);
+    throw new Error(`Java Backend Failed! Status: ${res.status}`);
   }
   return res.json();
 }
 
-/**
- * Send a message to Dorara and get a response
- * @param messages - Current conversation history (for context)
- * @param userMessage - The new message from the user
- * @param currentPage - The current page path for context
- */
+// ── Send message (non-streaming, structured response) ───────────────────
+
 export async function sendDoraraMessage(
   messages: DoraraChatMessage[],
   userMessage: string,
@@ -49,17 +68,40 @@ export async function sendDoraraMessage(
     const res = await fetchJava("/dorara/chat", {
       method: "POST",
       body: JSON.stringify({
-        messages,
+        messages: messages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+        })),
         userMessage,
         currentPage,
       }),
     });
-    return { response: res.response || "" };
+    return {
+      response: res.response || "",
+      suggestedActions: res.suggestedActions || [],
+      vocabHighlights: res.vocabHighlights || [],
+      quizQuestion: res.quizQuestion || null,
+    };
   } catch (error) {
     console.error("[sendDoraraMessage] Error:", error);
     return {
       response: "",
-      error: "Something went wrong. Please try again. Or please login to use Dorara.",
+      error:
+        "Something went wrong. Please try again. Or please login to use Dorara.",
     };
   }
+}
+
+// ── Build streaming URL (used by client-side fetch) ─────────────────────
+
+export async function getStreamConfig(): Promise<{
+  apiBase: string;
+  token: string | undefined;
+}> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+  const apiBase =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+  return { apiBase, token };
 }

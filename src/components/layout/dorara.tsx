@@ -13,19 +13,90 @@ import {
   HelpCircle,
   AlertTriangle,
   RotateCcw,
+  Mic,
+  Brain,
+  Target,
+  GraduationCap,
+  Notebook,
+  Zap,
+  ArrowRight,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store";
-import { sendDoraraMessage, DoraraChatMessage } from "@/actions/dorara";
+import {
+  sendDoraraMessage,
+  DoraraChatMessage,
+} from "@/actions/dorara";
+import { DoraraMessageRenderer } from "@/components/dorara/dorara-message-renderer";
 
-const STORAGE_KEY = "dorara-chat-history";
+const STORAGE_KEY = "dorara-chat-history-v2";
 const MAX_MESSAGES = 100;
 const INITIAL_MESSAGE: DoraraChatMessage = {
   id: "initial",
   role: "tutor",
   content:
-    "Hi there! I'm Dorara, your English learning assistant. How can I help you today?",
+    "Hey! I'm **Dorara**, your AI English companion.\n\nI know your learning journey — your XP, your strengths, your weak spots. Ask me anything and I'll tailor it to you.",
+  suggestedActions: [
+    "Teach me a new word",
+    "Quiz me on grammar",
+    "How do I use DailyEng?",
+  ],
 };
+
+// ── Context-aware quick actions ─────────────────────────────────────────
+
+interface QuickAction {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  message: string;
+}
+
+function getQuickActionsForPage(pathname: string): QuickAction[] {
+  const cleanPath = pathname.split("?")[0].replace(/\/$/, "") || "/";
+
+  if (cleanPath === "/speaking" || cleanPath.startsWith("/speaking/")) {
+    return [
+      { icon: Mic, label: "Review my speaking", message: "How were my recent speaking sessions? What should I improve?" },
+      { icon: Target, label: "Suggest a scenario", message: "What speaking scenario should I practice next based on my level?" },
+      { icon: Lightbulb, label: "Speaking tips", message: "Give me tips to improve my English speaking fluency!" },
+    ];
+  }
+  if (cleanPath === "/vocab" || cleanPath.startsWith("/vocab/")) {
+    return [
+      { icon: BookOpen, label: "Teach me a word", message: "Teach me a useful English word that matches my level with examples!" },
+      { icon: Brain, label: "Quiz me", message: "Give me a vocabulary quiz question to test my knowledge!" },
+      { icon: Zap, label: "Word of the day", message: "What's a great word of the day? Include phonetics and examples." },
+    ];
+  }
+  if (cleanPath === "/grammar" || cleanPath.startsWith("/grammar/")) {
+    return [
+      { icon: GraduationCap, label: "Explain this rule", message: "Explain the grammar rule I'm studying with simple examples!" },
+      { icon: Brain, label: "Grammar quiz", message: "Give me a grammar quiz question to practice!" },
+      { icon: Lightbulb, label: "Common mistakes", message: "What are common grammar mistakes Vietnamese learners make?" },
+    ];
+  }
+  if (cleanPath === "/notebook") {
+    return [
+      { icon: Notebook, label: "Review weak words", message: "Which words in my notebook need review? Quiz me on them!" },
+      { icon: Brain, label: "Quiz notebook", message: "Give me a quiz based on words in my notebook!" },
+      { icon: Target, label: "Study strategy", message: "Best strategy for reviewing vocabulary with spaced repetition?" },
+    ];
+  }
+  if (cleanPath.startsWith("/user/profile")) {
+    return [
+      { icon: Target, label: "Analyze progress", message: "Look at my learning stats and tell me what to focus on next!" },
+      { icon: Sparkles, label: "Set a goal", message: "Help me set a realistic learning goal for this week!" },
+      { icon: Zap, label: "Motivate me", message: "Give me some motivation to keep learning English!" },
+    ];
+  }
+
+  return [
+    { icon: BookOpen, label: "Teach me a word", message: "Teach me a useful English word with pronunciation, meaning, and an example sentence!" },
+    { icon: Brain, label: "Quiz me", message: "Give me a quick English quiz question to test my skills!" },
+    { icon: HelpCircle, label: "How to use DailyEng", message: "What features does DailyEng have? How should I start learning?" },
+  ];
+}
+
+// ── Main Component ──────────────────────────────────────────────────────
 
 export function Dorara() {
   const { user, status } = useAuth();
@@ -33,357 +104,352 @@ export function Dorara() {
   const setDoraraOpen = useAppStore((state) => state.setDoraraOpen);
   const pathname = usePathname();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [messages, setMessages] = useState<DoraraChatMessage[]>([
-    INITIAL_MESSAGE,
-  ]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [messages, setMessages] = useState<DoraraChatMessage[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
   const [isPending, startTransition] = useTransition();
-  const [isAnimating, setIsAnimating] = useState(false);
   const [showLimitWarning, setShowLimitWarning] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   const isAuthenticated = status === "authenticated" && !!user;
+  const isLoading = isPending;
+  const quickActions = getQuickActionsForPage(pathname || "/");
+  const lastTutorMessage = [...messages].reverse().find((m) => m.role === "tutor");
+  const aiSuggestedActions = lastTutorMessage?.suggestedActions || [];
 
-  // Load messages from localStorage on mount
+  // Load/save localStorage
   useEffect(() => {
     if (typeof window !== "undefined" && !isInitialized) {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setMessages(parsed);
-          }
+          if (Array.isArray(parsed) && parsed.length > 0) setMessages(parsed);
         }
-      } catch (error) {
-        console.error("Error loading chat history:", error);
-      }
+      } catch (e) { console.error("Error loading chat:", e); }
       setIsInitialized(true);
     }
   }, [isInitialized]);
 
-  // Save messages to localStorage when they change
   useEffect(() => {
     if (isInitialized && typeof window !== "undefined") {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      } catch (error) {
-        console.error("Error saving chat history:", error);
-      }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(messages)); }
+      catch (e) { console.error("Error saving chat:", e); }
     }
   }, [messages, isInitialized]);
 
-  // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Don't render for non-authenticated users
-  if (!isAuthenticated) {
-    return null;
-  }
+  useEffect(() => {
+    if (doraraOpen) setTimeout(() => inputRef.current?.focus(), 300);
+  }, [doraraOpen]);
+
+  if (!isAuthenticated) return null;
 
   const isAtLimit = messages.length >= MAX_MESSAGES;
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  // ── Handlers ──────────────────────────────────────────────────────────
 
-    // Check message limit
-    if (isAtLimit) {
-      setShowLimitWarning(true);
-      return;
-    }
+  const handleSend = async (overrideMessage?: string) => {
+    const messageText = overrideMessage || input.trim();
+    if (!messageText) return;
+    if (isAtLimit) { setShowLimitWarning(true); return; }
 
     const userMessage: DoraraChatMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input.trim(),
+      id: Date.now().toString(), role: "user", content: messageText,
     };
-
-    const currentInput = input.trim();
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    // Call API with transition for loading state
     startTransition(async () => {
-      const result = await sendDoraraMessage(
-        messages,
-        currentInput,
-        pathname || "/"
-      );
-
-      if (result.error) {
-        // Add error message from tutor
-        const errorMessage: DoraraChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: "tutor",
-          content: result.error,
-        };
-        setMessages((prev) => [...prev, errorMessage]);
-      } else {
-        // Add tutor response
-        const tutorMessage: DoraraChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: "tutor",
-          content: result.response,
-        };
-        setMessages((prev) => [...prev, tutorMessage]);
-      }
+      const result = await sendDoraraMessage(messages, messageText, pathname || "/");
+      setMessages((prev) => [...prev, {
+        id: (Date.now() + 1).toString(), role: "tutor",
+        content: result.error || result.response,
+        suggestedActions: result.suggestedActions,
+        vocabHighlights: result.vocabHighlights,
+        quizQuestion: result.quizQuestion,
+      }]);
     });
   };
+
 
   const handleClearHistory = () => {
     setMessages([INITIAL_MESSAGE]);
     setShowLimitWarning(false);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY);
   };
 
-  const handleQuickAction = (action: string) => {
-    let message = "";
-    switch (action) {
-      case "Vocabulary help":
-        message = "Can you help me learn vocabulary?";
-        break;
-      case "Grammar tips":
-        message = "Give me some tips for learning English grammar!";
-        break;
-      case "Practice ideas":
-        message = "Suggest some effective ways to practice English!";
-        break;
-    }
-    if (message) {
-      setInput(message);
-    }
-  };
-
-  // Handle opening the chat with animation
-  const handleOpenChat = () => {
-    setIsAnimating(true);
-    setDoraraOpen(true);
-    setTimeout(() => setIsAnimating(false), 300);
-  };
-
-  // Handle closing the chat with animation
-  const handleCloseChat = () => {
-    setIsAnimating(true);
-    setDoraraOpen(false);
-    setTimeout(() => setIsAnimating(false), 300);
-  };
-
-  const quickActions = [
-    { icon: BookOpen, label: "Vocabulary help" },
-    { icon: Lightbulb, label: "Grammar tips" },
-    { icon: HelpCircle, label: "Practice ideas" },
-  ];
+  // ── Render ────────────────────────────────────────────────────────────
 
   return (
     <>
-      {/* Floating Button - Only visible when chat is closed */}
+      {/* ── Floating Trigger ──────────────────────────────────────── */}
       {!doraraOpen && (
         <button
-          onClick={handleOpenChat}
-          className={`
-            fixed bottom-6 right-6 z-50 
-            h-16 w-16 rounded-full 
-            bg-primary-600 text-white 
-            shadow-[4px_4px_0px_0px_rgba(var(--primary-700))] 
-            hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(var(--primary-700))]
-            active:translate-y-0.5 active:shadow-[2px_2px_0px_0px_rgba(var(--primary-700))]
+          onClick={() => setDoraraOpen(true)}
+          className="
+            fixed bottom-6 right-6 z-50 cursor-pointer
+            h-14 w-14 rounded-2xl
+            bg-gradient-to-br from-primary-600 to-primary-700
+            text-white
+            shadow-[0_4px_20px_rgba(79,70,229,0.35)]
+            hover:shadow-[0_6px_28px_rgba(79,70,229,0.5)]
+            hover:-translate-y-0.5
+            active:translate-y-0
             flex items-center justify-center
-            border-2 border-primary-700
-            animate-in fade-in zoom-in-95 duration-300
-          `}
+            border border-primary-500/40
+            transition-all duration-200 ease-out
+          "
           aria-label="Open Dorara"
         >
-          {/* Dorara Avatar */}
           <Image
             src="/dorara-assistant.png"
             alt="Dorara"
-            width={40}
-            height={40}
-            className="rounded-full"
+            width={32}
+            height={32}
+            className="rounded-xl"
           />
         </button>
       )}
 
-      {/* Chat Panel */}
+      {/* ── Chat Panel ────────────────────────────────────────────── */}
       {doraraOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-[420px] max-w-[calc(100vw-24px)] rounded-3xl bg-white border-[1.4px] border-primary-200 shadow-[6px_6px_0px_0px_rgba(var(--primary-200))] flex flex-col h-[520px] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-          {/* Header */}
-          <div className="bg-gradient-to-l from-primary-500 to-primary-600 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {/* Dorara Avatar */}
-                <div className="h-12 w-12 rounded-full bg-primary-500 border-2 border-primary-400 shadow-md flex items-center justify-center">
-                  <Image
-                    src="/dorara-assistant.png"
-                    alt="Dorara"
-                    width={36}
-                    height={36}
-                    className="object-cover rounded-full"
-                  />
-                </div>
-                <div>
-                  <p className="font-bold text-white text-lg flex items-center gap-2">
-                    Dorara
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-xs font-medium">
-                      <span className="h-1.5 w-1.5 rounded-full bg-accent-400 animate-pulse" />
-                      Online
-                    </span>
-                  </p>
-                  <p className="text-sm text-white/80">
-                    Your AI English Assistant
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                {/* New chat button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleClearHistory}
-                  aria-label="New chat"
-                  className="text-white/70 hover:text-white hover:bg-white/20 rounded-full h-9 w-9"
-                  title="New Chat"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCloseChat}
-                  aria-label="Close chat"
-                  className="text-white hover:bg-white/20 rounded-full h-10 w-10"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
+        <div
+          className="
+            fixed bottom-6 right-6 z-50
+            w-[420px] max-w-[calc(100vw-32px)]
+            rounded-2xl
+            bg-white/95
+            backdrop-blur-xl
+            border border-primary-200/50
+            shadow-[0_8px_40px_rgba(79,70,229,0.12),0_2px_8px_rgba(0,0,0,0.04)]
+            flex flex-col
+            h-[600px]
+            overflow-hidden
+            animate-in fade-in slide-in-from-bottom-3 duration-200
+          "
+        >
+          {/* ── Header ──────────────────────────────────────────── */}
+          <div className="relative overflow-hidden">
+            {/* Gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800" />
+            {/* Subtle pattern overlay */}
+            <div className="absolute inset-0 opacity-[0.04]" style={{
+              backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+              backgroundSize: "24px 24px",
+            }} />
 
-            {/* Quick action buttons */}
-            <div className="flex gap-2 mt-4">
-              {quickActions.map((action) => (
-                <button
-                  key={action.label}
-                  onClick={() => handleQuickAction(action.label)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors"
-                >
-                  <action.icon className="h-3.5 w-3.5" />
-                  {action.label}
-                </button>
-              ))}
+            <div className="relative pt-4 pb-3">
+              <div className="flex items-center justify-between px-4">
+                <div className="flex items-center gap-3">
+                  {/* Avatar */}
+                  <div className="relative">
+                    <div className="h-10 w-10 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-lg">
+                      <Image src="/dorara-assistant.png" alt="Dorara" width={28} height={28} className="rounded-lg" />
+                    </div>
+                    {/* Online indicator */}
+                    <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-accent-400 border-2 border-primary-700 shadow-sm" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-white text-[15px] tracking-tight">
+                        Dorara
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/15 backdrop-blur-sm text-[10px] font-semibold text-white/90 uppercase tracking-wider">
+                        <Sparkles className="h-2.5 w-2.5" />
+                        AI
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/60 font-medium">
+                      English Learning Companion
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={handleClearHistory}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all duration-200 cursor-pointer"
+                    aria-label="New chat"
+                    title="New Chat"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDoraraOpen(false)}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all duration-200 cursor-pointer"
+                    aria-label="Close chat"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick actions — pills */}
+              <div className="flex gap-1.5 mt-3 overflow-x-auto pb-0.5 scrollbar-none w-full">
+                {/* Spacer for left padding (16px total = 10px + 6px gap) */}
+                <div className="w-2.5 flex-shrink-0" />
+                {quickActions.map((action) => (
+                  <button
+                    key={action.label}
+                    onClick={() => handleSend(action.message)}
+                    disabled={isLoading}
+                    className="
+                      flex items-center gap-1.5
+                      px-2.5 py-1.5
+                      rounded-lg
+                      bg-white/10 backdrop-blur-sm border border-white/10
+                      hover:bg-white/20 hover:border-white/20
+                      text-white/80 hover:text-white
+                      text-[11px] font-medium
+                      transition-all duration-150
+                      whitespace-nowrap flex-shrink-0
+                      disabled:opacity-40 disabled:cursor-not-allowed
+                      cursor-pointer
+                    "
+                  >
+                    <action.icon className="h-3 w-3 opacity-70" />
+                    {action.label}
+                  </button>
+                ))}
+                {/* Spacer for right padding (ensure it never touches the edge) */}
+                <div className="w-2.5 flex-shrink-0" />
+              </div>
             </div>
           </div>
 
-          {/* Message limit warning */}
+          {/* ── Limit Warning ──────────────────────────────────── */}
           {showLimitWarning && (
-            <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-2 text-amber-700 text-sm">
-              <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-              <span>
-                Message limit of {MAX_MESSAGES} reached. Please start a new chat
-                to continue.
-              </span>
-              <button
-                onClick={handleClearHistory}
-                className="ml-auto text-amber-600 hover:text-amber-800 font-medium underline"
-              >
+            <div className="bg-amber-50/80 border-b border-amber-200/60 px-4 py-2 flex items-center gap-2 text-amber-700 text-xs">
+              <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+              <span>Message limit reached.</span>
+              <button onClick={handleClearHistory} className="ml-auto text-amber-600 hover:text-amber-800 font-semibold cursor-pointer">
                 New Chat
               </button>
             </div>
           )}
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+          {/* ── Messages ──────────────────────────────────────── */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gradient-to-b from-gray-50/30 to-white scrollbar-none">
             {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
+              <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                {/* Tutor avatar */}
                 {msg.role === "tutor" && (
-                  <div className="h-8 w-8 rounded-full bg-primary-500 border border-primary-400 mr-2 flex-shrink-0 shadow-sm flex items-center justify-center">
-                    <Image
-                      src="/dorara-assistant.png"
-                      alt="Dorara"
-                      width={24}
-                      height={24}
-                      className="object-cover rounded-full"
-                    />
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 mr-2 flex-shrink-0 flex items-center justify-center shadow-sm mt-0.5">
+                    <Image src="/dorara-assistant.png" alt="" width={18} height={18} className="rounded-md" />
                   </div>
                 )}
+                {/* Message bubble */}
                 <div
-                  className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
-                    msg.role === "user"
-                      ? "bg-primary-500 text-white rounded-br-md shadow-[2px_2px_0px_0px_rgba(var(--primary-700))]"
-                      : "bg-background text-foreground rounded-bl-md border border-primary-100 shadow-[2px_2px_0px_0px_rgba(var(--primary-100))]"
-                  }`}
+                  className={`
+                    max-w-[82%] px-3.5 py-2.5
+                    ${msg.role === "user"
+                      ? "bg-gradient-to-br from-primary-600 to-primary-700 text-white rounded-2xl rounded-br-lg shadow-[0_2px_8px_rgba(79,70,229,0.2)] text-[13px] leading-relaxed"
+                      : "bg-white text-foreground rounded-2xl rounded-bl-lg border border-gray-200/60 shadow-[0_1px_4px_rgba(0,0,0,0.03)]"
+                    }
+                  `}
                 >
-                  {msg.content}
+                  {msg.role === "tutor" ? (
+                    <DoraraMessageRenderer message={msg} />
+                  ) : (
+                    <span className="whitespace-pre-wrap">{msg.content}</span>
+                  )}
                 </div>
               </div>
             ))}
 
-            {isPending && (
+            {/* Typing indicator */}
+            {isLoading && (
               <div className="flex justify-start">
-                <div className="h-8 w-8 rounded-full bg-primary-500 border border-primary-400 mr-2 shadow-sm flex items-center justify-center">
-                  <Image
-                    src="/dorara-assistant.png"
-                    alt="Dorara"
-                    width={24}
-                    height={24}
-                    className="object-cover rounded-full"
-                  />
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 mr-2 flex items-center justify-center shadow-sm">
+                  <Image src="/dorara-assistant.png" alt="" width={18} height={18} className="rounded-md" />
                 </div>
-                <div className="bg-white border border-primary-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
-                  <div className="flex gap-1.5">
-                    <span
-                      className="h-2 w-2 rounded-full bg-primary-300 animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    />
-                    <span
-                      className="h-2 w-2 rounded-full bg-primary-300 animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    />
-                    <span
-                      className="h-2 w-2 rounded-full bg-primary-300 animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    />
+                <div className="bg-white border border-gray-200/60 rounded-2xl rounded-bl-lg px-4 py-3 shadow-sm">
+                  <div className="flex gap-1 items-center">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: "0ms", animationDuration: "1.4s" }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary-300 animate-bounce" style={{ animationDelay: "200ms", animationDuration: "1.4s" }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary-200 animate-bounce" style={{ animationDelay: "400ms", animationDuration: "1.4s" }} />
                   </div>
                 </div>
               </div>
             )}
+
+            {/* AI-suggested follow-up actions */}
+            {!isLoading && aiSuggestedActions.length > 0 && messages.length > 1 && (
+              <div className="flex flex-wrap gap-1.5 pl-9">
+                {aiSuggestedActions.map((action, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSend(action)}
+                    className="
+                      inline-flex items-center gap-1
+                      px-3 py-1.5 rounded-xl
+                      border border-primary-200/50
+                      bg-primary-50/40
+                      text-[11px] text-primary-700 font-medium
+                      hover:bg-primary-100/60 hover:border-primary-300/50
+                      transition-all duration-150
+                      cursor-pointer
+                    "
+                  >
+                    {action}
+                    <ArrowRight className="h-2.5 w-2.5 opacity-50" />
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="border-t border-primary-100 bg-white p-4">
-            <div className="flex gap-3">
+          {/* ── Input ──────────────────────────────────────────── */}
+          <div className="border-t border-gray-100 bg-white px-4 py-3">
+            <div className="flex gap-2 items-end">
               <input
+                ref={inputRef}
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && !isPending && handleSend()
-                }
-                placeholder="Ask Dorara anything..."
-                disabled={isPending}
-                className="flex-1 rounded-xl border-[1.4px] border-primary-200 bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300 transition-all disabled:opacity-50"
+                onKeyDown={(e) => e.key === "Enter" && !isLoading && handleSend()}
+                placeholder="Ask anything..."
+                disabled={isLoading}
+                className="
+                  flex-1 rounded-xl
+                  border border-gray-200/80 bg-gray-50/50
+                  px-3.5 py-2.5
+                  text-[13px] text-foreground
+                  placeholder:text-gray-400
+                  focus:outline-none focus:ring-2 focus:ring-primary-300/40 focus:border-primary-300/60 focus:bg-white
+                  transition-all duration-200
+                  disabled:opacity-40
+                "
                 aria-label="Message input"
               />
-              <Button
-                size="icon"
-                onClick={handleSend}
-                disabled={isPending || !input.trim()}
+              <button
+                onClick={() => handleSend()}
+                disabled={isLoading || !input.trim()}
                 aria-label="Send message"
-                className="h-12 w-12 rounded-xl bg-primary-500 hover:bg-primary-600 shadow-[3px_3px_0px_0px_rgba(var(--primary-700))] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(var(--primary-700))] active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_rgba(var(--primary-700))] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="
+                  h-10 w-10 rounded-xl
+                  bg-gradient-to-br from-primary-600 to-primary-700
+                  hover:from-primary-700 hover:to-primary-800
+                  text-white
+                  shadow-[0_2px_8px_rgba(79,70,229,0.25)]
+                  hover:shadow-[0_4px_12px_rgba(79,70,229,0.35)]
+                  hover:-translate-y-px
+                  active:translate-y-0
+                  transition-all duration-200
+                  disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
+                  cursor-pointer
+                  flex items-center justify-center flex-shrink-0
+                "
               >
-                <Send className="h-5 w-5" />
-              </Button>
+                <Send className="h-4 w-4" />
+              </button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2 text-center">
+            <p className="text-[10px] text-gray-400 mt-2 text-center tracking-wide">
               {messages.length}/{MAX_MESSAGES} messages
             </p>
           </div>

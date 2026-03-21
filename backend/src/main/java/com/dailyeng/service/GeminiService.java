@@ -399,11 +399,12 @@ public class GeminiService {
     }
 
     // ========================================================================
-    // 4. generateDoraraResponse — AI Chatbot
+    // 4. generateDoraraResponse — AI Chatbot (Structured JSON Output)
     // ========================================================================
 
     /**
-     * Generate Dorara AI chatbot response.
+     * Generate Dorara AI chatbot response as structured JSON.
+     * Returns raw JSON string — parsing is handled by DoraraService.
      */
     public String generateDoraraResponse(
             String systemInstruction,
@@ -411,23 +412,61 @@ public class GeminiService {
             String userMessage
     ) {
         if (client == null) {
-            return "Xin lỗi, tôi gặp chút trục trặc. Bạn có thể hỏi lại được không?";
+            return "{\"response\":\"Xin lỗi, tôi gặp chút trục trặc. Bạn có thể hỏi lại được không?\",\"suggestedActions\":[],\"vocabHighlights\":[],\"quizQuestion\":null}";
         }
 
         try {
             var contents = buildContents(history, userMessage);
-            var responseText = callGemini(systemInstruction, contents, 0.7, 2048);
-            // Clean any accidental markdown
-            return responseText
-                    .replaceAll("\\*\\*", "")
-                    .replaceAll("\\*", "")
-                    .replaceAll("#{1,6}\\s", "")
-                    .replaceAll("```[\\s\\S]*?```", "")
-                    .replaceAll("`", "")
-                    .trim();
+            // Increased tokens (2048 → 4096) for structured JSON with vocab cards & quizzes
+            return callGemini(systemInstruction, contents, 0.7, 4096);
         } catch (Exception e) {
             log.error("[generateDoraraResponse] Error: {}", e.getMessage());
-            return "Xin lỗi, tôi gặp chút trục trặc. Bạn có thể hỏi lại được không?";
+            return "{\"response\":\"Xin lỗi, tôi gặp chút trục trặc. Bạn có thể hỏi lại được không?\",\"suggestedActions\":[],\"vocabHighlights\":[],\"quizQuestion\":null}";
+        }
+    }
+
+    /**
+     * Generate Dorara AI response with streaming via a consumer callback.
+     * Each chunk of text is passed to the consumer as it arrives.
+     */
+    public void generateDoraraResponseStream(
+            String systemInstruction,
+            List<Map<String, String>> history,
+            String userMessage,
+            java.util.function.Consumer<String> chunkConsumer
+    ) {
+        if (client == null) {
+            chunkConsumer.accept("{\"response\":\"Xin lỗi, tôi gặp chút trục trặc.\",\"suggestedActions\":[],\"vocabHighlights\":[],\"quizQuestion\":null}");
+            return;
+        }
+
+        try {
+            var contents = buildContents(history, userMessage);
+            var model = appProperties.getGemini().getModel();
+
+            var configBuilder = GenerateContentConfig.builder()
+                    .candidateCount(1)
+                    .temperature(0.7f)
+                    .maxOutputTokens(4096);
+
+            if (systemInstruction != null && !systemInstruction.isBlank()) {
+                configBuilder.systemInstruction(
+                        Content.fromParts(Part.fromText(systemInstruction)));
+            }
+
+            var config = configBuilder.build();
+
+            // Use streaming API — emit each chunk as it arrives
+            var stream = client.models.generateContentStream(model, contents, config);
+            for (var chunk : stream) {
+                var text = chunk.text();
+                if (text != null && !text.isEmpty()) {
+                    chunkConsumer.accept(text);
+                }
+            }
+        } catch (Exception e) {
+            log.error("[generateDoraraResponseStream] Error: {}", e.getMessage());
+            chunkConsumer.accept("{\"response\":\"Xin lỗi, tôi gặp chút trục trặc.\",\"suggestedActions\":[],\"vocabHighlights\":[],\"quizQuestion\":null}");
         }
     }
 
