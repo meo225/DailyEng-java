@@ -115,6 +115,7 @@ export function StackedCardCarousel({ images, autoPlayInterval = 4000 }: Stacked
         <Button
           variant="outline"
           size="icon"
+          aria-label="Previous slide"
           onClick={() => handleManualNavigation("prev")}
           className="w-12 h-12 rounded-full border-2 border-gray-200 hover:border-[#C2E2FA] hover:bg-[#C2E2FA] hover:text-blue-900 transition-all bg-white"
         >
@@ -144,6 +145,7 @@ export function StackedCardCarousel({ images, autoPlayInterval = 4000 }: Stacked
         <Button
           variant="outline"
           size="icon"
+          aria-label="Next slide"
           onClick={() => handleManualNavigation("next")}
           className="w-12 h-12 rounded-full border-2 border-gray-200 hover:border-[#C2E2FA] hover:bg-[#C2E2FA] hover:text-blue-900 transition-all bg-white"
         >
