@@ -98,4 +98,21 @@ public class JwtTokenProvider {
         }
         return false;
     }
+
+    /**
+     * Check whether the given token is a refresh token (has type=refresh claim).
+     * Prevents access tokens from being used as refresh tokens.
+     */
+    public boolean isRefreshToken(String token) {
+        try {
+            var claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return "refresh".equals(claims.get("type", String.class));
+        } catch (Exception ex) {
+            return false;
+        }
+    }
 }

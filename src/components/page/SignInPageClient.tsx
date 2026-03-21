@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useTransition } from "react";
+import { useState, useTransition, lazy, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
+
+const AuthScene3D = lazy(() => import("@/components/auth/AuthScene3D"));
 
 export interface SignInStat {
   value: string;
@@ -62,58 +64,48 @@ export default function SignInPageClient({ stats }: SignInPageClientProps) {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left side - Decorative */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent-400/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-secondary-400/20 rounded-full blur-3xl" />
-        </div>
+      {/* Left side - 3D Decorative Panel */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        {/* Gradient background behind 3D */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900" />
 
-        {/* Floating icons */}
-        <div className="absolute top-32 left-16 p-4 bg-white/20 backdrop-blur-sm rounded-2xl animate-float">
-          <BookOpen className="h-8 w-8 text-white" />
-        </div>
-        <div
-          className="absolute top-48 right-24 p-4 bg-white/20 backdrop-blur-sm rounded-2xl animate-float"
-          style={{ animationDelay: "1s" }}
-        >
-          <Languages className="h-8 w-8 text-white" />
-        </div>
-        <div
-          className="absolute bottom-40 left-24 p-4 bg-white/20 backdrop-blur-sm rounded-2xl animate-float"
-          style={{ animationDelay: "2s" }}
-        >
-          <GraduationCap className="h-8 w-8 text-white" />
-        </div>
-        <div
-          className="absolute bottom-32 right-32 p-4 bg-white/20 backdrop-blur-sm rounded-2xl animate-float"
-          style={{ animationDelay: "0.5s" }}
-        >
-          <Sparkles className="h-8 w-8 text-white" />
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center px-12 text-white">
-          <h1 className="text-5xl font-bold mb-6 leading-tight">
-            Master English
-            <br />
-            <span className="text-accent-200">Your Way</span>
-          </h1>
-          <p className="text-xl text-white/80 mb-8 max-w-md">
-            Join thousands of learners improving their English skills with our
-            AI-powered platform.
-          </p>
-
-          {/* Stats */}
-          <div className="flex gap-8">
-            {stats.map((stat, index) => (
-              <div key={index}>
-                <p className="text-4xl font-bold">{stat.value}</p>
-                <p className="text-white/70">{stat.label}</p>
+        {/* 3D Canvas */}
+        <Suspense
+          fallback={
+            <div className="absolute inset-0">
+              {/* Fallback gradient with floating icons (old design) */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800">
+                <div className="absolute top-20 left-20 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent-400/20 rounded-full blur-3xl" />
               </div>
-            ))}
+            </div>
+          }
+        >
+          <AuthScene3D variant="signin" />
+        </Suspense>
+
+        {/* Glassmorphic text overlay */}
+        <div className="auth-glass-overlay">
+          <div className="flex flex-col justify-center h-full px-12 text-white">
+            <h1 className="text-5xl font-bold mb-6 leading-tight">
+              Master English
+              <br />
+              <span className="text-accent-200">Your Way</span>
+            </h1>
+            <p className="text-xl text-white/80 mb-8 max-w-md">
+              Join thousands of learners improving their English skills with our
+              AI-powered platform.
+            </p>
+
+            {/* Stats */}
+            <div className="flex gap-8">
+              {stats.map((stat, index) => (
+                <div key={index}>
+                  <p className="text-4xl font-bold">{stat.value}</p>
+                  <p className="text-white/70">{stat.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

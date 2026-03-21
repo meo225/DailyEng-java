@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import javax.sql.DataSource;
 import java.net.URI;
@@ -14,8 +15,11 @@ import java.net.URISyntaxException;
  * Automatically parses the standard Prisma DATABASE_URL (postgresql://user:pass@host:port/db)
  * and configures the Spring Boot DataSource, eliminating the need for separate
  * SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, and SPRING_DATASOURCE_PASSWORD variables.
+ *
+ * Disabled in test profile — tests use spring.datasource.* from application-test.yml.
  */
 @Configuration
+@Profile("!test")
 public class DatabaseConfig {
 
     @Value("${DATABASE_URL:postgresql://postgres:postgres@localhost:5432/dailyeng}")

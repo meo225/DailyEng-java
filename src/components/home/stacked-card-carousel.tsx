@@ -83,7 +83,6 @@ export function StackedCardCarousel({ images, autoPlayInterval = 4000 }: Stacked
               alt={`Slide ${currentIndex + 1}`}
               fill
               className="object-cover"
-              priority
             />
             {/* Subtle gradient overlay for depth */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
@@ -99,7 +98,6 @@ export function StackedCardCarousel({ images, autoPlayInterval = 4000 }: Stacked
               alt={`Slide ${backIndex + 1}`}
               fill
               className="object-cover"
-              priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
           </div>

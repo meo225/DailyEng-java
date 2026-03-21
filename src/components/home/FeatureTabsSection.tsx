@@ -62,8 +62,8 @@ export function FeatureTabsSection({ featureTabs }: FeatureTabsSectionProps) {
                 onClick={() => setActiveTab(tab.id)}
                 className={`group flex items-center gap-4 p-4 rounded-2xl text-left transition-all duration-300 cursor-pointer ${
                   activeTab === tab.id
-                    ? "bg-primary-50 ring-1 ring-primary-200 shadow-sm"
-                    : "hover:bg-gray-50"
+                    ? "glass-card-strong ring-1 ring-primary-200 antigravity-shadow"
+                    : "hover:bg-white/40 hover:backdrop-blur-sm"
                 }`}
               >
                 <div
@@ -100,7 +100,8 @@ export function FeatureTabsSection({ featureTabs }: FeatureTabsSectionProps) {
 
           {/* Tab Content Display */}
           <div className="lg:w-2/3">
-            <div className="relative h-[500px] w-full bg-primary-100 rounded-[2.5rem] border border-primary-100 p-2 overflow-hidden shadow-lg">
+            <div className="antigravity-perspective">
+            <div className="relative h-[500px] w-full glass-card-strong rounded-[2.5rem] border border-white/40 p-2 overflow-hidden antigravity-shadow">
               {featureTabs.map((tab) => (
                 <div
                   key={tab.id}
@@ -145,6 +146,7 @@ export function FeatureTabsSection({ featureTabs }: FeatureTabsSectionProps) {
                   </div>
                 </div>
               ))}
+            </div>
             </div>
           </div>
         </RevealOnScroll>

@@ -46,11 +46,16 @@ export function HeroSection() {
         className="z-0 opacity-80"
       />
 
+      {/* Antigravity floating orbs for spatial depth */}
+      <div className="antigravity-orb w-72 h-72 bg-primary-300 top-10 -left-20 antigravity-float-slow" />
+      <div className="antigravity-orb w-96 h-96 bg-secondary-200 -bottom-20 right-10 antigravity-float-slow" style={{ animationDelay: '3s' }} />
+      <div className="antigravity-orb w-56 h-56 bg-accent-200 top-1/2 left-1/3 antigravity-float-slow" style={{ animationDelay: '6s' }} />
+
       <div className="pointer-events-none max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           {/* Left Content */}
           <div ref={heroRef} className="pointer-events-none flex flex-col items-center lg:items-start text-center lg:text-left">
-            <div className="hero-anim-target opacity-0 inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6 border border-primary-100 shadow-sm cursor-pointer hover:bg-primary-100 transition-colors">
+            <div className="hero-anim-target opacity-0 glass-card inline-flex items-center gap-2 text-primary-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6 cursor-pointer hover:border-primary-200 transition-all">
               <Sparkles className="w-4 h-4 fill-primary-400 text-primary-600" />
               <span>The #1 AI-Powered English Platform</span>
             </div>
@@ -85,7 +90,7 @@ export function HeroSection() {
                 <Button
                   size="lg"
                   variant="default"
-                  className="w-full sm:w-auto bg-primary-400 hover:bg-primary-600 text-white px-8 py-6 rounded-full text-lg font-bold cursor-pointer"
+                  className="w-full sm:w-auto bg-primary-400 hover:bg-primary-600 text-white px-8 py-6 rounded-full text-lg font-bold cursor-pointer antigravity-shadow hover:-translate-y-1 transition-transform"
                 >
                   Start Learning Free
                 </Button>
@@ -97,7 +102,7 @@ export function HeroSection() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto border-2 border-primary-200 text-primary-700 hover:border-primary-300 hover:bg-primary-50 px-8 py-6 rounded-full text-lg bg-transparent cursor-pointer"
+                  className="w-full sm:w-auto glass-card border-2 border-primary-200 text-primary-700 hover:border-primary-300 px-8 py-6 rounded-full text-lg cursor-pointer hover:-translate-y-1 transition-transform"
                 >
                   How it works
                 </Button>
@@ -116,7 +121,6 @@ export function HeroSection() {
                       width={32}
                       height={32}
                       alt="User"
-                      priority
                     />
                   </div>
                 ))}
@@ -127,10 +131,10 @@ export function HeroSection() {
 
           {/* Right Visual - StackedCardCarousel */}
           <div
-            className="relative w-full pointer-events-auto lg:pl-10 animate-fade-in-up"
+            className="relative w-full pointer-events-auto lg:pl-10 animate-fade-in-up antigravity-perspective"
             style={{ animationDelay: "600ms" }}
           >
-            <div className="absolute -inset-4 bg-linear-to-r from-primary-100 to-secondary-100 rounded-full opacity-30 blur-3xl z-0" />
+            <div className="absolute -inset-4 bg-linear-to-r from-primary-100 to-secondary-100 rounded-full opacity-30 blur-3xl z-0 antigravity-glow" />
             <StackedCardBackground
               images={[
                 "/carousel-1.jpg",

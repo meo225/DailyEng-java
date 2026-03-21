@@ -3,7 +3,7 @@ import { Review } from "@/types/home"
 export const reviews: Review[] = [
   {
     name: "Alex Nguyen",
-    avatar: "/avatars/alex.jpg",
+    avatar: "/avatars/alex.png",
     ielts: "IELTS 7.5",
     content: "DailyEng really helped me improve my speaking confidence. The AI tutor Dorara feels just like a real person!",
     direction: "Academic",
@@ -11,11 +11,11 @@ export const reviews: Review[] = [
     courses: ["IELTS Speaking Mastery", "Advanced Grammar"],
     result: { type: "IELTS", score: "7.5", previousScore: "6.0" },
     duration: "3 months",
-    photo: "/reviews/alex-result.jpg"
+    photo: "/reviews/alex-result.png"
   },
   {
     name: "Mai Le",
-    avatar: "/avatars/mai.jpg",
+    avatar: "/avatars/mai.png",
     ielts: "TOEIC 900",
     content: "The vocabulary hub is amazing. I learned so many new words without feeling overwhelmed.",
     direction: "General",
@@ -23,11 +23,11 @@ export const reviews: Review[] = [
     courses: ["Business English", "Toeic 800+"],
     result: { type: "TOEIC", score: "900", previousScore: "650" },
     duration: "2 months",
-    photo: "/reviews/mai-result.jpg"
+    photo: "/reviews/mai-result.png"
   },
   {
     name: "Tuan Vu",
-    avatar: "/avatars/tuan.jpg",
+    avatar: "/avatars/tuan.png",
     ielts: "IELTS 8.0",
     content: "A game changer! The learning profile tracking kept me motivated every single day.",
     direction: "Academic",
@@ -35,6 +35,6 @@ export const reviews: Review[] = [
     courses: ["Intensive Speaking", "Academic Writing"],
     result: { type: "IELTS", score: "8.0", previousScore: "7.0" },
     duration: "4 months",
-    photo: "/reviews/tuan-result.jpg"
+    photo: "/reviews/tuan-result.png"
   }
 ]

@@ -3,10 +3,18 @@ spring:
     url: jdbc:postgresql://localhost:5432/dailyeng_test
     username: postgres
     password: postgres
+  flyway:
+    enabled: false
   jpa:
     hibernate:
       ddl-auto: create-drop
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
     show-sql: true
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
 
 app:
   jwt:

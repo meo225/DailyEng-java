@@ -17,7 +17,7 @@ export const mockTopics: Topic[] = [
     progress: 12,
     wordCount: 25,
     estimatedTime: 45,
-    thumbnail: "/diverse-travelers-world-map.png",
+    thumbnail: "/diverse-travelers-world-map.jpg",
   },
   {
     id: "2",
@@ -27,7 +27,7 @@ export const mockTopics: Topic[] = [
     progress: 0,
     wordCount: 28,
     estimatedTime: 50,
-    thumbnail: "/diverse-food-spread.png",
+    thumbnail: "/diverse-food-spread.jpg",
   },
   {
     id: "3",
@@ -37,7 +37,7 @@ export const mockTopics: Topic[] = [
     progress: 55,
     wordCount: 30,
     estimatedTime: 60,
-    thumbnail: "/abstract-job-concept.png",
+    thumbnail: "/abstract-job-concept.jpg",
   },
 ];
 

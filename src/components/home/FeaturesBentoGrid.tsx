@@ -12,8 +12,12 @@ import { RevealOnScroll } from "./RevealOnScroll"
 
 export function FeaturesBentoGrid() {
   return (
-    <section className="py-15 bg-linear-to-br from-primary-200 via-primary-50 to-secondary-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-15 bg-linear-to-br from-primary-200 via-primary-50 to-secondary-100 relative overflow-hidden">
+      {/* Antigravity background orb */}
+      <div className="antigravity-orb w-80 h-80 bg-primary-200 -top-20 -right-20 antigravity-float-slow" />
+      <div className="antigravity-orb w-64 h-64 bg-secondary-200 bottom-10 -left-16 antigravity-float-slow" style={{ animationDelay: '4s' }} />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <RevealOnScroll className="text-center mb-16">
           <h2 className="text-4xl sm:text-4xl font-bold text-primary-800 mb-6">
             Why Learners Choose DailyEng
@@ -40,7 +44,7 @@ export function FeaturesBentoGrid() {
 function SpeakFromDayOneCard() {
   return (
     <RevealOnScroll className="md:col-span-2">
-      <Card className="h-full bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all p-8 rounded-3xl flex flex-col md:flex-row items-center gap-8 overflow-hidden group cursor-pointer">
+      <Card className="h-full glass-card-strong antigravity-hover border border-white/40 hover:border-primary-200 p-8 rounded-3xl flex flex-col md:flex-row items-center gap-8 overflow-hidden group cursor-pointer">
         <div className="flex-1 z-10">
           <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-2xl flex items-center justify-center mb-6">
             <Mic className="w-6 h-6" />
@@ -69,7 +73,6 @@ function SpeakFromDayOneCard() {
             src="/Speak-From-Day-One.jpg"
             alt="Speaking Practice"
             fill
-            priority
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover"
           />
@@ -82,7 +85,7 @@ function SpeakFromDayOneCard() {
 function ContextualLearningCard() {
   return (
     <RevealOnScroll delay={100}>
-      <Card className="h-full bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all p-8 rounded-3xl flex flex-col justify-between group cursor-pointer">
+      <Card className="h-full glass-card-strong antigravity-hover border border-white/40 hover:border-primary-200 p-8 rounded-3xl flex flex-col justify-between group cursor-pointer">
         <div>
           <div className="w-12 h-12 bg-secondary-100 text-secondary-600 rounded-2xl flex items-center justify-center mb-6">
             <BookOpen className="w-6 h-6" />
@@ -127,7 +130,7 @@ function ContextualLearningCard() {
 function StayMotivatedCard() {
   return (
     <RevealOnScroll delay={200}>
-      <Card className="h-full bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all p-8 rounded-3xl flex flex-col justify-between group cursor-pointer">
+      <Card className="h-full glass-card-strong antigravity-hover border border-white/40 hover:border-primary-200 p-8 rounded-3xl flex flex-col justify-between group cursor-pointer">
         <div>
           <div className="w-12 h-12 bg-accent-100 text-accent-600 rounded-2xl flex items-center justify-center mb-6">
             <Zap className="w-6 h-6" />
@@ -154,7 +157,7 @@ function StayMotivatedCard() {
 function DoraraCompanionCard() {
   return (
     <RevealOnScroll className="md:col-span-2" delay={300}>
-      <Card className="h-full bg-white border border-secondary-100 shadow-sm hover:shadow-lg transition-all p-8 rounded-3xl flex flex-col md:flex-row-reverse items-center gap-8 overflow-hidden group cursor-pointer">
+      <Card className="h-full glass-card-strong antigravity-hover border border-secondary-100/50 hover:border-secondary-200 p-8 rounded-3xl flex flex-col md:flex-row-reverse items-center gap-8 overflow-hidden group cursor-pointer">
         <div className="flex-1 z-10">
           <div className="w-12 h-12 bg-secondary-50 text-secondary-600 rounded-2xl flex items-center justify-center mb-6 border border-secondary-100">
             <Sparkles className="w-6 h-6" />
@@ -177,7 +180,7 @@ function DoraraCompanionCard() {
         <div className="flex-1 relative h-64 w-full md:h-full rounded-2xl overflow-hidden bg-secondary-50/50">
           <div className="absolute inset-0 bg-linear-to-r from-white/40 to-transparent z-10" />
           <Image
-            src="/Dorara-Companion.png"
+            src="/Dorara-Companion.jpg"
             alt="AI Companion"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"

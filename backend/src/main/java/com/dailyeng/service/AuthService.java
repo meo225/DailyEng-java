@@ -115,7 +115,11 @@ public class AuthService {
         // Step 2: Verify audience matches our Google Client ID
         var aud = googleUser.path("aud").asText();
         var googleClientId = appProperties.getGoogle().getClientId();
-        if (googleClientId != null && !googleClientId.isBlank() && !aud.equals(googleClientId)) {
+        if (googleClientId == null || googleClientId.isBlank()) {
+            log.error("GOOGLE_CLIENT_ID not configured — cannot verify Google token audience");
+            throw new BadRequestException("Google authentication is not configured");
+        }
+        if (!aud.equals(googleClientId)) {
             log.warn("Google token audience mismatch: expected={}, got={}", googleClientId, aud);
             throw new BadRequestException("Invalid Google token audience");
         }

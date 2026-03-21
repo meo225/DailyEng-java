@@ -76,7 +76,7 @@ function TestEnglishImage() {
   return (
     <div className="relative h-64 md:h-auto min-h-[300px] bg-primary-50">
       <Image
-        src="/test.jpg"
+        src="/test.png"
         alt="English Level Test"
         fill
         sizes="(max-width: 768px) 100vw, 50vw"

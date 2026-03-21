@@ -74,7 +74,7 @@ export function Navbar() {
       aria-label="Main navigation"
     >
       {/* Floating pill container with glassmorphism */}
-      <div className="mx-auto max-w-7xl rounded-2xl border border-white/60 bg-white/85 shadow-lg shadow-primary-100/30 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70">
+      <div className="mx-auto max-w-7xl rounded-2xl border border-white/60 bg-white/80 shadow-lg shadow-primary-100/30 backdrop-blur-[20px] supports-[backdrop-filter]:bg-white/65" style={{ boxShadow: '0 4px 24px rgba(79, 70, 229, 0.08), 0 1px 3px rgba(0,0,0,0.04), 0 12px 40px -8px rgba(79, 70, 229, 0.06)' }}>
         <div className="flex h-14 items-center justify-between px-4 sm:px-5">
           {/* Logo */}
           <Link
@@ -125,10 +125,10 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => startNavigation(item.href)}
-                  className={`text-[13.5px] px-3 py-1.5 rounded-xl font-semibold transition-all duration-200 ${
+                  className={`text-[13.5px] px-3 py-1.5 rounded-xl font-semibold transition-all duration-300 ${
                     isActive
-                      ? "bg-primary-500 text-white shadow-sm shadow-primary-200"
-                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/80"
+                      ? "bg-primary-500 text-white shadow-sm shadow-primary-200 hover:-translate-y-0.5"
+                      : "text-gray-500 hover:text-gray-900 hover:bg-white/60 hover:backdrop-blur-sm"
                   }`}
                 >
                   {t(`nav.${item.labelKey}`)}

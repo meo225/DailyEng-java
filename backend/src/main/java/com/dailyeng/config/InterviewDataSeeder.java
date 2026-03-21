@@ -9,6 +9,7 @@ import com.dailyeng.repository.TopicGroupRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +19,12 @@ import java.util.List;
 /**
  * Seeds the database with Interview Practice speaking scenarios on first startup.
  * Idempotent — skips if the "interview practice" TopicGroup already exists.
+ * Disabled in test profile — test DB does not have schema from Flyway migrations.
  */
 @Slf4j
 @Component
 @Order(10)
+@Profile("!test")
 @RequiredArgsConstructor
 public class InterviewDataSeeder implements CommandLineRunner {
 

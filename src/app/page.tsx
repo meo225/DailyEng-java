@@ -73,7 +73,7 @@ const featureTabs: FeatureTab[] = [
 const partnerLogos: PartnerLogo[] = [
   { src: "/bc-logo.png", alt: "British Council" },
   { src: "/idp-logo.png", alt: "IDP" },
-  { src: "/cambridge-logo.png", alt: "Cambridge" },
+  { src: "/cambridge-logo.jpg", alt: "Cambridge" },
   { src: "/toefl-logo.png", alt: "TOEFL" },
   { src: "/ielts-logo.png", alt: "IELTS" },
 ]

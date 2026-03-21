@@ -4,6 +4,7 @@ import com.dailyeng.dto.speaking.SpeakingDtos.*;
 import com.dailyeng.service.AzureSpeechService;
 import com.dailyeng.service.SpeakingService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import java.util.Map;
  * REST controller for the Speaking module — 15 endpoints.
  * Maps from speaking.ts Server Actions to REST API.
  */
+@Slf4j
 @RestController
 @RequestMapping("/speaking")
 @RequiredArgsConstructor
@@ -108,26 +110,30 @@ public class SpeakingController extends BaseController {
             @PathVariable String id,
             @RequestBody SubmitTurnRequest req
     ) {
-        return ResponseEntity.ok(speakingService.submitTurn(id, req));
+        var userId = requireUserId();
+        return ResponseEntity.ok(speakingService.submitTurn(userId, id, req));
     }
 
     /** POST /speaking/sessions/{id}/end — analyzeAndScoreSession() */
     @PostMapping("/sessions/{id}/end")
     public ResponseEntity<SessionAnalysisResponse> endSession(@PathVariable String id) {
-        return ResponseEntity.ok(speakingService.analyzeAndScoreSession(id));
+        var userId = requireUserId();
+        return ResponseEntity.ok(speakingService.analyzeAndScoreSession(userId, id));
     }
 
     /** POST /speaking/sessions/{id}/hint — generate a sample response hint */
     @PostMapping("/sessions/{id}/hint")
     public ResponseEntity<Map<String, String>> getHint(@PathVariable String id) {
-        var hint = speakingService.generateHint(id);
+        var userId = requireUserId();
+        var hint = speakingService.generateHint(userId, id);
         return ResponseEntity.ok(Map.of("hint", hint));
     }
 
     /** GET /speaking/sessions/{id} — getSessionDetailsById() */
     @GetMapping("/sessions/{id}")
     public ResponseEntity<SessionDetailResponse> getSessionDetails(@PathVariable String id) {
-        return ResponseEntity.ok(speakingService.getSessionDetails(id));
+        var userId = requireUserId();
+        return ResponseEntity.ok(speakingService.getSessionDetails(userId, id));
     }
 
     /** DELETE /speaking/sessions/{id} — deleteSession() */
@@ -224,23 +230,22 @@ public class SpeakingController extends BaseController {
             var originalFilename = audioFile.getOriginalFilename();
             var size = audioFile.getSize();
 
-            System.out.printf("🎤 STT Request: contentType=%s, filename=%s, size=%d bytes%n",
+            log.info("🎤 STT Request: contentType={}, filename={}, size={} bytes",
                     contentType, originalFilename, size);
 
             // Always convert to WAV PCM 16kHz mono via ffmpeg (handles WebM, OGG, etc.)
             byte[] wavBytes = convertToWav(audioFile.getBytes());
-            System.out.printf("🎤 Converted to WAV: %d bytes%n", wavBytes.length);
+            log.info("🎤 Converted to WAV: {} bytes", wavBytes.length);
 
             // Use Azure Speech SDK (higher accuracy than REST API)
             var result = azureSpeechService.transcribeSdk(wavBytes);
 
-            System.out.printf("🎤 STT Result: text='%s', confidence=%.2f, status=%s%n",
+            log.info("🎤 STT Result: text='{}', confidence={}, status={}",
                     result.text(), result.confidence(), result.status());
 
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            System.err.printf("🎤 STT Error: %s%n", e.getMessage());
-            e.printStackTrace();
+            log.error("🎤 STT Error: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -259,7 +264,7 @@ public class SpeakingController extends BaseController {
         requireUserId();
         boolean isScripted = referenceText != null && !referenceText.isBlank();
         try {
-            System.out.printf("🎤 Transcribe+Assess [%s]: contentType=%s, size=%d bytes%n",
+            log.info("🎤 Transcribe+Assess [{}]: contentType={}, size={} bytes",
                     isScripted ? "scripted" : "unscripted",
                     audioFile.getContentType(), audioFile.getSize());
 
@@ -272,7 +277,7 @@ public class SpeakingController extends BaseController {
                     : azureSpeechService.assessPronunciationUnscripted(wavBytes);
 
             if (pronResult.recognizedText() == null || pronResult.recognizedText().isBlank()) {
-                System.out.println("🎤 Transcribe+Assess: no speech detected");
+                log.info("🎤 Transcribe+Assess: no speech detected");
                 return ResponseEntity.ok(new TranscribeAssessResponse(
                         "", 0, 0, 0, 0, 0, List.of()));
             }
@@ -300,7 +305,7 @@ public class SpeakingController extends BaseController {
                     pronResult.completenessScore(),
                     wordResults);
 
-            System.out.printf("🎤 Transcribe+Assess OK [%s]: text='%s', accuracy=%.0f, fluency=%.0f, prosody=%.0f, completeness=%.0f, overall=%.0f%n",
+            log.info("🎤 Transcribe+Assess OK [{}]: text='{}', accuracy={}, fluency={}, prosody={}, completeness={}, overall={}",
                     isScripted ? "scripted" : "unscripted",
                     pronResult.recognizedText(),
                     pronResult.accuracyScore(), pronResult.fluencyScore(),
@@ -309,8 +314,7 @@ public class SpeakingController extends BaseController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            System.err.printf("🎤 Transcribe+Assess Error: %s%n", e.getMessage());
-            e.printStackTrace();
+            log.error("🎤 Transcribe+Assess Error: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -403,7 +407,7 @@ public class SpeakingController extends BaseController {
 
             var exitCode = process.exitValue();
             if (exitCode != 0) {
-                System.err.printf("🎤 ffmpeg failed (exit %d): %s%n", exitCode, ffmpegOutput);
+                log.error("🎤 ffmpeg failed (exit {}): {}", exitCode, ffmpegOutput);
                 throw new java.io.IOException("ffmpeg conversion failed with exit code " + exitCode);
             }
 

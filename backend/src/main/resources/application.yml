@@ -10,7 +10,7 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
-    baseline-version: 3        # V1 (init), V2 (renames), V3 (reconcile) already applied
+    baseline-version: 0        # Run all migrations from V1 on fresh databases
     locations: classpath:db/migration
 
   jpa:
@@ -163,3 +163,7 @@ logging:
 sentry:
   dsn: https://cf2665ef787b1b0b47cfdac06c92e520@o4510039124475904.ingest.us.sentry.io/4511083289706496
   send-default-pii: true
+  traces-sample-rate: 0.1           # 10% of requests traced in production
+  environment: ${SENTRY_ENVIRONMENT:development}
+  exception-resolver-order: -2147483647  # Ensures Sentry captures before Spring's default handler
+  enable-tracing: true

@@ -4,12 +4,16 @@ import { RevealOnScroll } from "./RevealOnScroll"
 
 export function SocialProofSection() {
   return (
-    <section className="py-24 bg-background">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-24 bg-background relative overflow-hidden">
+      {/* Floating accent dots for depth */}
+      <div className="antigravity-orb w-40 h-40 bg-primary-200 top-10 right-20 antigravity-float-slow" style={{ opacity: 0.2 }} />
+      <div className="antigravity-orb w-32 h-32 bg-secondary-200 bottom-10 left-10 antigravity-float-slow" style={{ animationDelay: '3s', opacity: 0.15 }} />
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid md:grid-cols-2 gap-6">
           {/* Rating Card */}
           <RevealOnScroll>
-            <Card className="bg-primary-600 text-white border-0 p-6 shadow-xl rounded-2xl relative overflow-hidden group transition-transform hover:scale-[1.02] h-full cursor-pointer">
+            <Card className="bg-primary-600 text-white border-0 p-6 shadow-xl rounded-2xl relative overflow-hidden group transition-all antigravity-hover h-full cursor-pointer">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-white/20 transition-colors"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary-400/20 rounded-full -ml-10 -mb-10 blur-xl"></div>
 
@@ -50,7 +54,7 @@ export function SocialProofSection() {
 
           {/* Quote Card */}
           <RevealOnScroll delay={200}>
-            <Card className="bg-gray-50 border border-gray-200 p-6 shadow-lg rounded-2xl relative flex flex-col justify-center group hover:border-primary-200 transition-colors h-full cursor-pointer">
+            <Card className="glass-card-strong p-6 shadow-lg rounded-2xl relative flex flex-col justify-center group hover:border-primary-200 antigravity-hover h-full cursor-pointer">
               <Quote className="absolute top-4 right-4 w-10 h-10 text-primary-100 z-0 rotate-12" />
               <div className="relative z-10">
                 <div className="mb-4 flex gap-1">

@@ -67,6 +67,11 @@ public class SrsService {
 
     @Transactional
     public ReviewResultResponse reviewCard(String userId, String cardId, int quality) {
+        if (quality < 0 || quality > 5) {
+            throw new com.dailyeng.exception.BadRequestException(
+                    "Quality must be between 0 and 5, got: " + quality);
+        }
+
         var card = flashcardRepo.findById(cardId)
                 .orElseThrow(() -> new ResourceNotFoundException("Flashcard not found: " + cardId));
 

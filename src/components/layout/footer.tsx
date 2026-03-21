@@ -18,9 +18,16 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t border-border bg-white">
+    <footer className="relative overflow-hidden bg-white">
+      {/* Gradient top border replacing flat border */}
+      <div className="h-px bg-gradient-to-r from-transparent via-primary-300 to-transparent" />
+
+      {/* Floating decorative orbs */}
+      <div className="antigravity-orb w-64 h-64 bg-primary-100 -top-20 right-20 antigravity-float-slow" style={{ opacity: 0.1 }} />
+      <div className="antigravity-orb w-48 h-48 bg-secondary-100 bottom-10 -left-10 antigravity-float-slow" style={{ animationDelay: '5s', opacity: 0.08 }} />
+
       {/* Main Footer Content */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-10">
           {/* About DailyEng */}
           <div className="lg:col-span-1 flex flex-col items-center lg:items-start">
@@ -155,7 +162,7 @@ export function Footer() {
             <div className="flex gap-3 mb-6">
               <a
                 href="mailto:contact@dailyeng.com"
-                className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 hover:bg-primary-200 transition-colors"
+                className="w-10 h-10 rounded-full glass-card flex items-center justify-center text-primary-600 antigravity-hover"
                 aria-label="Email"
               >
                 <Mail className="h-5 w-5" />
@@ -164,7 +171,7 @@ export function Footer() {
                 href="https://twitter.com/dailyeng"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 hover:bg-primary-200 transition-colors"
+                className="w-10 h-10 rounded-full glass-card flex items-center justify-center text-primary-600 antigravity-hover"
                 aria-label="Twitter"
               >
                 <Twitter className="h-5 w-5" />
@@ -173,7 +180,7 @@ export function Footer() {
                 href="https://instagram.com/dailyeng"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 hover:bg-primary-200 transition-colors"
+                className="w-10 h-10 rounded-full glass-card flex items-center justify-center text-primary-600 antigravity-hover"
                 aria-label="Instagram"
               >
                 <Instagram className="h-5 w-5" />
@@ -182,7 +189,7 @@ export function Footer() {
                 href="https://facebook.com/dailyeng"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 hover:bg-primary-200 transition-colors"
+                className="w-10 h-10 rounded-full glass-card flex items-center justify-center text-primary-600 antigravity-hover"
                 aria-label="Facebook"
               >
                 <Facebook className="h-5 w-5" />
@@ -201,7 +208,8 @@ export function Footer() {
       </div>
 
       {/* Bottom Section - Company Info */}
-      <div className="border-t border-border bg-white">
+      <div className="bg-white relative z-10">
+        <div className="h-px bg-gradient-to-r from-transparent via-primary-200 to-transparent" />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Copyright & Registration */}

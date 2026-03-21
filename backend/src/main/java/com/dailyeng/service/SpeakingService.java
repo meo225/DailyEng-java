@@ -287,9 +287,12 @@ public class SpeakingService {
     // ========================================================================
 
     @Transactional
-    public SubmitTurnResponse submitTurn(String sessionId, SubmitTurnRequest req) {
+    public SubmitTurnResponse submitTurn(String userId, String sessionId, SubmitTurnRequest req) {
         var session = sessionRepo.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found: " + sessionId));
+        if (!userId.equals(session.getUserId())) {
+            throw new ResourceNotFoundException("Session not found: " + sessionId);
+        }
         var scenario = scenarioRepo.findById(session.getScenarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Scenario not found"));
         var turns = turnRepo.findBySessionIdOrderByTimestampAsc(sessionId);
@@ -370,9 +373,12 @@ public class SpeakingService {
     // ========================================================================
 
     @Transactional(readOnly = true)
-    public String generateHint(String sessionId) {
+    public String generateHint(String userId, String sessionId) {
         var session = sessionRepo.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found: " + sessionId));
+        if (!userId.equals(session.getUserId())) {
+            throw new ResourceNotFoundException("Session not found: " + sessionId);
+        }
         var scenario = scenarioRepo.findById(session.getScenarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Scenario not found"));
         var turns = turnRepo.findBySessionIdOrderByTimestampAsc(sessionId);
@@ -394,9 +400,12 @@ public class SpeakingService {
     // ========================================================================
 
     @Transactional
-    public SessionAnalysisResponse analyzeAndScoreSession(String sessionId) {
+    public SessionAnalysisResponse analyzeAndScoreSession(String userId, String sessionId) {
         var session = sessionRepo.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found: " + sessionId));
+        if (!userId.equals(session.getUserId())) {
+            throw new ResourceNotFoundException("Session not found: " + sessionId);
+        }
         var scenario = scenarioRepo.findById(session.getScenarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Scenario not found"));
         var turns = turnRepo.findBySessionIdOrderByTimestampAsc(sessionId);
@@ -525,9 +534,12 @@ public class SpeakingService {
     // ========================================================================
 
     @Transactional(readOnly = true)
-    public SessionDetailResponse getSessionDetails(String sessionId) {
+    public SessionDetailResponse getSessionDetails(String userId, String sessionId) {
         var session = sessionRepo.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found: " + sessionId));
+        if (!userId.equals(session.getUserId())) {
+            throw new ResourceNotFoundException("Session not found: " + sessionId);
+        }
         var turns = turnRepo.findBySessionIdOrderByTimestampAsc(sessionId);
 
         // Build error categories
@@ -602,8 +614,13 @@ public class SpeakingService {
         var sessions = sessionRepo.findByUserIdAndEndedAtIsNotNullOrderByEndedAtDesc(userId);
         var limitedSessions = sessions.stream().limit(20).toList();
 
+        // Batch-load all scenarios to avoid N+1
+        var scenarioIds = limitedSessions.stream().map(SpeakingSession::getScenarioId).distinct().toList();
+        var scenarioMap = scenarioRepo.findAllById(scenarioIds).stream()
+                .collect(Collectors.toMap(SpeakingScenario::getId, s -> s));
+
         var historyTopics = limitedSessions.stream().map(s -> {
-            var scenario = scenarioRepo.findById(s.getScenarioId()).orElse(null);
+            var scenario = scenarioMap.get(s.getScenarioId());
             return new HistoryItem(
                     s.getId(),
                     scenario != null ? scenario.getTitle() : "Unknown",
@@ -616,8 +633,8 @@ public class SpeakingService {
                     100, 0);
         }).toList();
 
-        var historyGraph = limitedSessions.stream().limit(10).toList();
-        Collections.reverse(new ArrayList<>(historyGraph));
+        var historyGraph = limitedSessions.stream().limit(10).collect(Collectors.toCollection(ArrayList::new));
+        Collections.reverse(historyGraph);
         var graphPoints = IntStream.range(0, Math.min(10, historyGraph.size()))
                 .mapToObj(i -> new HistoryGraphPoint(i + 1,
                         historyGraph.get(i).getOverallScore() != null ? historyGraph.get(i).getOverallScore() : 0))
@@ -637,8 +654,13 @@ public class SpeakingService {
                 ? sessionRepo.findByUserIdAndEndedAtIsNotNullAndFeedbackRating(userId, rating, pageable)
                 : sessionRepo.findByUserIdAndEndedAtIsNotNull(userId, pageable);
 
+        // Batch-load all scenarios to avoid N+1
+        var scenarioIds = sessionPage.getContent().stream().map(SpeakingSession::getScenarioId).distinct().toList();
+        var scenarioMap = scenarioRepo.findAllById(scenarioIds).stream()
+                .collect(Collectors.toMap(SpeakingScenario::getId, s -> s));
+
         var items = sessionPage.getContent().stream().map(s -> {
-            var scenario = scenarioRepo.findById(s.getScenarioId()).orElse(null);
+            var scenario = scenarioMap.get(s.getScenarioId());
             return new HistorySessionItem(
                     s.getId(), s.getScenarioId(),
                     scenario != null ? scenario.getTitle() : "Unknown",
@@ -829,8 +851,14 @@ public class SpeakingService {
         var pageable = PageRequest.of(page - 1, limit);
         var bookmarkPage = bookmarkRepo.findByUserIdOrderByCreatedAtDesc(userId, pageable);
 
+        // Batch-load all scenarios to avoid N+1
+        var scenarioIds = bookmarkPage.getContent().stream()
+                .map(SpeakingBookmark::getScenarioId).distinct().toList();
+        var scenarioMap = scenarioRepo.findAllById(scenarioIds).stream()
+                .collect(Collectors.toMap(SpeakingScenario::getId, s -> s));
+
         var bookmarks = bookmarkPage.getContent().stream().map(b -> {
-            var s = scenarioRepo.findById(b.getScenarioId()).orElse(null);
+            var s = scenarioMap.get(b.getScenarioId());
             if (s == null) return null;
             return new ScenarioListItem(
                     s.getId(), s.getTitle(), s.getDescription(),

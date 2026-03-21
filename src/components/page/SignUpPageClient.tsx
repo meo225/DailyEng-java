@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useTransition } from "react";
+import { useState, useTransition, lazy, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+const AuthScene3D = lazy(() => import("@/components/auth/AuthScene3D"));
 
 export interface SignUpPageClientProps {
   benefits: string[];
@@ -425,60 +427,49 @@ export default function SignUpPageClient({ benefits }: SignUpPageClientProps) {
         </div>
       </div>
 
-      {/* Right side - Decorative */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent-400/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-secondary-400/20 rounded-full blur-3xl" />
-        </div>
+      {/* Right side - 3D Decorative Panel */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        {/* Gradient background behind 3D */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800" />
 
-        {/* Floating icons */}
-        <div className="absolute top-32 right-16 p-4 bg-white/20 backdrop-blur-sm rounded-2xl animate-float">
-          <BookOpen className="h-8 w-8 text-white" />
-        </div>
-        <div
-          className="absolute top-48 left-24 p-4 bg-white/20 backdrop-blur-sm rounded-2xl animate-float"
-          style={{ animationDelay: "1s" }}
-        >
-          <Languages className="h-8 w-8 text-white" />
-        </div>
-        <div
-          className="absolute bottom-40 right-24 p-4 bg-white/20 backdrop-blur-sm rounded-2xl animate-float"
-          style={{ animationDelay: "2s" }}
-        >
-          <GraduationCap className="h-8 w-8 text-white" />
-        </div>
-        <div
-          className="absolute bottom-32 left-32 p-4 bg-white/20 backdrop-blur-sm rounded-2xl animate-float"
-          style={{ animationDelay: "0.5s" }}
-        >
-          <Sparkles className="h-8 w-8 text-white" />
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center px-12 text-white">
-          <h1 className="text-5xl font-bold mb-6 leading-tight">
-            Learn English
-            <br />
-            <span className="text-accent-300">The Smart Way</span>
-          </h1>
-          <p className="text-xl text-white/80 mb-8 max-w-md">
-            Join our community and unlock your full potential with personalized
-            learning.
-          </p>
-
-          {/* Benefits */}
-          <div className="space-y-4">
-            {benefits.map((benefit, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-accent-400 flex items-center justify-center">
-                  <Check className="h-4 w-4 text-white" />
-                </div>
-                <p className="text-white/90">{benefit}</p>
+        {/* 3D Canvas */}
+        <Suspense
+          fallback={
+            <div className="absolute inset-0">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600">
+                <div className="absolute top-20 left-20 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent-400/20 rounded-full blur-3xl" />
               </div>
-            ))}
+            </div>
+          }
+        >
+          <AuthScene3D variant="signup" />
+        </Suspense>
+
+        {/* Glassmorphic text overlay */}
+        <div className="auth-glass-overlay">
+          <div className="flex flex-col justify-center h-full px-12 text-white">
+            <h1 className="text-5xl font-bold mb-6 leading-tight">
+              Learn English
+              <br />
+              <span className="text-accent-300">The Smart Way</span>
+            </h1>
+            <p className="text-xl text-white/80 mb-8 max-w-md">
+              Join our community and unlock your full potential with personalized
+              learning.
+            </p>
+
+            {/* Benefits */}
+            <div className="space-y-4">
+              {benefits.map((benefit, index) => (
+                <div key={index} className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-accent-400 flex items-center justify-center">
+                    <Check className="h-4 w-4 text-white" />
+                  </div>
+                  <p className="text-white/90">{benefit}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
