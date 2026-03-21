@@ -55,6 +55,7 @@ jobs:
         env:
           # Dummy values so Next.js build doesn't fail on missing env vars
           DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+          DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
           AUTH_SECRET: "dummy-secret-for-ci"
           JWT_SECRET: "dummy-jwt-for-ci"
           NEXT_PUBLIC_API_URL: "http://localhost:8080/api"
