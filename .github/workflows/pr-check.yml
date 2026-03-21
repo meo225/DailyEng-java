@@ -73,6 +73,7 @@ jobs:
           npx prisma db push
         env:
           DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+          DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
 
       - name: Build
         run: npm run build
