@@ -268,7 +268,7 @@ public class AzureSpeechService {
         var ssml = String.format("""
                 <speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='%s'>
                     <voice name='%s'>
-                        <prosody rate='0.95'>%s</prosody>
+                        <prosody rate='+5%%'>%s</prosody>
                     </voice>
                 </speak>
                 """, config.getSttLanguage(), voice, escapeXml(text));
@@ -393,6 +393,12 @@ public class AzureSpeechService {
 
             // Merge all segments into a single PronunciationResult
             var pronResult = mergePronunciationResults(segmentJsons);
+
+            // ── Cross-segment Omission detection ──────────────────────
+            // Continuous recognition splits audio into segments, each assessed independently.
+            // Words omitted BETWEEN segments are missed. Compare reference vs recognized.
+            pronResult = detectOmissions(pronResult, referenceText);
+
             log.info("📝 SDK Pronunciation: accuracy={}, fluency={}, completeness={}, prosody={}, overall={}, segments={}",
                     pronResult.accuracyScore(), pronResult.fluencyScore(),
                     pronResult.completenessScore(), pronResult.prosodyScore(),
@@ -537,11 +543,98 @@ public class AzureSpeechService {
     }
 
     /**
+     * Detect words in the referenceText that were not recognized (Omissions).
+     * Uses greedy alignment: walk through reference words and recognized words,
+     * inserting Omission entries for unmatched reference words.
+     */
+    private PronunciationResult detectOmissions(PronunciationResult result, String referenceText) {
+        if (referenceText == null || referenceText.isBlank()) return result;
+
+        // Normalize: lowercase, strip punctuation, split into words
+        var refWords = referenceText.replaceAll("[^a-zA-Z'\\s]", "").toLowerCase().split("\\s+");
+        var recognizedWords = result.words().stream()
+                .map(w -> w.word().replaceAll("[^a-zA-Z']", "").toLowerCase())
+                .toList();
+
+        // Greedy alignment: match reference words to recognized words in order
+        var aligned = new ArrayList<WordPronunciation>();
+        int recIdx = 0;
+
+        for (String refWord : refWords) {
+            if (refWord.isBlank()) continue;
+
+            // Look for this reference word in remaining recognized words
+            boolean found = false;
+            if (recIdx < recognizedWords.size()) {
+                // Check if current recognized word matches
+                if (recognizedWords.get(recIdx).equals(refWord)) {
+                    aligned.add(result.words().get(recIdx));
+                    recIdx++;
+                    found = true;
+                } else {
+                    // Look ahead a few words for a match (handles slight reordering)
+                    for (int ahead = 1; ahead <= 2 && recIdx + ahead < recognizedWords.size(); ahead++) {
+                        if (recognizedWords.get(recIdx + ahead).equals(refWord)) {
+                            // Insert any skipped recognized words before this match
+                            for (int skip = 0; skip < ahead; skip++) {
+                                aligned.add(result.words().get(recIdx + skip));
+                            }
+                            aligned.add(result.words().get(recIdx + ahead));
+                            recIdx += ahead + 1;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!found) {
+                // This reference word was not spoken — mark as Omission
+                aligned.add(new WordPronunciation(refWord, 0, "Omission", List.of(), List.of()));
+                log.info("🔍 Omission detected: reference word '{}' not found in recognized speech", refWord);
+            }
+        }
+
+        // Append any remaining recognized words not matched to reference
+        while (recIdx < result.words().size()) {
+            var remaining = result.words().get(recIdx);
+            // Check if this is an extra word (Insertion)
+            var remainingNorm = remaining.word().replaceAll("[^a-zA-Z']", "").toLowerCase();
+            boolean inRef = false;
+            for (var rw : refWords) {
+                if (rw.equals(remainingNorm)) { inRef = true; break; }
+            }
+            if (!inRef && "None".equals(remaining.errorType())) {
+                aligned.add(new WordPronunciation(
+                        remaining.word(), remaining.accuracyScore(), "Insertion",
+                        remaining.phonemes(), remaining.syllables()));
+                log.info("🔍 Insertion detected: word '{}' not in reference text", remaining.word());
+            } else {
+                aligned.add(remaining);
+            }
+            recIdx++;
+        }
+
+        if (aligned.equals(result.words())) return result;
+
+        // Recalculate completeness score
+        long omissions = aligned.stream().filter(w -> "Omission".equals(w.errorType())).count();
+        double newCompleteness = refWords.length > 0
+                ? Math.max(0, 100.0 * (refWords.length - omissions) / refWords.length)
+                : result.completenessScore();
+
+        return new PronunciationResult(
+                result.accuracyScore(), result.fluencyScore(), newCompleteness,
+                result.prosodyScore(), result.overallScore(),
+                result.recognizedText(), aligned);
+    }
+
+    /**
      * Parse a single SDK JSON segment into PronunciationResult.
      */
     private PronunciationResult parsePronunciationJson(JsonNode json) {
         // Log the full raw JSON so we can inspect the actual Azure response structure
-        log.debug("🔍 Azure pronunciation JSON: {}", json);
+        log.debug("🔍 Azure pronunciation JSON (full): {}", json);
 
         var nBest = json.path("NBest");
         if (!nBest.isArray() || nBest.isEmpty()) return PronunciationResult.empty();
@@ -591,62 +684,101 @@ public class AzureSpeechService {
                     }
                 }
 
+                var wordText = w.path("Word").asText();
+                var wordErrorType = wa.path("ErrorType").asText("None");
+                var wordAccuracy = wa.path("AccuracyScore").asDouble(0);
+                if (!"None".equals(wordErrorType)) {
+                    log.info("🔍 Word error: word='{}', errorType={}, accuracy={}", wordText, wordErrorType, wordAccuracy);
+                }
                 wordScores.add(new WordPronunciation(
-                        w.path("Word").asText(),
-                        wa.path("AccuracyScore").asDouble(0),
-                        wa.path("ErrorType").asText("None"),
-                        phonemes,
-                        syllables
+                        wordText, wordAccuracy, wordErrorType, phonemes, syllables
                 ));
             }
         }
 
-        // ── Prosody assessment — parse Break and Intonation errors ───────────
-        // Azure reports UnexpectedBreak / MissingBreak / Monotone under
-        // PronunciationAssessment.ProsodyAssessment (utterance-level), NOT on individual words.
-        // We convert these into synthetic word entries so the frontend can display them.
+        // Log summary of all error types found in words
+        var errorSummary = wordScores.stream()
+                .filter(w -> !"None".equals(w.errorType()))
+                .map(w -> w.word() + "=" + w.errorType())
+                .toList();
+        log.info("🔍 Word errors found: {} total, details: {}", errorSummary.size(), errorSummary);
+
+        // ── Prosody errors — parse from word-level Feedback.Prosody ────────
+        // Azure reports Break/Intonation errors under each word's
+        // PronunciationAssessment.Feedback.Prosody, NOT at utterance level.
+        // Structure: Words[i].PronunciationAssessment.Feedback.Prosody.Break.ErrorTypes[]
+        //            Words[i].PronunciationAssessment.Feedback.Prosody.Intonation.ErrorTypes[]
+        if (wordsNode.isArray()) {
+            for (int i = 0; i < wordsNode.size(); i++) {
+                var w = wordsNode.get(i);
+                var feedback = w.path("PronunciationAssessment").path("Feedback").path("Prosody");
+                if (feedback.isMissingNode()) continue;
+
+                // Break errors (UnexpectedBreak, MissingBreak)
+                var breakNode = feedback.path("Break");
+                if (!breakNode.isMissingNode()) {
+                    var breakErrorTypes = breakNode.path("ErrorTypes");
+                    if (breakErrorTypes.isArray()) {
+                        for (var et : breakErrorTypes) {
+                            var errorType = et.asText("None");
+                            if (!"None".equals(errorType) && !errorType.isBlank()) {
+                                if (i < wordScores.size()) {
+                                    var orig = wordScores.get(i);
+                                    if ("None".equals(orig.errorType())) {
+                                        wordScores.set(i, new WordPronunciation(
+                                                orig.word(), orig.accuracyScore(), errorType,
+                                                orig.phonemes(), orig.syllables()));
+                                        log.info("🔍 Break error detected: type={}, word='{}'", errorType, orig.word());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Intonation errors (Monotone)
+                var intonationNode = feedback.path("Intonation");
+                if (!intonationNode.isMissingNode()) {
+                    var intonationErrorTypes = intonationNode.path("ErrorTypes");
+                    if (intonationErrorTypes.isArray()) {
+                        for (var et : intonationErrorTypes) {
+                            var errorType = et.asText("None");
+                            if ("Monotone".equals(errorType)) {
+                                if (i < wordScores.size()) {
+                                    var orig = wordScores.get(i);
+                                    if ("None".equals(orig.errorType())) {
+                                        wordScores.set(i, new WordPronunciation(
+                                                orig.word(), orig.accuracyScore(), "Monotone",
+                                                orig.phonemes(), orig.syllables()));
+                                        log.info("🔍 Monotone error detected on word='{}'", orig.word());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Also check utterance-level ProsodyAssessment (fallback) ──────
         var prosodyAssessment = assessment.path("ProsodyAssessment");
         if (!prosodyAssessment.isMissingNode()) {
-            // Break errors: each break entry references a word index where the break issue occurs
             var breaksNode = prosodyAssessment.path("Breaks");
             if (breaksNode.isArray()) {
                 for (var brk : breaksNode) {
                     var errorType = brk.path("ErrorType").asText("None");
                     if (!"None".equals(errorType) && !errorType.isBlank()) {
-                        // Find the word at the break index and annotate it
                         var breakIdx = brk.path("WordIndex").asInt(-1);
                         if (breakIdx >= 0 && breakIdx < wordScores.size()) {
                             var orig = wordScores.get(breakIdx);
-                            wordScores.set(breakIdx, new WordPronunciation(
-                                    orig.word(), orig.accuracyScore(), errorType,
-                                    orig.phonemes(), orig.syllables()));
-                        } else {
-                            // No word index — add as a standalone break marker
-                            wordScores.add(new WordPronunciation(
-                                    brk.path("BreakLength").asText("..."),
-                                    0, errorType, List.of(), List.of()));
-                        }
-                        log.debug("🔍 Break error detected: type={}, wordIndex={}", errorType, breakIdx);
-                    }
-                }
-            }
-
-            // Intonation/Monotone errors: these span the entire utterance
-            var intonationNode = prosodyAssessment.path("Intonation");
-            if (!intonationNode.isMissingNode()) {
-                var errorType = intonationNode.path("ErrorType").asText("None");
-                if ("Monotone".equals(errorType)) {
-                    // Tag the first word as monotone (or add a marker)
-                    if (!wordScores.isEmpty()) {
-                        var orig = wordScores.get(0);
-                        // Only override if it has no other error
-                        if ("None".equals(orig.errorType())) {
-                            wordScores.set(0, new WordPronunciation(
-                                    orig.word(), orig.accuracyScore(), "Monotone",
-                                    orig.phonemes(), orig.syllables()));
+                            if ("None".equals(orig.errorType())) {
+                                wordScores.set(breakIdx, new WordPronunciation(
+                                        orig.word(), orig.accuracyScore(), errorType,
+                                        orig.phonemes(), orig.syllables()));
+                                log.info("🔍 Utterance-level break error: type={}, word='{}'", errorType, orig.word());
+                            }
                         }
                     }
-                    log.debug("🔍 Monotone error detected for utterance");
                 }
             }
         }

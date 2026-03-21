@@ -30,11 +30,12 @@ public class SpeakingSession extends BaseEntity {
     private Integer fluencyScore;
     private Integer accuracyScore;
     private Integer prosodyScore;
+    private Integer vocabularyScore;
 
-    private String feedbackTitle;
-    private String feedbackSummary;
-    private String feedbackRating;
-    private String feedbackTip;
+    @Column(columnDefinition = "TEXT") private String feedbackTitle;
+    @Column(columnDefinition = "TEXT") private String feedbackSummary;
+    @Column(columnDefinition = "TEXT") private String feedbackRating;
+    @Column(columnDefinition = "TEXT") private String feedbackTip;
 
     private Integer variationSeed;
 
