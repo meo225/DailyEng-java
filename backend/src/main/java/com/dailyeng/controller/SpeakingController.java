@@ -3,7 +3,6 @@ package com.dailyeng.controller;
 import com.dailyeng.dto.speaking.SpeakingDtos.*;
 import com.dailyeng.service.AzureSpeechService;
 import com.dailyeng.service.SpeakingService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/speaking")
 @RequiredArgsConstructor
-public class SpeakingController {
+public class SpeakingController extends BaseController {
 
     private final SpeakingService speakingService;
     private final AzureSpeechService azureSpeechService;
@@ -42,10 +41,9 @@ public class SpeakingController {
             @RequestParam(required = false) String subcategory,
             @RequestParam(required = false) List<String> levels,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "12") int limit,
-            HttpServletRequest request
+            @RequestParam(defaultValue = "12") int limit
     ) {
-        var userId = extractUserId(request);
+        var userId = extractUserId();
         return ResponseEntity.ok(speakingService.getScenariosWithProgress(
                 userId, category, subcategory, levels, page, limit));
     }
@@ -64,11 +62,8 @@ public class SpeakingController {
 
     /** DELETE /speaking/scenarios/{id} — deleteCustomScenario() */
     @DeleteMapping("/scenarios/{id}")
-    public ResponseEntity<Void> deleteScenario(
-            @PathVariable String id,
-            HttpServletRequest request
-    ) {
-        var userId = requireUserId(request);
+    public ResponseEntity<Void> deleteScenario(@PathVariable String id) {
+        var userId = requireUserId();
         speakingService.deleteCustomScenario(id, userId);
         return ResponseEntity.noContent().build();
     }
@@ -76,24 +71,23 @@ public class SpeakingController {
     /** POST /speaking/scenarios/custom — createCustomScenario() */
     @PostMapping("/scenarios/custom")
     public ResponseEntity<CustomScenarioResponse> createCustomScenario(
-            @RequestBody CreateCustomScenarioRequest req,
-            HttpServletRequest request
+            @RequestBody CreateCustomScenarioRequest req
     ) {
-        var userId = requireUserId(request);
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.createCustomScenario(userId, req.topicPrompt()));
     }
 
     /** POST /speaking/scenarios/random — createRandomScenario() */
     @PostMapping("/scenarios/random")
-    public ResponseEntity<CustomScenarioResponse> createRandomScenario(HttpServletRequest request) {
-        var userId = requireUserId(request);
+    public ResponseEntity<CustomScenarioResponse> createRandomScenario() {
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.createRandomScenario(userId));
     }
 
     /** POST /speaking/scenarios/free-talk — createFreeTalkScenario() */
     @PostMapping("/scenarios/free-talk")
-    public ResponseEntity<CustomScenarioResponse> createFreeTalkScenario(HttpServletRequest request) {
-        var userId = requireUserId(request);
+    public ResponseEntity<CustomScenarioResponse> createFreeTalkScenario() {
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.createFreeTalkScenario(userId));
     }
 
@@ -102,10 +96,9 @@ public class SpeakingController {
     /** POST /speaking/sessions — startSessionWithGreeting() */
     @PostMapping("/sessions")
     public ResponseEntity<SessionStartResponse> startSession(
-            @RequestBody StartSessionRequest req,
-            HttpServletRequest request
+            @RequestBody StartSessionRequest req
     ) {
-        var userId = requireUserId(request);
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.startSession(userId, req.scenarioId()));
     }
 
@@ -139,11 +132,8 @@ public class SpeakingController {
 
     /** DELETE /speaking/sessions/{id} — deleteSession() */
     @DeleteMapping("/sessions/{id}")
-    public ResponseEntity<Void> deleteSession(
-            @PathVariable String id,
-            HttpServletRequest request
-    ) {
-        var userId = requireUserId(request);
+    public ResponseEntity<Void> deleteSession(@PathVariable String id) {
+        var userId = requireUserId();
         speakingService.deleteSession(id, userId);
         return ResponseEntity.noContent().build();
     }
@@ -152,8 +142,8 @@ public class SpeakingController {
 
     /** GET /speaking/history — getUserSpeakingHistory() */
     @GetMapping("/history")
-    public ResponseEntity<HistoryResponse> getHistory(HttpServletRequest request) {
-        var userId = requireUserId(request);
+    public ResponseEntity<HistoryResponse> getHistory() {
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.getUserHistory(userId));
     }
 
@@ -162,17 +152,16 @@ public class SpeakingController {
     public ResponseEntity<HistorySessionsResponse> getHistorySessions(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(required = false) String rating,
-            HttpServletRequest request
+            @RequestParam(required = false) String rating
     ) {
-        var userId = requireUserId(request);
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.getHistorySessions(userId, page, limit, rating));
     }
 
     /** GET /speaking/history/stats — getSpeakingHistoryStats() */
     @GetMapping("/history/stats")
-    public ResponseEntity<HistoryStatsResponse> getHistoryStats(HttpServletRequest request) {
-        var userId = requireUserId(request);
+    public ResponseEntity<HistoryStatsResponse> getHistoryStats() {
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.getHistoryStats(userId));
     }
 
@@ -180,8 +169,8 @@ public class SpeakingController {
 
     /** GET /speaking/custom-topics — getCustomTopics() */
     @GetMapping("/custom-topics")
-    public ResponseEntity<List<ScenarioListItem>> getCustomTopics(HttpServletRequest request) {
-        var userId = requireUserId(request);
+    public ResponseEntity<List<ScenarioListItem>> getCustomTopics() {
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.getCustomTopics(userId));
     }
 
@@ -189,11 +178,8 @@ public class SpeakingController {
 
     /** GET /speaking/scenarios/{id}/records — getLearningRecordsForScenario() */
     @GetMapping("/scenarios/{id}/records")
-    public ResponseEntity<List<LearningRecordItem>> getLearningRecords(
-            @PathVariable String id,
-            HttpServletRequest request
-    ) {
-        var userId = requireUserId(request);
+    public ResponseEntity<List<LearningRecordItem>> getLearningRecords(@PathVariable String id) {
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.getLearningRecords(userId, id));
     }
 
@@ -202,10 +188,9 @@ public class SpeakingController {
     /** POST /speaking/bookmarks/toggle — toggleSpeakingBookmark() */
     @PostMapping("/bookmarks/toggle")
     public ResponseEntity<ToggleBookmarkResponse> toggleBookmark(
-            @RequestBody ToggleBookmarkRequest req,
-            HttpServletRequest request
+            @RequestBody ToggleBookmarkRequest req
     ) {
-        var userId = requireUserId(request);
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.toggleBookmark(userId, req.scenarioId()));
     }
 
@@ -213,17 +198,16 @@ public class SpeakingController {
     @GetMapping("/bookmarks")
     public ResponseEntity<BookmarkListResponse> getBookmarks(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "8") int limit,
-            HttpServletRequest request
+            @RequestParam(defaultValue = "8") int limit
     ) {
-        var userId = requireUserId(request);
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.getBookmarks(userId, page, limit));
     }
 
     /** GET /speaking/bookmarks/ids — getSpeakingBookmarkIds() */
     @GetMapping("/bookmarks/ids")
-    public ResponseEntity<List<String>> getBookmarkIds(HttpServletRequest request) {
-        var userId = requireUserId(request);
+    public ResponseEntity<List<String>> getBookmarkIds() {
+        var userId = requireUserId();
         return ResponseEntity.ok(speakingService.getBookmarkIds(userId));
     }
 
@@ -232,10 +216,9 @@ public class SpeakingController {
     /** POST /speaking/speech/transcribe — Transcribe audio to text */
     @PostMapping("/speech/transcribe")
     public ResponseEntity<AzureSpeechService.TranscriptionResult> transcribeAudio(
-            @RequestParam("audio") MultipartFile audioFile,
-            HttpServletRequest request
+            @RequestParam("audio") MultipartFile audioFile
     ) {
-        requireUserId(request);
+        requireUserId();
         try {
             var contentType = audioFile.getContentType();
             var originalFilename = audioFile.getOriginalFilename();
@@ -271,10 +254,9 @@ public class SpeakingController {
     @PostMapping("/speech/transcribe-assess")
     public ResponseEntity<TranscribeAssessResponse> transcribeAndAssess(
             @RequestParam("audio") MultipartFile audioFile,
-            @RequestParam(value = "referenceText", required = false) String referenceText,
-            HttpServletRequest request
+            @RequestParam(value = "referenceText", required = false) String referenceText
     ) {
-        requireUserId(request);
+        requireUserId();
         boolean isScripted = referenceText != null && !referenceText.isBlank();
         try {
             System.out.printf("🎤 Transcribe+Assess [%s]: contentType=%s, size=%d bytes%n",
@@ -455,10 +437,9 @@ public class SpeakingController {
     @PostMapping("/speech/pronunciation")
     public ResponseEntity<AzureSpeechService.PronunciationResult> assessPronunciation(
             @RequestParam("audio") MultipartFile audioFile,
-            @RequestParam(value = "referenceText", required = false) String referenceText,
-            HttpServletRequest request
+            @RequestParam(value = "referenceText", required = false) String referenceText
     ) {
-        requireUserId(request);
+        requireUserId();
         try {
             AzureSpeechService.PronunciationResult result;
             if (referenceText != null && !referenceText.isBlank()) {
@@ -478,27 +459,4 @@ public class SpeakingController {
         return ResponseEntity.ok(azureSpeechService.listVoices());
     }
 
-    // ======================== Helpers ========================
-
-    /**
-     * Extract userId from SecurityContext (set by JwtAuthenticationFilter which reads cookies + header).
-     */
-    private String extractUserId(HttpServletRequest request) {
-        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
-            return auth.getName(); // userId from JWT subject
-        }
-        return null;
-    }
-
-    /**
-     * Require userId from SecurityContext (throws 401 if not present).
-     */
-    private String requireUserId(HttpServletRequest request) {
-        var userId = extractUserId(request);
-        if (userId == null) {
-            throw new com.dailyeng.exception.UnauthorizedException("Authentication required");
-        }
-        return userId;
-    }
 }
