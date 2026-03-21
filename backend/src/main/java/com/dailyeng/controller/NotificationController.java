@@ -74,6 +74,20 @@ public class NotificationController {
         return ResponseEntity.ok(Map.of("success", true, "count", count));
     }
 
+    /** POST /api/notifications/test-create -> FOR TESTING IN POSTMAN */
+    @PostMapping("/test-create")
+    public ResponseEntity<?> createTestNotification(
+            @RequestBody Map<String, String> payload,
+            HttpServletRequest request
+    ) {
+        String userId = requireUserId(request);
+        String title = payload.getOrDefault("title", "Test Notification");
+        String message = payload.getOrDefault("message", "This is a dummy notification created via Postman!");
+        String type = payload.getOrDefault("type", "system");
+
+        return ResponseEntity.ok(notificationService.createTestNotification(userId, title, message, type));
+    }
+
     /**
      * Require userId from SecurityContext (throws 401 if not present).
      */

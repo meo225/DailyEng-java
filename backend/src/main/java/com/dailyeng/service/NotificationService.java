@@ -117,4 +117,19 @@ public class NotificationService {
         result.setCreatedAt(n.getCreatedAt());
         return result;
     }
+
+    /**
+     * TEST ONLY: Create a dummy notification
+     */
+    @Transactional
+    public NotificationResult createTestNotification(String userId, String title, String message, String type) {
+        Notification notification = new Notification();
+        notification.setUserId(userId);
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notification.setType(com.dailyeng.entity.enums.NotificationType.valueOf(type));
+        notification.setRead(false);
+        notification = notificationRepository.save(notification);
+        return mapToResult(notification);
+    }
 }
