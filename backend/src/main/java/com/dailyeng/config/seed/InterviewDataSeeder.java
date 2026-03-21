@@ -1,4 +1,4 @@
-package com.dailyeng.config;
+package com.dailyeng.config.seed;
 
 import com.dailyeng.entity.SpeakingScenario;
 import com.dailyeng.entity.TopicGroup;

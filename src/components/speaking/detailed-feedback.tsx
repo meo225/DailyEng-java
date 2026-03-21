@@ -112,7 +112,7 @@ export function DetailedFeedback({
       </div>
 
       {/* Score Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         {scores.map((score, index) => (
           <Card
             key={index}

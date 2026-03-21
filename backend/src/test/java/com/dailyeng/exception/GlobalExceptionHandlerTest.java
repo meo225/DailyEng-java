@@ -67,7 +67,7 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Email hoặc mật khẩu không chính xác", response.getBody().error());
+        assertEquals("Invalid email or password", response.getBody().error());
     }
 
     @Test
@@ -89,7 +89,7 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Đã có lỗi xảy ra. Vui lòng thử lại.", response.getBody().error());
+        assertEquals("An unexpected error occurred. Please try again.", response.getBody().error());
         assertEquals(500, response.getBody().status());
     }
 

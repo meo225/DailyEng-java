@@ -11,6 +11,8 @@ export function useTextToSpeech() {
   const ttsVoice = useAppStore((state) => state.ttsVoice);
   const isSpeakingRef = useRef(false);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  /** Holds the resolve callback of the in-flight speakText promise. */
+  const pendingResolveRef = useRef<(() => void) | null>(null);
 
   const stopPlayback = () => {
     if (audioElementRef.current) {
@@ -19,6 +21,11 @@ export function useTextToSpeech() {
       audioElementRef.current = null;
     }
     isSpeakingRef.current = false;
+    // Resolve the pending speakText promise so any awaiting code can proceed
+    if (pendingResolveRef.current) {
+      pendingResolveRef.current();
+      pendingResolveRef.current = null;
+    }
   };
 
   const speakText = async (text: string): Promise<void> => {
@@ -45,10 +52,13 @@ export function useTextToSpeech() {
       audioElementRef.current = audio;
 
       return new Promise<void>((resolve) => {
+        pendingResolveRef.current = resolve;
+
         const cleanup = () => {
           isSpeakingRef.current = false;
           URL.revokeObjectURL(audioUrl);
           audioElementRef.current = null;
+          pendingResolveRef.current = null;
           resolve();
         };
 

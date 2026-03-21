@@ -1,8 +1,12 @@
 package com.dailyeng.controller;
 
 import com.dailyeng.dto.speaking.SpeakingDtos.*;
+import com.dailyeng.service.AudioConversionService;
 import com.dailyeng.service.AzureSpeechService;
+import com.dailyeng.service.SpeakingHistoryService;
 import com.dailyeng.service.SpeakingService;
+import com.dailyeng.service.SpeakingSessionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -24,7 +28,10 @@ import java.util.Map;
 public class SpeakingController extends BaseController {
 
     private final SpeakingService speakingService;
+    private final SpeakingSessionService sessionService;
+    private final SpeakingHistoryService historyService;
     private final AzureSpeechService azureSpeechService;
+    private final AudioConversionService audioConversionService;
 
     // ======================== Topic Groups ========================
 
@@ -73,7 +80,7 @@ public class SpeakingController extends BaseController {
     /** POST /speaking/scenarios/custom — createCustomScenario() */
     @PostMapping("/scenarios/custom")
     public ResponseEntity<CustomScenarioResponse> createCustomScenario(
-            @RequestBody CreateCustomScenarioRequest req
+            @Valid @RequestBody CreateCustomScenarioRequest req
     ) {
         var userId = requireUserId();
         return ResponseEntity.ok(speakingService.createCustomScenario(userId, req.topicPrompt()));
@@ -98,34 +105,34 @@ public class SpeakingController extends BaseController {
     /** POST /speaking/sessions — startSessionWithGreeting() */
     @PostMapping("/sessions")
     public ResponseEntity<SessionStartResponse> startSession(
-            @RequestBody StartSessionRequest req
+            @Valid @RequestBody StartSessionRequest req
     ) {
         var userId = requireUserId();
-        return ResponseEntity.ok(speakingService.startSession(userId, req.scenarioId()));
+        return ResponseEntity.ok(sessionService.startSession(userId, req.scenarioId()));
     }
 
     /** POST /speaking/sessions/{id}/turns — submitTurn() */
     @PostMapping("/sessions/{id}/turns")
     public ResponseEntity<SubmitTurnResponse> submitTurn(
             @PathVariable String id,
-            @RequestBody SubmitTurnRequest req
+            @Valid @RequestBody SubmitTurnRequest req
     ) {
         var userId = requireUserId();
-        return ResponseEntity.ok(speakingService.submitTurn(userId, id, req));
+        return ResponseEntity.ok(sessionService.submitTurn(userId, id, req));
     }
 
     /** POST /speaking/sessions/{id}/end — analyzeAndScoreSession() */
     @PostMapping("/sessions/{id}/end")
     public ResponseEntity<SessionAnalysisResponse> endSession(@PathVariable String id) {
         var userId = requireUserId();
-        return ResponseEntity.ok(speakingService.analyzeAndScoreSession(userId, id));
+        return ResponseEntity.ok(sessionService.analyzeAndScoreSession(userId, id));
     }
 
     /** POST /speaking/sessions/{id}/hint — generate a sample response hint */
     @PostMapping("/sessions/{id}/hint")
     public ResponseEntity<Map<String, String>> getHint(@PathVariable String id) {
         var userId = requireUserId();
-        var hint = speakingService.generateHint(userId, id);
+        var hint = sessionService.generateHint(userId, id);
         return ResponseEntity.ok(Map.of("hint", hint));
     }
 
@@ -133,14 +140,14 @@ public class SpeakingController extends BaseController {
     @GetMapping("/sessions/{id}")
     public ResponseEntity<SessionDetailResponse> getSessionDetails(@PathVariable String id) {
         var userId = requireUserId();
-        return ResponseEntity.ok(speakingService.getSessionDetails(userId, id));
+        return ResponseEntity.ok(sessionService.getSessionDetails(userId, id));
     }
 
     /** DELETE /speaking/sessions/{id} — deleteSession() */
     @DeleteMapping("/sessions/{id}")
     public ResponseEntity<Void> deleteSession(@PathVariable String id) {
         var userId = requireUserId();
-        speakingService.deleteSession(id, userId);
+        sessionService.deleteSession(id, userId);
         return ResponseEntity.noContent().build();
     }
 
@@ -150,7 +157,7 @@ public class SpeakingController extends BaseController {
     @GetMapping("/history")
     public ResponseEntity<HistoryResponse> getHistory() {
         var userId = requireUserId();
-        return ResponseEntity.ok(speakingService.getUserHistory(userId));
+        return ResponseEntity.ok(historyService.getUserHistory(userId));
     }
 
     /** GET /speaking/history/sessions — getSpeakingHistorySessions() */
@@ -161,14 +168,14 @@ public class SpeakingController extends BaseController {
             @RequestParam(required = false) String rating
     ) {
         var userId = requireUserId();
-        return ResponseEntity.ok(speakingService.getHistorySessions(userId, page, limit, rating));
+        return ResponseEntity.ok(historyService.getHistorySessions(userId, page, limit, rating));
     }
 
     /** GET /speaking/history/stats — getSpeakingHistoryStats() */
     @GetMapping("/history/stats")
     public ResponseEntity<HistoryStatsResponse> getHistoryStats() {
         var userId = requireUserId();
-        return ResponseEntity.ok(speakingService.getHistoryStats(userId));
+        return ResponseEntity.ok(historyService.getHistoryStats(userId));
     }
 
     // ======================== Custom Topics ========================
@@ -186,7 +193,7 @@ public class SpeakingController extends BaseController {
     @GetMapping("/scenarios/{id}/records")
     public ResponseEntity<List<LearningRecordItem>> getLearningRecords(@PathVariable String id) {
         var userId = requireUserId();
-        return ResponseEntity.ok(speakingService.getLearningRecords(userId, id));
+        return ResponseEntity.ok(historyService.getLearningRecords(userId, id));
     }
 
     // ======================== Bookmarks ========================
@@ -194,7 +201,7 @@ public class SpeakingController extends BaseController {
     /** POST /speaking/bookmarks/toggle — toggleSpeakingBookmark() */
     @PostMapping("/bookmarks/toggle")
     public ResponseEntity<ToggleBookmarkResponse> toggleBookmark(
-            @RequestBody ToggleBookmarkRequest req
+            @Valid @RequestBody ToggleBookmarkRequest req
     ) {
         var userId = requireUserId();
         return ResponseEntity.ok(speakingService.toggleBookmark(userId, req.scenarioId()));
@@ -234,7 +241,7 @@ public class SpeakingController extends BaseController {
                     contentType, originalFilename, size);
 
             // Always convert to WAV PCM 16kHz mono via ffmpeg (handles WebM, OGG, etc.)
-            byte[] wavBytes = convertToWav(audioFile.getBytes());
+            byte[] wavBytes = audioConversionService.convertToWav(audioFile.getBytes());
             log.info("🎤 Converted to WAV: {} bytes", wavBytes.length);
 
             // Use Azure Speech SDK (higher accuracy than REST API)
@@ -264,12 +271,13 @@ public class SpeakingController extends BaseController {
         requireUserId();
         boolean isScripted = referenceText != null && !referenceText.isBlank();
         try {
-            log.info("🎤 Transcribe+Assess [{}]: contentType={}, size={} bytes",
+            log.info("🎤 Transcribe+Assess [{}]: contentType={}, size={} bytes, referenceText='{}'",
                     isScripted ? "scripted" : "unscripted",
-                    audioFile.getContentType(), audioFile.getSize());
+                    audioFile.getContentType(), audioFile.getSize(),
+                    isScripted ? referenceText : "N/A");
 
             // Convert to WAV PCM 16kHz mono
-            byte[] wavBytes = convertToWav(audioFile.getBytes());
+            byte[] wavBytes = audioConversionService.convertToWav(audioFile.getBytes());
 
             // Run scripted or unscripted pronunciation assessment
             var pronResult = isScripted
@@ -316,105 +324,6 @@ public class SpeakingController extends BaseController {
         } catch (Exception e) {
             log.error("🎤 Transcribe+Assess Error: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    /** Response DTO for combined transcribe + pronunciation assessment. */
-    public record TranscribeAssessResponse(
-            String text,
-            double accuracyScore,
-            double fluencyScore,
-            double prosodyScore,
-            double overallScore,
-            double completenessScore,
-            List<WordAssessResult> words
-    ) {}
-
-    /** Per-word pronunciation result with IPA phonemes. */
-    public record WordAssessResult(
-            String word,
-            double accuracyScore,
-            String errorType,  // None, Mispronunciation, UnexpectedBreak, MissingBreak, Monotone
-            List<PhonemeResult> phonemes,
-            List<SyllableResult> syllables
-    ) {}
-
-    /** Per-phoneme IPA result. */
-    public record PhonemeResult(
-            String phoneme,       // IPA symbol, e.g. "θ", "ɛ"
-            double accuracyScore
-    ) {}
-
-    /** Per-syllable result. */
-    public record SyllableResult(
-            String syllable,
-            double accuracyScore
-    ) {}
-
-    /**
-     * Convert any audio format to WAV PCM 16kHz mono via ffmpeg.
-     * This ensures Azure STT always gets a format it can decode.
-     *
-     * Safeguards:
-     * - Rejects uploads larger than 20 MB
-     * - Enforces a 30-second timeout on ffmpeg
-     * - Provides a clear error when ffmpeg is not installed
-     */
-    private static final int MAX_AUDIO_BYTES = 20 * 1024 * 1024; // 20 MB
-    private static final long FFMPEG_TIMEOUT_SECONDS = 30L;
-
-    private byte[] convertToWav(byte[] inputAudio) throws java.io.IOException, InterruptedException {
-        if (inputAudio == null || inputAudio.length == 0) {
-            throw new java.io.IOException("Input audio is empty.");
-        }
-        if (inputAudio.length > MAX_AUDIO_BYTES) {
-            throw new java.io.IOException("Input audio is too large; maximum supported size is 20 MB.");
-        }
-
-        // Write input to temp file
-        var inputFile = java.io.File.createTempFile("stt_input_", ".audio");
-        var outputFile = java.io.File.createTempFile("stt_output_", ".wav");
-        try {
-            java.nio.file.Files.write(inputFile.toPath(), inputAudio);
-
-            // ffmpeg: convert to WAV PCM 16kHz mono (Azure STT optimal format)
-            Process process;
-            try {
-                process = new ProcessBuilder(
-                        "ffmpeg", "-y",
-                        "-i", inputFile.getAbsolutePath(),
-                        "-ar", "16000",     // 16kHz sample rate
-                        "-ac", "1",         // mono
-                        "-f", "wav",        // WAV format
-                        outputFile.getAbsolutePath()
-                )
-                        .redirectErrorStream(true)
-                        .start();
-            } catch (java.io.IOException e) {
-                throw new java.io.IOException(
-                        "Failed to execute ffmpeg. Ensure ffmpeg is installed and available on the system PATH.", e);
-            }
-
-            // Read ffmpeg output for debugging
-            var ffmpegOutput = new String(process.getInputStream().readAllBytes());
-
-            // Enforce timeout to avoid hanging conversions
-            boolean finished = process.waitFor(FFMPEG_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                throw new java.io.IOException("ffmpeg conversion timed out after " + FFMPEG_TIMEOUT_SECONDS + " seconds.");
-            }
-
-            var exitCode = process.exitValue();
-            if (exitCode != 0) {
-                log.error("🎤 ffmpeg failed (exit {}): {}", exitCode, ffmpegOutput);
-                throw new java.io.IOException("ffmpeg conversion failed with exit code " + exitCode);
-            }
-
-            return java.nio.file.Files.readAllBytes(outputFile.toPath());
-        } finally {
-            inputFile.delete();
-            outputFile.delete();
         }
     }
 

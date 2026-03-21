@@ -1,5 +1,7 @@
 package com.dailyeng.dto.speaking;
 
+import jakarta.validation.constraints.NotBlank;
+
 import java.util.List;
 
 /**
@@ -12,10 +14,10 @@ public final class SpeakingDtos {
 
     // ============================== Requests ==============================
 
-    public record CreateCustomScenarioRequest(String topicPrompt) {}
-    public record StartSessionRequest(String scenarioId) {}
+    public record CreateCustomScenarioRequest(@NotBlank String topicPrompt) {}
+    public record StartSessionRequest(@NotBlank String scenarioId) {}
     public record SubmitTurnRequest(
-            String userText,
+            @NotBlank String userText,
             String audioUrl,
             SpeechMetrics speechMetrics
     ) {}
@@ -64,13 +66,16 @@ public final class SpeakingDtos {
             String contextMessage, String greetingMessage, String greetingTurnId
     ) {}
 
-    public record SubmitTurnResponse(String aiResponse, String userTurnId, String aiTurnId, boolean sessionComplete) {}
+    public record SubmitTurnResponse(
+            String aiResponse, String userTurnId, String aiTurnId,
+            boolean sessionComplete, String correctionHint
+    ) {}
 
     public record CustomScenarioResponse(ScenarioDetailResponse scenario, String sessionId) {}
 
     public record SessionScores(
             int grammar, int topic, int fluency,
-            int accuracy, int prosody, int overall
+            int accuracy, int prosody, int vocabulary, int overall
     ) {}
 
     public record ErrorCategory(String name, int count) {}
@@ -91,7 +96,13 @@ public final class SpeakingDtos {
             SessionScores scores, List<ErrorCategory> errorCategories,
             List<ConversationTurn> conversation,
             String feedbackTitle, String feedbackSummary,
-            String feedbackRating, String feedbackTip
+            String feedbackRating, String feedbackTip,
+            // Enhancement #1: Adaptive difficulty
+            String newLevel, String previousLevel,
+            // Enhancement #2: Richer analysis
+            List<CorrectedSentence> correctedSentences,
+            List<String> vocabularyHighlights,
+            List<SuggestedPhrase> suggestedPhrases
     ) {}
 
     public record SessionDetailResponse(
@@ -120,7 +131,7 @@ public final class SpeakingDtos {
             String id, String scenarioId, String scenarioTitle,
             int overallScore, int grammarScore, int topicScore,
             int fluencyScore, int accuracyScore, int prosodyScore,
-            String feedbackRating, String createdAt
+            int vocabularyScore, String feedbackRating, String createdAt
     ) {}
 
     public record HistorySessionsResponse(
@@ -133,11 +144,11 @@ public final class SpeakingDtos {
             int totalSessions, int highestScore, int averageScore
     ) {}
 
-    public record CriteriaAverages(int topic, int accuracy, int prosody, int fluency, int grammar) {}
+    public record CriteriaAverages(int topic, int accuracy, int prosody, int fluency, int grammar, int vocabulary) {}
 
     public record LearningRecordItem(
             String id, int overallScore, int grammarScore, int topicScore,
-            int fluencyScore, int accuracyScore, int prosodyScore, String date
+            int fluencyScore, int accuracyScore, int prosodyScore, int vocabularyScore, String date
     ) {}
 
     // ============================== Word Assessment ==============================
@@ -153,9 +164,17 @@ public final class SpeakingDtos {
     public record PhonemeDto(String phoneme, double accuracyScore) {}
     public record SyllableDto(String syllable, double accuracyScore) {}
 
+    // ============================== Richer Analysis DTOs ==============================
+
+    /** A corrected version of a user turn. */
+    public record CorrectedSentence(int turnIndex, String original, String corrected) {}
+
+    /** A better alternative for a phrase the user used. */
+    public record SuggestedPhrase(String used, String better) {}
+
     // ============================== Bookmarks ==============================
 
-    public record ToggleBookmarkRequest(String scenarioId) {}
+    public record ToggleBookmarkRequest(@NotBlank String scenarioId) {}
     public record ToggleBookmarkResponse(boolean bookmarked) {}
     public record BookmarkListResponse(
             List<ScenarioListItem> bookmarks,
@@ -163,5 +182,39 @@ public final class SpeakingDtos {
             long total,
             int totalPages,
             int currentPage
+    ) {}
+
+    // ============================== Speech Assessment DTOs ==============================
+
+    /** Combined transcribe + pronunciation assessment response. */
+    public record TranscribeAssessResponse(
+            String text,
+            double accuracyScore,
+            double fluencyScore,
+            double prosodyScore,
+            double overallScore,
+            double completenessScore,
+            List<WordAssessResult> words
+    ) {}
+
+    /** Per-word pronunciation result with IPA phonemes. */
+    public record WordAssessResult(
+            String word,
+            double accuracyScore,
+            String errorType,
+            List<PhonemeResult> phonemes,
+            List<SyllableResult> syllables
+    ) {}
+
+    /** Per-phoneme IPA result. */
+    public record PhonemeResult(
+            String phoneme,
+            double accuracyScore
+    ) {}
+
+    /** Per-syllable result. */
+    public record SyllableResult(
+            String syllable,
+            double accuracyScore
     ) {}
 }

@@ -139,6 +139,7 @@ export function useSessionFeedback({
             fluencyScore: r.fluencyScore,
             accuracyScore: r.accuracyScore,
             prosodyScore: r.prosodyScore,
+            vocabularyScore: r.vocabularyScore ?? 0,
             date: new Date(r.date),
           }))
         );
@@ -162,6 +163,7 @@ export function useSessionFeedback({
           fluencyScore: r.fluencyScore,
           accuracyScore: r.accuracyScore,
           prosodyScore: r.prosodyScore,
+          vocabularyScore: r.vocabularyScore ?? 0,
           date: new Date(r.date),
         }))
       );

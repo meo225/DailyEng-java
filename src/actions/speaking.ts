@@ -63,6 +63,7 @@ export interface SubmitTurnResponse {
   userTurnId: string;
   aiTurnId: string;
   sessionComplete: boolean;
+  correctionHint?: string;
 }
 
 export interface CustomScenarioResponse {
@@ -101,6 +102,7 @@ export interface SessionScores {
   fluency: number;
   accuracy: number;
   prosody: number;
+  vocabulary: number;
   overall: number;
 }
 
@@ -127,6 +129,17 @@ export interface ConversationTurn {
   wordAssessments?: WordAssessmentResult[];
 }
 
+export interface CorrectedSentence {
+  turnIndex: number;
+  original: string;
+  corrected: string;
+}
+
+export interface SuggestedPhrase {
+  used: string;
+  better: string;
+}
+
 export interface SessionAnalysisResponse {
   scores: SessionScores;
   errorCategories: ErrorCategory[];
@@ -135,6 +148,11 @@ export interface SessionAnalysisResponse {
   feedbackSummary: string;
   feedbackRating: string;
   feedbackTip: string;
+  newLevel?: string;
+  previousLevel?: string;
+  correctedSentences?: CorrectedSentence[];
+  vocabularyHighlights?: string[];
+  suggestedPhrases?: SuggestedPhrase[];
 }
 
 export interface SessionInfo {
@@ -148,6 +166,7 @@ export interface SessionInfo {
   fluencyScore?: number;
   accuracyScore?: number;
   prosodyScore?: number;
+  vocabularyScore?: number;
   feedbackTitle?: string;
   feedbackSummary?: string;
   feedbackRating?: string;
@@ -193,6 +212,7 @@ export interface HistorySessionItem {
   fluencyScore: number;
   accuracyScore: number;
   prosodyScore: number;
+  vocabularyScore: number;
   feedbackRating: string;
   createdAt: string;
 }
@@ -209,6 +229,7 @@ export interface CriteriaAverages {
   prosody: number;
   fluency: number;
   grammar: number;
+  vocabulary: number;
 }
 
 export interface HistoryStatsResponse {
@@ -227,6 +248,7 @@ export interface LearningRecordItem {
   fluencyScore: number;
   accuracyScore: number;
   prosodyScore: number;
+  vocabularyScore: number;
   date: string;
 }
 

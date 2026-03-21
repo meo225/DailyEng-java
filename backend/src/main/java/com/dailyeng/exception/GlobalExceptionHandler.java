@@ -83,7 +83,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ErrorResponse.of("Email hoặc mật khẩu không chính xác", HttpStatus.UNAUTHORIZED));
+                .body(ErrorResponse.of("Invalid email or password", HttpStatus.UNAUTHORIZED));
     }
 
     @ExceptionHandler(AuthenticationException.class)
@@ -132,7 +132,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ErrorResponse.of(
-                        "Đã có lỗi xảy ra. Vui lòng thử lại.",
+                        "An unexpected error occurred. Please try again.",
                         HttpStatus.INTERNAL_SERVER_ERROR
                 ));
     }

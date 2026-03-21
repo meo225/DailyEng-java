@@ -13,6 +13,7 @@ import {
   AudioWaveform as Waveform,
   Zap,
   Languages,
+  BookOpen,
 } from "lucide-react";
 
 interface LearningRecordCardProps {
@@ -22,6 +23,7 @@ interface LearningRecordCardProps {
   fluencyScore: number;
   accuracyScore: number;
   prosodyScore: number;
+  vocabularyScore: number;
   date: Date;
 }
 
@@ -32,6 +34,7 @@ export function LearningRecordCard({
   fluencyScore,
   accuracyScore,
   prosodyScore,
+  vocabularyScore,
   date,
 }: LearningRecordCardProps) {
   const formatDate = (d: Date) => {
@@ -56,6 +59,7 @@ export function LearningRecordCard({
     { icon: Waveform, value: prosodyScore, label: "Prosody" },
     { icon: Languages, value: grammarScore, label: "Grammar" },
     { icon: Target, value: topicScore, label: "Topic" },
+    { icon: BookOpen, value: vocabularyScore, label: "Vocabulary" },
   ];
 
   return (

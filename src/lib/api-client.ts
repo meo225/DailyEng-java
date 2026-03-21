@@ -47,8 +47,9 @@ class ApiClient {
       signal: options?.signal,
     });
 
-    // Handle 401 — try silent refresh, then fail
-    if (response.status === 401) {
+    // Handle 401 — skip refresh for auth endpoints (they use 401 for bad credentials)
+    const isAuthEndpoint = path.startsWith('/auth/');
+    if (response.status === 401 && !isAuthEndpoint) {
       const refreshed = await this.tryRefresh();
       if (refreshed) {
         // Retry the original request

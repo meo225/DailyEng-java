@@ -72,7 +72,7 @@ public class GeminiService {
     // 1. generateSpeakingResponse — In-conversation AI reply
     // ========================================================================
 
-    public record SpeakingResponseResult(String response) {}
+    public record SpeakingResponseResult(String response, String correctionHint) {}
 
     public record SpeakingHintResult(String hint) {}
 
@@ -93,7 +93,7 @@ public class GeminiService {
             int turnsRemaining
     ) {
         if (client == null) {
-            return new SpeakingResponseResult("I'm sorry, I didn't catch that. Could you repeat?");
+            return new SpeakingResponseResult("I'm sorry, I didn't catch that. Could you repeat?", null);
         }
 
         var botRoleDesc = scenario.botRole() != null
@@ -129,10 +129,13 @@ public class GeminiService {
                 Your task:
                 1. Stay in character as %s and respond naturally to continue the roleplay.
                 2. Generate a natural, conversational response that advances the scenario. Keep it concise (1-2 sentences).
+                3. If the user made a notable grammar or vocabulary error, naturally incorporate the correct form in your response.
+                   Example: If user says "I go there yesterday", respond: "Oh, you went there yesterday? That sounds interesting!"
                 %s
                 
                 IMPORTANT: Be natural and engaging. Do NOT use markdown formatting.
-                CRITICAL: Return ONLY a JSON object: {"response": "<your response>"}
+                CRITICAL: Return ONLY a JSON object: {"response": "<your response>", "correctionHint": "<brief correction or null>"}
+                The correctionHint should be a SHORT correction note like "go → went (past tense)" or null if no error.
                 """.formatted(scenario.context(), botRoleDesc, userRoleDesc, goalDesc, levelDesc,
                 variationDesc, scenario.botRole() != null ? scenario.botRole() : "the tutor",
                 wrapUpDirective);
@@ -145,8 +148,10 @@ public class GeminiService {
             try {
                 var parsed = objectMapper.readTree(responseText);
                 var responseField = parsed.path("response").asText(null);
+                var correctionHint = parsed.path("correctionHint").asText(null);
                 if (responseField != null && !responseField.isBlank()) {
-                    return new SpeakingResponseResult(responseField);
+                    return new SpeakingResponseResult(responseField,
+                            correctionHint != null && !correctionHint.equals("null") ? correctionHint : null);
                 }
             } catch (Exception jsonEx) {
                 log.debug("[generateSpeakingResponse] Gemini returned plain text, using as-is");
@@ -159,10 +164,10 @@ public class GeminiService {
             }
             return new SpeakingResponseResult(cleaned.isBlank()
                     ? "I'm sorry, I didn't catch that. Could you repeat?"
-                    : cleaned);
+                    : cleaned, null);
         } catch (Exception e) {
             log.error("[generateSpeakingResponse] Error: {}", e.getMessage());
-            return new SpeakingResponseResult("I'm sorry, I didn't catch that. Could you repeat?");
+            return new SpeakingResponseResult("I'm sorry, I didn't catch that. Could you repeat?", null);
         }
     }
 
@@ -235,11 +240,17 @@ public class GeminiService {
     // 2. analyzeSessionConversation — Post-session analysis
     // ========================================================================
 
+    public record CorrectedSentence(int turnIndex, String original, String corrected) {}
+    public record SuggestedPhrase(String used, String better) {}
     public record TurnError(String word, String correction, String errorType, int startIndex, int endIndex) {}
     public record TurnAnalysis(int turnIndex, List<TurnError> errors) {}
     public record SessionAnalysisResult(
             String feedbackTitle, String feedbackSummary, String feedbackRating, String feedbackTip,
-            int grammarScore, int relevanceScore, List<TurnAnalysis> turnAnalyses) {}
+            int grammarScore, int relevanceScore, int vocabularyScore,
+            List<TurnAnalysis> turnAnalyses,
+            List<CorrectedSentence> correctedSentences,
+            List<String> vocabularyHighlights,
+            List<SuggestedPhrase> suggestedPhrases) {}
 
     /**
      * Analyze session conversation for errors and scoring.
@@ -255,7 +266,7 @@ public class GeminiService {
             return new SessionAnalysisResult(
                     "Session Complete", "Start speaking to get feedback!",
                     "N/A", "Try to speak more in your next session.",
-                    0, 0, List.of());
+                    0, 0, 0, List.of(), List.of(), List.of(), List.of());
         }
 
         if (client == null) {
@@ -287,7 +298,8 @@ public class GeminiService {
                 STRICT SCORING GUIDELINES:
                 GRAMMAR: 90-100 (perfect), 80-89 (1-2 errors), 70-79 (3-4 errors), 60-69 (5-7 errors), below 60 (8+ errors)
                 RELEVANCE: 90-100 (perfectly on-topic), 80-89 (mostly relevant), 70-79 (generally relevant), below 70 (off-topic)
-                FEEDBACK RATING: "Excellent" (both 85+), "Good" (both 70+), "Average" (one 60-69), "Needs Improvement" (any below 60)
+                VOCABULARY: 90-100 (diverse, precise word choices), 80-89 (good variety), 70-79 (adequate), 60-69 (limited/repetitive), below 60 (very basic/incorrect)
+                FEEDBACK RATING: "Excellent" (all 85+), "Good" (all 70+), "Average" (one 60-69), "Needs Improvement" (any below 60)
                 
                 Return JSON ONLY:
                 {
@@ -297,6 +309,7 @@ public class GeminiService {
                   "feedbackTip": "<specific actionable tip>",
                   "grammarScore": <0-100>,
                   "relevanceScore": <0-100>,
+                  "vocabularyScore": <0-100>,
                   "turnAnalyses": [
                     {
                       "turnIndex": <index>,
@@ -304,6 +317,13 @@ public class GeminiService {
                         {"word": "<incorrect>", "correction": "<correct>", "errorType": "<Grammar|Vocabulary|Preposition|Article|Verb Tense|Word Choice>", "startIndex": <int>, "endIndex": <int>}
                       ]
                     }
+                  ],
+                  "correctedSentences": [
+                    {"turnIndex": <index>, "original": "<user's text>", "corrected": "<corrected version>"}
+                  ],
+                  "vocabularyHighlights": ["word1", "phrase2"],
+                  "suggestedPhrases": [
+                    {"used": "<what user said>", "better": "<better alternative>"}
                   ]
                 }
                 """.formatted(scenarioContext, sb.toString());
@@ -564,7 +584,7 @@ public class GeminiService {
                 "Session Complete",
                 "Great effort! Keep practicing to improve your English speaking skills.",
                 "Good", "Focus on grammar and vocabulary to improve your speaking.",
-                70, 70, analyses);
+                70, 70, 70, analyses, List.of(), List.of(), List.of());
     }
 
     private GeneratedScenario fallbackScenario(String topic, String userLevel) {

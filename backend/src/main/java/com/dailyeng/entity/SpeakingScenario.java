@@ -19,8 +19,8 @@ public class SpeakingScenario extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "topicId", insertable = false, updatable = false) private Topic topic;
 
     @Column(nullable = false) private String title;
-    @Column(nullable = false) private String description;
-    @Column(nullable = false) private String goal;
+    @Column(nullable = false, columnDefinition = "TEXT") private String description;
+    @Column(nullable = false, columnDefinition = "TEXT") private String goal;
     @Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) @Column(columnDefinition = "\"Level\"") private Level difficulty;
     @Column(nullable = false, columnDefinition = "TEXT") private String context;
 
@@ -33,7 +33,7 @@ public class SpeakingScenario extends BaseEntity {
 
     private String userRole;
     private String botRole;
-    private String openingLine;
+    @Column(columnDefinition = "TEXT") private String openingLine;
 
     private String createdById;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "createdById", insertable = false, updatable = false) private User createdBy;

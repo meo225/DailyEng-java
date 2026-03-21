@@ -11,6 +11,7 @@ import {
   Lightbulb,
   BookOpen,
   X,
+  Pencil,
 } from "lucide-react";
 import type { Turn } from "@/hooks/speaking-session/types";
 import VoiceWaveform from "@/components/speaking/VoiceWaveform";
@@ -331,6 +332,14 @@ function MessageBubble({
               <Volume2 className="h-4 w-4" />
             </button>
           </div>
+
+          {/* Correction hint nudge */}
+          {!isUser && turn.correctionHint && (
+            <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200/60 w-fit motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300">
+              <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
+              <span className="text-xs text-amber-700 font-medium">{turn.correctionHint}</span>
+            </div>
+          )}
         </div>
 
         {isUser && (

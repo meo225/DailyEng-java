@@ -29,6 +29,7 @@ export interface HistorySession {
   fluencyScore: number;
   accuracyScore: number;
   prosodyScore: number;
+  vocabularyScore: number;
   feedbackRating: string;
   createdAt: Date;
 }
@@ -41,6 +42,7 @@ export interface HistoryStats {
     prosody: number;
     fluency: number;
     grammar: number;
+    vocabulary: number;
   };
   totalSessions: number;
   highestScore: number;

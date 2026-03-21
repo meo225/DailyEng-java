@@ -57,6 +57,8 @@ export function getScoreIcon(label: string): React.ReactNode {
       return React.createElement(Zap, { className: "h-4 w-4" });
     case "Grammar":
       return React.createElement(Languages, { className: "h-4 w-4" });
+    case "Vocabulary":
+      return React.createElement(Languages, { className: "h-4 w-4" });
     default:
       return React.createElement(Target, { className: "h-4 w-4" });
   }
@@ -71,6 +73,7 @@ interface SessionDataForFeedback {
     fluency: number;
     accuracy: number;
     prosody: number;
+    vocabulary: number;
   };
   errorCategories: { name: string; count: number }[];
   conversation: {
@@ -92,6 +95,7 @@ export function buildDetailedFeedbackData(
       { label: "Prosody", value: data.scores.prosody },
       { label: "Grammar", value: data.scores.grammar },
       { label: "Topic", value: data.scores.topic },
+      { label: "Vocabulary", value: data.scores.vocabulary },
     ],
     errorCategories: data.errorCategories,
     conversation: data.conversation.map((c) => {
@@ -135,6 +139,7 @@ interface ScoresInput {
   prosody: number;
   grammar: number;
   topic: number;
+  vocabulary: number;
 }
 
 export function buildAssessmentData(
@@ -186,9 +191,9 @@ export function buildAssessmentData(
     fluencyScore: Math.round(avg((t) => t.fluencyScore, scores.fluency)),
     prosodyScore: Math.round(avg((t) => t.prosodyScore, scores.prosody)),
     completenessScore: Math.round(avgCompleteness),
-    contentScore: Math.round((scores.grammar + scores.topic) / 2),
+    contentScore: Math.round((scores.grammar + scores.topic + scores.vocabulary) / 3),
     grammarScore: scores.grammar,
     relevanceScore: scores.topic,
-    vocabularyScore: scores.grammar,
+    vocabularyScore: scores.vocabulary,
   };
 }

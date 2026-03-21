@@ -79,7 +79,7 @@ public class AuthService {
      */
     public AuthResponse login(LoginRequest request) {
         var user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new BadRequestException("Email hoặc mật khẩu không chính xác"));
+                .orElseThrow(() -> new BadRequestException("Invalid email or password"));
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(user.getId(), request.password())

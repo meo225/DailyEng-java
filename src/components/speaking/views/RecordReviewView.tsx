@@ -78,10 +78,10 @@ function buildRecordAssessmentData(
     fluencyScore: data.scores.fluency,
     prosodyScore: data.scores.prosody,
     contentScore: Math.round(
-      (data.scores.grammar + data.scores.topic) / 2
+      (data.scores.grammar + data.scores.topic + data.scores.vocabulary) / 3
     ),
     grammarScore: data.scores.grammar,
     relevanceScore: data.scores.topic,
-    vocabularyScore: data.scores.grammar,
+    vocabularyScore: data.scores.vocabulary,
   };
 }

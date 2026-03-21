@@ -12,9 +12,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
- * Automatically parses the standard Prisma DATABASE_URL (postgresql://user:pass@host:port/db)
- * and configures the Spring Boot DataSource, eliminating the need for separate
- * SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, and SPRING_DATASOURCE_PASSWORD variables.
+ * Parses the Prisma-style DATABASE_URL (postgresql://user:pass@host:port/db)
+ * and configures a HikariCP DataSource. Pool settings are read from
+ * {@code spring.datasource.hikari.*} in application.yml.
  *
  * Disabled in test profile — tests use spring.datasource.* from application-test.yml.
  */
@@ -24,6 +24,24 @@ public class DatabaseConfig {
 
     @Value("${DATABASE_URL:postgresql://postgres:postgres@localhost:5432/dailyeng}")
     private String databaseUrl;
+
+    @Value("${spring.datasource.hikari.maximum-pool-size:10}")
+    private int maxPoolSize;
+
+    @Value("${spring.datasource.hikari.minimum-idle:2}")
+    private int minIdle;
+
+    @Value("${spring.datasource.hikari.idle-timeout:300000}")
+    private long idleTimeout;
+
+    @Value("${spring.datasource.hikari.connection-timeout:10000}")
+    private long connectionTimeout;
+
+    @Value("${spring.datasource.hikari.max-lifetime:1800000}")
+    private long maxLifetime;
+
+    @Value("${spring.datasource.hikari.leak-detection-threshold:60000}")
+    private long leakDetectionThreshold;
 
     @Bean
     public DataSource dataSource() throws URISyntaxException {
@@ -50,12 +68,12 @@ public class DatabaseConfig {
         if (password != null) config.setPassword(password);
         
         config.setDriverClassName("org.postgresql.Driver");
-        config.setMaximumPoolSize(10);
-        config.setMinimumIdle(2);
-        config.setIdleTimeout(300000);          // 5 min
-        config.setConnectionTimeout(10000);     // 10s
-        config.setMaxLifetime(1800000);         // 30 min
-        config.setLeakDetectionThreshold(60000); // 60s leak detection
+        config.setMaximumPoolSize(maxPoolSize);
+        config.setMinimumIdle(minIdle);
+        config.setIdleTimeout(idleTimeout);
+        config.setConnectionTimeout(connectionTimeout);
+        config.setMaxLifetime(maxLifetime);
+        config.setLeakDetectionThreshold(leakDetectionThreshold);
 
         return new HikariDataSource(config);
     }

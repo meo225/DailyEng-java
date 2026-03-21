@@ -93,9 +93,13 @@ export default function SpeakingSessionClient(
           onFinish={async () => {
             session.setShowQuitDialog(false);
             session.setShowFinishDialog(false);
+            session.tts.stopPlayback();
             await session.finishAndAnalyze();
           }}
-          onStopMicrophone={session.recording.stopMicrophone}
+          onStopMicrophone={() => {
+            session.tts.stopPlayback();
+            session.recording.stopMicrophone();
+          }}
           currentTurnNumber={session.currentTurnNumber}
           maxTurns={session.maxTurns}
           t={session.t}

@@ -27,6 +27,7 @@ export interface Turn {
   timestamp: Date;
   wordAssessments?: WordAssessment[];
   pronunciationScores?: PronunciationScores;
+  correctionHint?: string;
   scores?: {
     accuracy?: number;
     fluency?: number;
@@ -55,6 +56,7 @@ export interface LearningRecord {
   fluencyScore: number;
   accuracyScore: number;
   prosodyScore: number;
+  vocabularyScore: number;
   date: Date;
 }
 
@@ -133,6 +135,7 @@ export interface AnalysisResult {
     fluency: number;
     accuracy: number;
     prosody: number;
+    vocabulary: number;
     overall: number;
   };
   sessionAnalysis: {
@@ -154,6 +157,11 @@ export interface AnalysisResult {
       endIndex: number;
     }[];
   }[];
+  newLevel?: string;
+  previousLevel?: string;
+  correctedSentences?: { turnIndex: number; original: string; corrected: string }[];
+  vocabularyHighlights?: string[];
+  suggestedPhrases?: { used: string; better: string }[];
 }
 
 // ─── Loaded session data (from history) ─────────────
@@ -164,6 +172,7 @@ export interface LoadedSessionData {
     fluency: number;
     accuracy: number;
     prosody: number;
+    vocabulary: number;
     overall: number;
   };
   conversation: {
@@ -182,5 +191,6 @@ export interface SessionScores {
   fluency: number;
   accuracy: number;
   prosody: number;
+  vocabulary: number;
   overall: number;
 }

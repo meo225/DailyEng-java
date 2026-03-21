@@ -24,6 +24,7 @@ interface LearningRecord {
   fluencyScore: number;
   accuracyScore: number;
   prosodyScore: number;
+  vocabularyScore: number;
   date: Date;
 }
 
@@ -159,6 +160,7 @@ export function LearningHistory({ records, onBack, onSelectRecord, onDeleteRecor
                   fluencyScore={record.fluencyScore}
                   accuracyScore={record.accuracyScore}
                   prosodyScore={record.prosodyScore}
+                  vocabularyScore={record.vocabularyScore}
                   date={record.date}
                 />
               </div>
