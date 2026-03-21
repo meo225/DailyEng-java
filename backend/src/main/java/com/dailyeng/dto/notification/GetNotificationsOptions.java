@@ -1,43 +1,21 @@
 package com.dailyeng.dto.notification;
 
-public class GetNotificationsOptions {
-    private Integer page = 1;
-    private Integer limit = 10;
-    private String sortOrder = "newest"; // "newest" hoặc "oldest"
-    private String searchQuery = "";
-
-    public GetNotificationsOptions() {
-    }
-
-    public Integer getPage() {
-        return page;
-    }
-
-    public void setPage(Integer page) {
-        this.page = page;
-    }
-
-    public Integer getLimit() {
-        return limit;
-    }
-
-    public void setLimit(Integer limit) {
-        this.limit = limit;
-    }
-
-    public String getSortOrder() {
-        return sortOrder;
-    }
-
-    public void setSortOrder(String sortOrder) {
-        this.sortOrder = sortOrder;
-    }
-
-    public String getSearchQuery() {
-        return searchQuery;
-    }
-
-    public void setSearchQuery(String searchQuery) {
-        this.searchQuery = searchQuery;
+/**
+ * Query options for listing notifications (page, limit, sort, search).
+ */
+public record GetNotificationsOptions(
+        Integer page,
+        Integer limit,
+        String sortOrder,
+        String searchQuery
+) {
+    /**
+     * Compact constructor providing sensible defaults for null values.
+     */
+    public GetNotificationsOptions {
+        page = (page != null && page > 0) ? page : 1;
+        limit = (limit != null && limit > 0) ? limit : 10;
+        sortOrder = "oldest".equalsIgnoreCase(sortOrder) ? "oldest" : "newest";
+        searchQuery = (searchQuery != null) ? searchQuery.trim() : "";
     }
 }
