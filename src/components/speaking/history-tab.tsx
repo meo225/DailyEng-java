@@ -165,14 +165,12 @@ function CriteriaRadarChart({
         ) : stats && stats.totalSessions > 0 ? (
           <RadarChart
             data={[
-              { label: t("speaking_hub.history.criteria.accuracy"), value: stats.criteriaAverages.accuracy },
-              { label: t("speaking_hub.history.criteria.fluency"), value: stats.criteriaAverages.fluency },
-              {
-                label: t("speaking_hub.history.criteria.prosody"),
-                value: stats.criteriaAverages.prosody,
-              },
-              { label: t("speaking_hub.history.criteria.grammar"), value: stats.criteriaAverages.grammar },
-              { label: t("speaking_hub.history.criteria.topic"), value: stats.criteriaAverages.topic },
+              { label: t("speaking_hub.history.criteria.accuracy"), value: stats.criteriaAverages.accuracy, hint: "How correctly each sound is pronounced" },
+              { label: t("speaking_hub.history.criteria.fluency"), value: stats.criteriaAverages.fluency, hint: "Smoothness and natural pace of speech" },
+              { label: t("speaking_hub.history.criteria.prosody"), value: stats.criteriaAverages.prosody, hint: "Intonation, stress, and rhythm patterns" },
+              { label: t("speaking_hub.history.criteria.grammar"), value: stats.criteriaAverages.grammar, hint: "Correctness of sentence structure" },
+              { label: t("speaking_hub.history.criteria.topic"), value: stats.criteriaAverages.topic, hint: "How well responses fit the scenario" },
+              { label: "Vocabulary", value: stats.criteriaAverages.vocabulary, hint: "Range and appropriateness of words used" },
             ]}
             size={300}
           />
@@ -268,6 +266,7 @@ function SessionList({
                 fluencyScore={session.fluencyScore}
                 accuracyScore={session.accuracyScore}
                 prosodyScore={session.prosodyScore}
+                vocabularyScore={session.vocabularyScore}
                 date={session.createdAt}
               />
             </div>

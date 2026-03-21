@@ -86,6 +86,14 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
     cancelTts: tts.stopPlayback,
   });
 
+  // ─── Stop TTS on unmount (covers all exit paths) ────
+  useEffect(() => {
+    return () => {
+      tts.stopPlayback();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ─── Auto-scroll ────────────────────────────────────
   useEffect(() => {
     if (conversationRef.current) {
@@ -245,16 +253,15 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
           role: "tutor",
           text: result.aiResponse,
           timestamp: new Date(),
+          correctionHint: result.correctionHint ?? undefined,
         },
       ]);
 
-      tts.speakText(result.aiResponse);
+      await tts.speakText(result.aiResponse);
 
-      // Auto-finish if session is complete
+      // Auto-finish if session is complete (speech already finished above)
       if (result.sessionComplete) {
-        setTimeout(() => {
-          finishAndAnalyze();
-        }, 2500);
+        finishAndAnalyze();
         return;
       }
 
@@ -275,6 +282,7 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
   }
 
   const finishAndAnalyze = useCallback(async () => {
+    tts.stopPlayback();
     recording.stopMicrophone();
     setViewState("analyzing");
     try {
@@ -298,7 +306,23 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
               endIndex: e.endIndex ?? 0,
             })),
           })),
+          newLevel: result.newLevel,
+          previousLevel: result.previousLevel,
+          correctedSentences: result.correctedSentences,
+          vocabularyHighlights: result.vocabularyHighlights,
+          suggestedPhrases: result.suggestedPhrases,
         });
+
+        // Level change toast
+        if (result.newLevel && result.previousLevel) {
+          const isPromotion = result.newLevel > result.previousLevel;
+          toast(isPromotion ? "🎉 Level Up!" : "📉 Level adjusted", {
+            description: isPromotion
+              ? `Great progress! You've been promoted from ${result.previousLevel} to ${result.newLevel}.`
+              : `Your level has been adjusted from ${result.previousLevel} to ${result.newLevel} for better practice.`,
+            duration: 6000,
+          });
+        }
       }
       setViewState("complete");
     } catch (error) {
@@ -306,7 +330,7 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
       toast.error("Failed to analyze session");
       setViewState("complete");
     }
-  }, [sessionId, recording, feedback]);
+  }, [sessionId, recording, feedback, tts]);
 
   const requestHint = useCallback(async () => {
     if (!sessionId || isLoadingHint) return;
@@ -339,11 +363,12 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
   }, [turns, scenario?.title]);
 
   const resetSession = useCallback(() => {
+    tts.stopPlayback();
     setSessionId(null);
     setTurns([]);
     feedback.resetFeedbackState();
     setViewState("preparation");
-  }, [feedback]);
+  }, [feedback, tts]);
 
   // ─── Derived data ───────────────────────────────────
 
@@ -353,16 +378,18 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
     fluency: 70,
     accuracy: 70,
     prosody: 70,
+    vocabulary: 0,
     overall: 0,
   };
 
   const radarData = useMemo(
     () => [
-      { label: "Accuracy", value: scores.accuracy },
-      { label: "Fluency", value: scores.fluency },
-      { label: "Prosody", value: scores.prosody },
-      { label: "Grammar", value: scores.grammar },
-      { label: "Topic", value: scores.topic },
+      { label: "Accuracy", value: scores.accuracy, hint: "How correctly each sound is pronounced" },
+      { label: "Fluency", value: scores.fluency, hint: "Smoothness and natural pace of speech" },
+      { label: "Prosody", value: scores.prosody, hint: "Intonation, stress, and rhythm" },
+      { label: "Grammar", value: scores.grammar, hint: "Correctness of sentence structure" },
+      { label: "Topic", value: scores.topic, hint: "How well responses fit the scenario" },
+      { label: "Vocabulary", value: scores.vocabulary, hint: "Range and appropriateness of words" },
     ],
     [
       scores.accuracy,
@@ -370,6 +397,7 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
       scores.prosody,
       scores.grammar,
       scores.topic,
+      scores.vocabulary,
     ]
   );
 

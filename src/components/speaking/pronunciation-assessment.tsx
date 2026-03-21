@@ -1,6 +1,12 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // ============================== Types ==============================
 
@@ -98,15 +104,35 @@ const ScoreRing = React.memo(function ScoreRing({
 const MetricBar = React.memo(function MetricBar({
   label,
   score,
+  hint,
 }: {
   label: string;
   score: number;
+  hint?: string;
 }) {
   const col = scoreColor(score);
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 group/metric">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-500 font-medium">{label}</span>
+        <span className="text-sm text-slate-500 font-medium flex items-center gap-1">
+          {label}
+          {hint && (
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center justify-center cursor-help rounded-full hover:bg-slate-100 p-0.5 transition-colors">
+                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-white text-slate-600 border border-slate-200 shadow-lg text-[11px] px-2.5 py-1.5 mb-1 z-50">
+                  {hint}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </span>
         <span className={`text-sm font-bold tabular-nums ${col.text}`}>{Math.round(score)}</span>
       </div>
       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -124,12 +150,12 @@ const MetricBar = React.memo(function MetricBar({
 // All possible error types — used regardless of mode;
 // visibleErrorTypes will filter to only those present in the data.
 const ALL_ERROR_TYPES = [
-  { key: "Mispronunciation", label: "Mispronunciations", color: "bg-red-500", dot: "bg-red-400" },
-  { key: "Omission", label: "Omission", color: "bg-orange-500", dot: "bg-orange-400" },
-  { key: "Insertion", label: "Insertion", color: "bg-cyan-500", dot: "bg-cyan-400" },
-  { key: "UnexpectedBreak", label: "Unexpected break", color: "bg-violet-500", dot: "bg-violet-400" },
-  { key: "MissingBreak", label: "Missing break", color: "bg-violet-500", dot: "bg-violet-400" },
-  { key: "Monotone", label: "Monotone", color: "bg-slate-400", dot: "bg-slate-400" },
+  { key: "Mispronunciation", label: "Mispronunciations", color: "bg-red-500", dot: "bg-red-400", hint: "A word was pronounced incorrectly" },
+  { key: "Omission", label: "Omission", color: "bg-orange-500", dot: "bg-orange-400", hint: "A word from the script was skipped" },
+  { key: "Insertion", label: "Insertion", color: "bg-cyan-500", dot: "bg-cyan-400", hint: "An extra word not in the script was spoken" },
+  { key: "UnexpectedBreak", label: "Unexpected break", color: "bg-violet-500", dot: "bg-violet-400", hint: "An unnatural pause between words" },
+  { key: "MissingBreak", label: "Missing break", color: "bg-violet-500", dot: "bg-violet-400", hint: "Words run together without a natural pause" },
+  { key: "Monotone", label: "Monotone", color: "bg-slate-400", dot: "bg-slate-400", hint: "Speech lacks pitch variation and sounds flat" },
 ] as const;
 
 const ERROR_WORD_STYLES: Record<string, string> = {
@@ -173,10 +199,7 @@ export default function PronunciationAssessmentReview({
   }, [data.turns]);
 
   // Show only error types that actually appear in the data (regardless of mode)
-  const visibleErrorTypes = useMemo(
-    () => ALL_ERROR_TYPES.filter((e) => (errorCounts[e.key] || 0) > 0),
-    [errorCounts]
-  );
+  const visibleErrorTypes = ALL_ERROR_TYPES;
 
   const toggleError = useCallback((key: string) => {
     setEnabledErrors((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -230,11 +253,10 @@ export default function PronunciationAssessmentReview({
                   return (
                     <div
                       key={turnIdx}
-                      className={`rounded-xl transition-all duration-200 border ${
-                        isExpanded
-                          ? "border-indigo-200 bg-indigo-50/30 shadow-sm"
-                          : "border-slate-100 hover:border-slate-200 bg-white hover:bg-slate-50/50"
-                      }`}
+                      className={`rounded-xl transition-all duration-200 border ${isExpanded
+                        ? "border-indigo-200 bg-indigo-50/30 shadow-sm"
+                        : "border-slate-100 hover:border-slate-200 bg-white hover:bg-slate-50/50"
+                        }`}
                     >
                       {/* Turn header */}
                       <button
@@ -421,38 +443,51 @@ export default function PronunciationAssessmentReview({
                 Errors
               </h3>
               <div className="space-y-4">
-                {ALL_ERROR_TYPES.filter((e) => (errorCounts[e.key] || 0) > 0).map((errorType) => {
+                {ALL_ERROR_TYPES.map((errorType) => {
                   const count = errorCounts[errorType.key] || 0;
                   return (
-                    <div key={errorType.key} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <span className={`w-5 h-5 rounded-md ${errorType.color} flex items-center justify-center text-white text-[11px] font-bold`}>
-                          {count}
-                        </span>
-                        <span className="text-sm text-slate-600">{errorType.label}</span>
+                    <div key={errorType.key} className="group/error">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className={`w-5 h-5 rounded-md ${count > 0 ? errorType.color : "bg-slate-200"} flex items-center justify-center text-white text-[11px] font-bold`}>
+                            {count}
+                          </span>
+                          <span className={`text-sm ${count > 0 ? "text-slate-600" : "text-slate-400"} flex items-center gap-1`}>
+                            {errorType.label}
+                            <TooltipProvider delayDuration={0}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="flex items-center justify-center cursor-help rounded-full hover:bg-slate-100 p-0.5 transition-colors">
+                                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    </svg>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="bg-white text-slate-600 border border-slate-200 shadow-lg text-[11px] px-2.5 py-1.5 mb-1 z-50">
+                                  {errorType.hint}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => toggleError(errorType.key)}
+                          className={`relative rounded-full transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${enabledErrors[errorType.key] ? "bg-indigo-500" : "bg-slate-200"
+                            }`}
+                          role="switch"
+                          aria-checked={enabledErrors[errorType.key]}
+                          aria-label={`Toggle ${errorType.label}`}
+                          style={{ width: 38, height: 22 }}
+                        >
+                          <span
+                            className={`absolute top-[3px] left-[3px] w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${enabledErrors[errorType.key] ? "translate-x-4" : "translate-x-0"
+                              }`}
+                          />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => toggleError(errorType.key)}
-                        className={`relative rounded-full transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
-                          enabledErrors[errorType.key] ? "bg-indigo-500" : "bg-slate-200"
-                        }`}
-                        role="switch"
-                        aria-checked={enabledErrors[errorType.key]}
-                        aria-label={`Toggle ${errorType.label}`}
-                        style={{ width: 38, height: 22 }}
-                      >
-                        <span
-                          className={`absolute top-[3px] left-[3px] w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${
-                            enabledErrors[errorType.key] ? "translate-x-4" : "translate-x-0"
-                          }`}
-                        />
-                      </button>
                     </div>
                   );
                 })}
-                {visibleErrorTypes.length === 0 && (
-                  <p className="text-sm text-slate-400 italic">No errors detected</p>
-                )}
               </div>
             </div>
           </div>
@@ -468,11 +503,11 @@ export default function PronunciationAssessmentReview({
             <div className="flex items-center gap-7">
               <ScoreRing score={data.pronunciationScore} />
               <div className="flex-1 space-y-3">
-                <MetricBar label="Accuracy" score={data.accuracyScore} />
-                <MetricBar label="Fluency" score={data.fluencyScore} />
-                <MetricBar label="Prosody" score={data.prosodyScore} />
+                <MetricBar label="Accuracy" score={data.accuracyScore} hint="How correctly each sound is pronounced" />
+                <MetricBar label="Fluency" score={data.fluencyScore} hint="Smoothness and natural pace of speech" />
+                <MetricBar label="Prosody" score={data.prosodyScore} hint="Intonation, stress, and rhythm patterns" />
                 {mode === "scripted" && data.completenessScore !== undefined && (
-                  <MetricBar label="Completeness" score={data.completenessScore} />
+                  <MetricBar label="Completeness" score={data.completenessScore} hint="How much of the script was spoken" />
                 )}
               </div>
             </div>
@@ -486,8 +521,9 @@ export default function PronunciationAssessmentReview({
             <div className="flex items-center gap-7">
               <ScoreRing score={data.contentScore} />
               <div className="flex-1 space-y-3">
-                <MetricBar label="Grammar" score={data.grammarScore} />
-                <MetricBar label="Topic Relevance" score={data.relevanceScore} />
+                <MetricBar label="Grammar" score={data.grammarScore} hint="Correctness of sentence structure" />
+                <MetricBar label="Topic Relevance" score={data.relevanceScore} hint="How well responses fit the scenario" />
+                <MetricBar label="Vocabulary" score={data.vocabularyScore} hint="Range and appropriateness of words used" />
               </div>
             </div>
           </div>

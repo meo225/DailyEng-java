@@ -1,12 +1,19 @@
 "use client"
 
 import { useMemo } from "react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface RadarChartProps {
   data: Array<{
     label: string
     value: number
     maxValue?: number
+    hint?: string
   }>
   size?: number
   levels?: number
@@ -14,6 +21,7 @@ interface RadarChartProps {
 }
 
 export function RadarChart({ data, size = 300, levels = 5, className = "" }: RadarChartProps) {
+
   // Padding for labels outside the chart
   const padding = 50;
   const center = size / 2 + padding;
@@ -61,7 +69,6 @@ export function RadarChart({ data, size = 300, levels = 5, className = "" }: Rad
   // Calculate label positions
   const labels = useMemo(() => {
     return dataPoints.map((point) => {
-      // Khoảng cách label ra khỏi chart
       const labelRadius = maxRadius + 40;
       const x = center + labelRadius * Math.cos(point.angle);
       const y = center + labelRadius * Math.sin(point.angle);
@@ -75,6 +82,7 @@ export function RadarChart({ data, size = 300, levels = 5, className = "" }: Rad
         y,
         label: point.label,
         value: point.value,
+        hint: point.hint,
         textAnchor,
       };
     });
@@ -85,7 +93,7 @@ export function RadarChart({ data, size = 300, levels = 5, className = "" }: Rad
   const viewBoxSize = size + padding * 2;
 
   return (
-    <div className={className}>
+    <div className={`relative ${className}`}>
       <svg
         viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
         className="w-full h-full max-w-full max-h-full"
@@ -139,7 +147,7 @@ export function RadarChart({ data, size = 300, levels = 5, className = "" }: Rad
           />
         ))}
 
-        {/* Labels */}
+        {/* Labels - inside SVG for positioning but with no tooltips here */}
         {labels.map((label, index) => (
           <g key={`label-${index}`}>
             <text
@@ -161,6 +169,41 @@ export function RadarChart({ data, size = 300, levels = 5, className = "" }: Rad
           </g>
         ))}
       </svg>
+
+      {/* HTML overlay for tooltips using Radix UI which works perfectly over SVGs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <TooltipProvider delayDuration={0}>
+          {labels.map((label, index) => {
+            const leftPct = (label.x / viewBoxSize) * 100;
+            const topPct = (label.y / viewBoxSize) * 100;
+            
+            if (!label.hint) return null;
+
+            return (
+              <div
+                key={`tooltip-${index}`}
+                className="absolute pointer-events-auto"
+                style={{
+                  left: `${leftPct}%`,
+                  top: `${topPct}%`,
+                  width: 80,
+                  height: 40,
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="w-full h-full cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-white text-slate-600 border border-slate-200 shadow-lg text-[11px] px-2.5 py-1.5 mb-1 z-50">
+                    {label.hint}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            );
+          })}
+        </TooltipProvider>
+      </div>
     </div>
   );
 }
