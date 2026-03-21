@@ -98,6 +98,8 @@
     "@vitest/browser-webdriverio": "4.0.3",
     "@vitest/coverage-v8": "4.0.3",
     "@vitest/ui": "4.0.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.1",
     "jsdom": "^23.0.0",
     "postcss": "^8.5",
     "prisma": "^6.19.0",
