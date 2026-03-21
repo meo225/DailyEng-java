@@ -1,9 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth";
-import { generateDoraraResponse, DoraraMessage } from "@/lib/gemini";
-import { buildSystemInstruction, DoraraUserInfo } from "@/lib/dorara-context";
-import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 
 export interface DoraraChatMessage {
   id: string;
@@ -14,6 +11,27 @@ export interface DoraraChatMessage {
 export interface DoraraChatResponse {
   response: string;
   error?: string;
+}
+
+/**
+ * Hàm bí mật: Tự động móc Token từ Cookie Next.js và nối dây sang Cổng 8080 của Java.
+ */
+async function fetchJava(path: string, options: RequestInit = {}) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+  const headers = new Headers(options.headers || {});
+  headers.set("Content-Type", "application/json");
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  if (!res.ok) {
+    throw new Error(`Java DB Backend Failed! Status: ${res.status}`);
+  }
+  return res.json();
 }
 
 /**
@@ -28,97 +46,20 @@ export async function sendDoraraMessage(
   currentPage: string
 ): Promise<DoraraChatResponse> {
   try {
-    // Get current user session
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return {
-        response: "",
-        error: "Please sign in to use Dorara.",
-      };
-    }
-
-    // Get user info from database for personalized context
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        name: true,
-        level: true,
-      },
+    const res = await fetchJava("/dorara/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        messages,
+        userMessage,
+        currentPage,
+      }),
     });
-
-    // Build user info for system instruction
-    const userInfo: DoraraUserInfo = {
-      name: user?.name || session.user.name || null,
-      level: user?.level || null,
-      currentPage: getPageDescription(currentPage),
-    };
-
-    // Build the complete system instruction
-    const systemInstruction = buildSystemInstruction(userInfo);
-
-    // Convert messages to the format expected by generateDoraraResponse
-    const history: DoraraMessage[] = messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
-
-    // Call Gemini API
-    const result = await generateDoraraResponse(
-      systemInstruction,
-      history,
-      userMessage
-    );
-
-    return { response: result.response };
+    return { response: res.response || "" };
   } catch (error) {
     console.error("[sendDoraraMessage] Error:", error);
     return {
       response: "",
-      error: "Something went wrong. Please try again.",
+      error: "Something went wrong. Please try again. Or please login to use Dorara.",
     };
   }
-}
-
-/**
- * Convert page path to a human-readable description
- */
-function getPageDescription(path: string): string {
-  // Remove query params and trailing slashes
-  const cleanPath = path.split("?")[0].replace(/\/$/, "") || "/";
-
-  // Map common paths to descriptions
-  const pathMap: Record<string, string> = {
-    "/": "Home Page",
-    "/speaking": "Speaking Practice Page - Practice English speaking",
-    "/vocab": "Vocabulary Hub Page - Learn vocabulary",
-    "/grammar": "Grammar Hub Page - Learn grammar",
-    "/notebook": "Notebook Page - Personal notes",
-    "/user/profile": "Profile Page - User information",
-    "/user/settings": "Settings Page - Account settings",
-    "/user/notifications": "Notifications Page",
-    "/placement-test": "Placement Test Page - Level assessment",
-    "/helps": "Help Page",
-    "/auth/signin": "Sign In Page",
-    "/auth/signup": "Sign Up Page",
-  };
-
-  // Check exact match first
-  if (pathMap[cleanPath]) {
-    return pathMap[cleanPath];
-  }
-
-  // Check for dynamic routes
-  if (cleanPath.startsWith("/speaking/session/")) {
-    return "Speaking Session - Practicing with AI";
-  }
-  if (cleanPath.startsWith("/vocab/")) {
-    return "Viewing a vocabulary topic";
-  }
-  if (cleanPath.startsWith("/grammar/")) {
-    return "Viewing a grammar lesson";
-  }
-
-  // Fallback
-  return `Page: ${cleanPath}`;
 }
