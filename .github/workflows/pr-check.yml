@@ -29,6 +29,8 @@ jobs:
 
       - name: Compile
         run: mvn compile -q -B
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
   # ─── Frontend (Next.js) ───
   frontend:
@@ -81,3 +83,4 @@ jobs:
           AUTH_SECRET: "dummy-secret-for-ci"
           JWT_SECRET: "dummy-jwt-for-ci"
           NEXT_PUBLIC_API_URL: "http://localhost:8080/api"
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
