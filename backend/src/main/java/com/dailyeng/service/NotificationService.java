@@ -117,7 +117,6 @@ public class NotificationService {
         result.setCreatedAt(n.getCreatedAt());
         return result;
     }
-
     /**
      * TEST ONLY: Create a dummy notification
      */

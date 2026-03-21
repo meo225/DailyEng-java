@@ -7,6 +7,8 @@ import { cookies } from "next/headers";
 // NOTIFICATION ACTIONS (ĐÃ ĐƯỢC "CUỐN CHIẾU" SANG JAVA HTTP API)
 // ============================================
 
+// [GHI CHÚ: Giữ nguyên định nghĩa này tạm thời để luồng Next.js cũ sống khỏe (Theo cách giải quyết số 1)]
+// Chúng ta đã code sẵn bản Java DTO tương ứng ở backend/src/main/java/com/dailyeng/dto/notification/
 export interface GetNotificationsOptions {
   page?: number;
   limit?: number;
