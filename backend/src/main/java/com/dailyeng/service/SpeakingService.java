@@ -2,7 +2,6 @@ package com.dailyeng.service;
 
 import com.dailyeng.dto.speaking.SpeakingDtos.*;
 import com.dailyeng.entity.*;
-import com.dailyeng.entity.enums.HubType;
 import com.dailyeng.entity.enums.Level;
 import com.dailyeng.entity.enums.Role;
 import com.dailyeng.exception.BadRequestException;
@@ -141,7 +140,6 @@ public class SpeakingService {
     public ScenarioDetailResponse getScenarioById(String id) {
         var s = scenarioRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Scenario not found: " + id));
-        @SuppressWarnings("unchecked")
         var objectives = s.getObjectives() instanceof List<?> list
                 ? list.stream().map(Object::toString).toList()
                 : List.<String>of();
@@ -679,7 +677,6 @@ public class SpeakingService {
                 .toList();
 
         int total = recent20.size();
-        var scores = recent20.stream().mapToInt(s -> s.getOverallScore() != null ? s.getOverallScore() : 0);
         int highest = recent20.stream().mapToInt(s -> s.getOverallScore() != null ? s.getOverallScore() : 0).max().orElse(0);
         int avg = (int) Math.round(recent20.stream().mapToInt(s -> s.getOverallScore() != null ? s.getOverallScore() : 0).average().orElse(0));
 

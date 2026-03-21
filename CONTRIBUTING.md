@@ -41,8 +41,9 @@ For structural changes (new classes, inheritance changes, new modules), add a Me
 ### Backend (Spring Boot)
 
 ```bash
+docker compose up -d   # Start local PostgreSQL
 cd backend
-./start-dev.sh      # Starts Cloud SQL proxy + Spring Boot
+./start-dev.sh         # Start Spring Boot
 ```
 
 ### Frontend (Next.js)
@@ -55,8 +56,8 @@ npm run dev
 ### Database Seeding
 
 ```bash
-# Run individual seed files against Cloud SQL
-DATABASE_URL="postgresql://dailyeng_user:PASSWORD@localhost:5434/dailyeng" npx tsx prisma/seed_vocab_N.ts
+# Run individual seed files against local PostgreSQL
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/dailyeng" npx tsx prisma/seed_vocab_N.ts
 ```
 
 ## Code Style

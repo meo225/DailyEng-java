@@ -46,15 +46,12 @@ public class DatabaseConfig {
         if (password != null) config.setPassword(password);
         
         config.setDriverClassName("org.postgresql.Driver");
-        // Cloud SQL db-f1-micro tier: keep pool small
         config.setMaximumPoolSize(10);
         config.setMinimumIdle(2);
-        config.setIdleTimeout(300000);       // 5 min
-        config.setConnectionTimeout(30000);  // 30s for cloud latency
-        config.setMaxLifetime(1800000);      // 30 min
+        config.setIdleTimeout(300000);          // 5 min
+        config.setConnectionTimeout(10000);     // 10s
+        config.setMaxLifetime(1800000);         // 30 min
         config.setLeakDetectionThreshold(60000); // 60s leak detection
-        // Keepalive to prevent Cloud SQL proxy idle disconnect
-        config.setKeepaliveTime(120000);     // 2 min
 
         return new HikariDataSource(config);
     }

@@ -1,7 +1,6 @@
 package com.dailyeng.service;
 
 import com.dailyeng.config.AppProperties;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

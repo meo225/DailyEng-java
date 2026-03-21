@@ -16,7 +16,7 @@ DailyEng is a modern, AI-powered English learning platform designed to help user
 
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript
 - **Backend API**: Spring Boot 3.4.3, Java 21
-- **Database**: PostgreSQL (hosted on Google Cloud SQL)
+- **Database**: PostgreSQL (local via Docker Compose)
 - **Database ORM/Migrations**: Prisma (Frontend models/schema) and Flyway (Backend migrations)
 - **Styling & UI**: Tailwind CSS v4, shadcn/ui, Lucide Icons
 - **State Management**: Zustand, React Hook Form, Zod
@@ -36,7 +36,7 @@ DailyEng is a modern, AI-powered English learning platform designed to help user
 - Node.js 18 or higher
 - Java 21 (Temurin / Eclipse Adoptium recommended)
 - Maven 3.8+
-- [Cloud SQL Auth Proxy](https://cloud.google.com/sql/docs/postgres/connect-auth-proxy) (if connecting to the production/staging database)
+- Docker & Docker Compose (for local PostgreSQL)
 
 ---
 
@@ -93,7 +93,7 @@ npx prisma generate
 Data seeding is managed via individual TypeScript files targeting different topic groups.
 ```bash
 # Seed a specific vocabulary file (e.g., topic 7 - Education)
-DATABASE_URL="postgresql://user:password@localhost:5434/dailyeng" npx tsx prisma/seed_vocab_7.ts
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/dailyeng" npx tsx prisma/seed_vocab_7.ts
 
 # Note: Adjust the DATABASE_URL to your active PostgreSQL instance.
 ```
@@ -102,12 +102,16 @@ DATABASE_URL="postgresql://user:password@localhost:5434/dailyeng" npx tsx prisma
 
 The application requires both the Next.js frontend and the Spring Boot backend to be running.
 
+**Terminal 0: Start Local PostgreSQL**
+```bash
+docker compose up -d
+```
+
 **Terminal 1: Start Backend (Spring Boot)**
 ```bash
 cd backend
 ./start-dev.sh
 ```
-*(Note: `start-dev.sh` automatically starts the Cloud SQL proxy in the background if configured, then launches the Maven Spring Boot app on port 8080).*
 
 **Terminal 2: Start Frontend (Next.js)**
 ```bash
@@ -195,9 +199,9 @@ topic_groups           # Macro categorizations (Speaking, Grammar, Vocab)
 | `npm run lint` | Run ESLint across the codebase |
 | `npm run test` | Run Vitest unit & integration tests |
 | **Backend Setup & Execution** | |
-| `cd backend && ./start-dev.sh` | Start Cloud SQL proxy + Spring Boot dev server |
+| `docker compose up -d` | Start local PostgreSQL via Docker |
+| `cd backend && ./start-dev.sh` | Start Spring Boot dev server |
 | `cd backend && mvn clean install`| Compile, test, and package the Java application |
-| `cd backend && sh start-proxy.sh`| Start *only* the Cloud SQL authentication proxy |
 | **Database Management (Prisma)** | |
 | `npx prisma generate` | Generate TypeScript types from `schema.prisma` |
 | `npx tsx prisma/seed_vocab_1.ts` | Run a specific database seeding script |
@@ -258,7 +262,7 @@ docker build -t dailyeng-api .
 
 ### Database
 
-The database is currently hosted on **Google Cloud SQL (PostgreSQL)**. 
+For local development, PostgreSQL runs via Docker Compose (`docker compose up -d`).
 - Schema changes are managed strictly via Flyway inside the Spring Boot app (`backend/src/main/resources/db/migration`).
 - Do NOT use `prisma db push` or `prisma migrate` against the production database to avoid conflicts with Flyway.
 

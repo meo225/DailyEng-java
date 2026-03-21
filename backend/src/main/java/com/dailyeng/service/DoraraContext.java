@@ -1,6 +1,8 @@
 package com.dailyeng.service;
 
-public class DoraraContext {
+public final class DoraraContext {
+
+    private DoraraContext() {}
 
     public static final String DAILYENG_CONTEXT = """
 ## About DailyEng

@@ -382,6 +382,7 @@ public class AzureSpeechService {
             recognizer.stopContinuousRecognitionAsync().get();
 
             recognizer.close();
+            pronConfig.close();
             audioConfig.close();
             speechConfig.close();
 
@@ -473,6 +474,7 @@ public class AzureSpeechService {
             recognizer.stopContinuousRecognitionAsync().get();
 
             recognizer.close();
+            pronConfig.close();
             audioConfig.close();
             speechConfig.close();
 
