@@ -1,6 +1,7 @@
 package com.dailyeng.entity;
 
 import io.hypersistence.utils.hibernate.type.array.ListArrayType;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -47,6 +48,14 @@ public class ProfileStats extends BaseEntity {
 
     @Builder.Default
     private int coins = 0;
+
+    /**
+     * Per-user optimized FSRS weights (17 doubles as JSON array).
+     * Null = use default FSRS-4.5 weights.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private double[] fsrsWeights;
 
     @Builder.Default
     private int vocabScore = 0;

@@ -18,6 +18,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
+    private static final String DEFAULT_ROLE = "ROLE_USER";
+
     private final UserRepository userRepository;
 
     @Override
@@ -25,10 +27,15 @@ public class CustomUserDetailsService implements UserDetailsService {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
 
+        // OAuth-only users have no password — use a non-matchable placeholder
+        String password = user.getPassword() != null
+                ? user.getPassword()
+                : "{noop}OAUTH_USER_NO_PASSWORD";
+
         return new org.springframework.security.core.userdetails.User(
                 user.getId(),
-                user.getPassword() != null ? user.getPassword() : "",
-                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                password,
+                List.of(new SimpleGrantedAuthority(DEFAULT_ROLE))
         );
     }
 }
