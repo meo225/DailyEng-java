@@ -6,8 +6,9 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Volume2, RotateCw, ChevronLeft, ChevronRight, Mic } from "lucide-react"
 import { cn } from "@/lib/utils"
-// import type { VocabItem } from "@/types" // Ensure this type exists or is compatible
 import { ShadowingPopup } from "./ShadowingPopup"
+import { reviewVocabItem } from "@/actions/srs"
+import { useXpToast } from "@/components/xp/xp-toast"
 
 // Define VocabItem locally or ensure it matches the project's type
 // Based on usage in component:
@@ -53,6 +54,7 @@ export function VocabFlashcardStack({
     const [showShadowing, setShowShadowing] = useState(false)
     const [shadowingContent, setShadowingContent] = useState<{ text: string, translation: string } | null>(null)
     const [masteredWords, setMasteredWords] = useState<string[]>([])
+    const xpToast = useXpToast();
 
     const currentIndex = controlledIndex ?? internalIndex
 
@@ -68,9 +70,31 @@ export function VocabFlashcardStack({
     const currentWord = words[currentIndex]
     const isLastCard = currentIndex === words.length - 1
 
-    const handleNext = useCallback((rating?: string) => {
+    const handleNext = useCallback(async (rating?: string) => {
         if (rating && onRate && currentWord) {
             onRate(currentWord.id, rating)
+
+            // Map string rating to FSRS numeric: again=1, hard=2, good=3, easy=4
+            const ratingMap: Record<string, 1 | 2 | 3 | 4> = {
+                again: 1, hard: 2, good: 3, easy: 4,
+            };
+            const fsrsRating = ratingMap[rating];
+            if (fsrsRating) {
+                try {
+                    const result = await reviewVocabItem(currentWord.id, fsrsRating);
+                    if (result.xpAwarded > 0 && xpToast) {
+                        xpToast.showXpToast({
+                            xpAwarded: result.xpAwarded,
+                            streakBonus: 0,
+                            totalXp: 0,
+                            streak: 0,
+                            isNewDay: false,
+                        });
+                    }
+                } catch {
+                    // API unavailable — continue offline
+                }
+            }
         }
 
         setIsFlipped(false)
@@ -79,7 +103,7 @@ export function VocabFlashcardStack({
         } else {
             changeIndex(currentIndex + 1)
         }
-    }, [currentIndex, isLastCard, onComplete, onRate, currentWord]) // Dependencies for handleNext
+    }, [currentIndex, isLastCard, onComplete, onRate, currentWord, xpToast]) // Dependencies for handleNext
 
     const handlePrev = useCallback(() => {
         if (currentIndex > 0) {

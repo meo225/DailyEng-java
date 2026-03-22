@@ -14,6 +14,7 @@ import {
   LogOut,
   Upload,
   Loader2,
+  Trophy,
 } from "lucide-react";
 
 interface NavButtonProps {
@@ -81,7 +82,7 @@ function SignOutButton() {
 }
 
 interface UserProfileSidebarProps {
-  activePage?: "plan" | "profile" | "notifications" | "settings" | "help";
+  activePage?: "plan" | "profile" | "leaderboard" | "notifications" | "settings" | "help";
   userName?: string;
   userImage?: string | null;
   onAvatarUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -163,6 +164,12 @@ export function UserProfileSidebar({
             label="Profile"
             href="/user/profile"
             active={activePage === "profile"}
+          />
+          <NavButton
+            icon={<Trophy size={16} />}
+            label="Leaderboard"
+            href="/user/leaderboard"
+            active={activePage === "leaderboard"}
           />
           <NavButton
             icon={<Bell size={16} />}

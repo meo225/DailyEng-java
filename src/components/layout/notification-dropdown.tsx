@@ -24,7 +24,7 @@ import {
 } from "@/actions/notification";
 
 // Icon mapping for notification types
-const typeIcons: Record<string, React.ElementType> = {
+const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   notebook: BookOpen,
   plan: CalendarCheck,
   achievement: Trophy,
@@ -172,7 +172,7 @@ export function NotificationDropdown() {
         ref={dropdownContentRef}
         align="end"
         className="w-80 max-h-[420px] overflow-y-auto bg-white border-gray-200 shadow-lg p-0 [&::-webkit-scrollbar]:hidden"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
       >
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 z-10">

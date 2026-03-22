@@ -54,7 +54,7 @@ export function SearchResults({
               type="vocabulary"
               isBookmarked={bookmarkedTopics.includes(topic.id)}
               onBookmarkToggle={onBookmarkToggle}
-              thumbnail={topic.thumbnail}
+              thumbnail={topic.thumbnail ?? undefined}
             />
           ))}
         </div>

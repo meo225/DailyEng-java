@@ -31,8 +31,8 @@ export async function GrammarContent({ userId }: GrammarContentProps) {
   return (
     <GrammarPageClient
       grammarGroups={grammarGroups}
-      grammarTopics={grammarTopicsResult.topics}
-      currentGrammarTopic={currentGrammarTopic}
+      grammarTopics={grammarTopicsResult.topics as any}
+      currentGrammarTopic={currentGrammarTopic as any}
       initialBookmarkIds={[]}
       showHero={false}
     />

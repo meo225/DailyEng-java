@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Volume2, ChevronLeft, ChevronRight } from "lucide-react"
+import { useXpToast } from "@/components/xp/xp-toast"
 
 // Define helper interfaces locally based on mock data structure
 interface GrammarExample {
@@ -36,6 +37,7 @@ export function GrammarFlashcardStack({
 }: GrammarFlashcardStackProps) {
     const [internalIndex, setInternalIndex] = useState(0)
     const [isFlipped, setIsFlipped] = useState(false)
+    const xpToast = useXpToast();
 
     const currentIndex = controlledIndex ?? internalIndex
 
@@ -53,6 +55,17 @@ export function GrammarFlashcardStack({
     const handleNext = useCallback((rating?: string) => {
         if (rating && onRate && currentItem) {
             onRate(currentItem.id, rating)
+
+            // Award XP for good/easy grammar ratings
+            if ((rating === "good" || rating === "easy") && xpToast) {
+                xpToast.showXpToast({
+                    xpAwarded: rating === "easy" ? 15 : 10,
+                    streakBonus: 0,
+                    totalXp: 0,
+                    streak: 0,
+                    isNewDay: false,
+                });
+            }
         }
 
         setIsFlipped(false)
@@ -61,7 +74,7 @@ export function GrammarFlashcardStack({
         } else {
             changeIndex(currentIndex + 1)
         }
-    }, [currentIndex, isLastCard, onComplete, onRate, currentItem])
+    }, [currentIndex, isLastCard, onComplete, onRate, currentItem, xpToast])
 
     const handlePrev = useCallback(() => {
         if (currentIndex > 0) {

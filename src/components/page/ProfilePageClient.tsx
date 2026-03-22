@@ -1,39 +1,77 @@
 "use client"
 
 import type React from "react";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Clock, BookOpen, Flame, TrendingUp, Quote } from "lucide-react";
+import { Clock, BookOpen, Flame, TrendingUp, Quote, Zap, Star, Trophy } from "lucide-react";
 import { UserProfileSidebar } from "@/components/layout/user-profile-sidebar";
 import { ProtectedRoute, PageIcons } from "@/components/auth/protected-route";
 import { useUserProfile } from "@/contexts/UserProfileContext";
+import { getXpStats, getActivityHistory } from "@/actions/xp";
+import type { XpStats, ActivityDay } from "@/actions/xp";
 
 interface ProfilePageClientProps {
-  activityData: Record<string, number>;
   userName?: string;
   userLevel?: string;
-  currentStreak?: number;
   quote?: { text: string; author: string } | null;
 }
 
 export default function ProfilePageClient({
-  activityData,
   userName = "User",
   userLevel = "A1",
-  currentStreak = 0,
   quote,
 }: ProfilePageClientProps) {
-  // Get avatar from profile context
   const { profile } = useUserProfile();
 
-  // Dynamic greeting based on current time
+  // Fetch real XP data from API
+  const [xpStats, setXpStats] = useState<XpStats | null>(null);
+  const [activityData, setActivityData] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [stats, history] = await Promise.all([
+          getXpStats(),
+          getActivityHistory(365),
+        ]);
+        setXpStats(stats);
+
+        // Convert activity days to heatmap format
+        const heatmap: Record<string, number> = {};
+        for (const day of history.days) {
+          heatmap[day.date] = day.lessonsCount;
+        }
+        setActivityData(heatmap);
+      } catch {
+        // API not available — show empty state
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Calculate streak from XP stats (real data) or 0
+  const currentStreak = xpStats?.streak ?? 0;
+
+  // Dynamic greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning";
     if (hour < 18) return "Good afternoon";
     return "Good evening";
   };
+
+  // XP level progress
+  const xpInLevel = xpStats ? xpStats.totalXp - xpStats.xpForCurrentLevel : 0;
+  const xpNeeded = xpStats ? xpStats.xpForNextLevel - xpStats.xpForCurrentLevel : 1;
+  const xpProgress = xpNeeded > 0 ? Math.min((xpInLevel / xpNeeded) * 100, 100) : 0;
+
+  // Format study time from total XP (rough estimate: 1 XP ≈ 1 minute)
+  const totalMinutes = xpStats?.totalXp ? Math.round(xpStats.totalXp / 2) : 0;
+  const studyHours = Math.floor(totalMinutes / 60);
+  const studyMins = totalMinutes % 60;
 
   return (
     <ProtectedRoute
@@ -54,12 +92,13 @@ export default function ProfilePageClient({
 
           {/* ================= MAIN CONTENT ================= */}
           <div className="md:col-span-9 lg:col-span-9 space-y-6">
+            {/* Hero Banner */}
             <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary-50 to-secondary-50 p-6 text-white shadow-sm border-2 border-border">
               <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-primary-600 text-sm font-medium">
-                      {getGreeting()} ✨
+                      {getGreeting()}
                     </span>
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-primary-800">
@@ -67,7 +106,7 @@ export default function ProfilePageClient({
                   </h1>
                   <p className="text-primary-600 text-sm">
                     {currentStreak > 0
-                      ? `You're on a ${currentStreak}-day streak! Keep up the great work and complete today's missions.`
+                      ? `You're on a ${currentStreak}-day streak! Keep up the great work.`
                       : "Start your learning journey today and build your streak!"}
                   </p>
                 </div>
@@ -84,13 +123,55 @@ export default function ProfilePageClient({
               </div>
             </div>
 
+            {/* XP Level Card */}
+            {xpStats && (
+              <Card className="border-2 border-border shadow-md bg-white p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg">
+                      <span className="text-white text-lg font-black">{xpStats.level}</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800">Level {xpStats.level}</h3>
+                      <p className="text-sm text-slate-500">
+                        {xpStats.totalXp.toLocaleString()} total XP
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm font-medium text-accent-600">
+                    <Zap size={16} className="text-accent-500" />
+                    {xpInLevel} / {xpNeeded} XP to Level {xpStats.level + 1}
+                  </div>
+                </div>
+
+                {/* XP Progress Bar */}
+                <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full xp-bar-gradient transition-all duration-1000 ease-out"
+                    style={{ width: `${xpProgress}%` }}
+                  />
+                </div>
+
+                {/* Skill Scores */}
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-5">
+                  <SkillBadge label="Vocab" score={xpStats.vocabScore} color="from-blue-500 to-indigo-500" />
+                  <SkillBadge label="Grammar" score={xpStats.grammarScore} color="from-purple-500 to-violet-500" />
+                  <SkillBadge label="Speaking" score={xpStats.speakingScore} color="from-pink-500 to-rose-500" />
+                  <SkillBadge label="Listening" score={xpStats.listeningScore} color="from-orange-500 to-amber-500" />
+                  <SkillBadge label="Reading" score={xpStats.readingScore} color="from-teal-500 to-emerald-500" />
+                  <SkillBadge label="Writing" score={xpStats.writingScore} color="from-cyan-500 to-blue-500" />
+                </div>
+              </Card>
+            )}
+
+            {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-4">
               <StatCard
                 label="Total Study Time"
-                value="48h 30m"
+                value={studyHours > 0 ? `${studyHours}h ${studyMins}m` : `${studyMins}m`}
                 icon={<Clock className="text-yellow-500" size={20} />}
-                trend="+1h 20m today"
-                trendUp={true}
+                trend={xpStats ? `${xpStats.totalXp.toLocaleString()} XP earned` : "Start learning"}
+                trendUp={!!xpStats?.totalXp}
                 bgColor="bg-gradient-to-br from-yellow-50 to-orange-50"
                 iconBg="bg-yellow-100"
               />
@@ -108,11 +189,11 @@ export default function ProfilePageClient({
                 iconBg="bg-orange-100"
               />
               <StatCard
-                label="Words Learned"
-                value="342"
-                icon={<BookOpen className="text-accent-500" size={20} />}
-                trend="+15 new"
-                trendUp={true}
+                label="Coins"
+                value={xpStats?.coins?.toLocaleString() ?? "0"}
+                icon={<Star className="text-accent-500" size={20} />}
+                trend={xpStats?.badges?.length ? `${xpStats.badges.length} badges` : "Earn more"}
+                trendUp={!!xpStats?.coins}
                 bgColor="bg-gradient-to-br from-accent-50 to-emerald-50"
                 iconBg="bg-accent-100"
               />
@@ -120,7 +201,13 @@ export default function ProfilePageClient({
 
             {/* Study Heat Map */}
             <Card className="border-2 border-border shadow-md bg-white p-6">
-              <ActivityHeatmap data={activityData} />
+              {loading ? (
+                <div className="h-32 flex items-center justify-center text-gray-400">
+                  Loading activity data...
+                </div>
+              ) : (
+                <ActivityHeatmap data={activityData} />
+              )}
             </Card>
 
             {/* Daily Quote */}
@@ -129,7 +216,7 @@ export default function ProfilePageClient({
                 <div className="flex flex-col items-center text-center">
                   <Quote className="w-10 h-10 text-primary-300 mb-4 rotate-180" />
                   <blockquote className="text-lg md:text-xl font-medium text-slate-700 italic leading-relaxed max-w-2xl">
-                    "{quote.text}"
+                    &quot;{quote.text}&quot;
                   </blockquote>
                   <div className="mt-4 flex items-center gap-2">
                     <div className="w-8 h-[2px] bg-primary-300"></div>
@@ -149,6 +236,17 @@ export default function ProfilePageClient({
 }
 
 /* --- Helper Components --- */
+
+function SkillBadge({ label, score, color }: { label: string; score: number; color: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+      <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center`}>
+        <span className="text-white text-xs font-bold">{score}</span>
+      </div>
+      <span className="text-[10px] font-medium text-gray-500">{label}</span>
+    </div>
+  );
+}
 
 function StatCard({
   label,
@@ -182,9 +280,8 @@ function StatCard({
           <p className="text-xl font-bold text-slate-800 truncate">{value}</p>
           {trend && (
             <div
-              className={`flex items-center gap-1 mt-1 text-xs font-medium ${
-                trendUp ? "text-accent-600" : "text-slate-500"
-              }`}
+              className={`flex items-center gap-1 mt-1 text-xs font-medium ${trendUp ? "text-accent-600" : "text-slate-500"
+                }`}
             >
               {trendUp && <TrendingUp size={10} />}
               {trend}
@@ -227,7 +324,7 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
     }
   });
 
-  // Generate last 52 weeks of data (364 days) - like LeetCode
+  // Generate last 52 weeks of data (364 days)
   const startDate = new Date(today);
   startDate.setDate(startDate.getDate() - 363);
 
@@ -253,7 +350,6 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
       const isToday = dateStr === today.toISOString().split("T")[0];
       const isFuture = currentDate > today;
 
-      // Track month changes (on first day of week)
       if (day === 0) {
         const month = currentDate.getMonth();
         if (month !== lastMonth && !isFuture) {
@@ -274,17 +370,15 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
     weeks.push(weekDays);
   }
 
-  // GitHub-style green color scale - every 3 lessons changes color
   const getColor = (count: number) => {
-    if (count === -1) return "bg-transparent"; // Future days
-    if (count === 0) return "bg-[#ebedf0]"; // No activity - GitHub gray
-    if (count <= 3) return "bg-[#9be9a8]"; // 1-3 lessons - Level 1 lightest green
-    if (count <= 6) return "bg-[#40c463]"; // 4-6 lessons - Level 2
-    if (count <= 9) return "bg-[#30a14e]"; // 7-9 lessons - Level 3
-    return "bg-[#216e39]"; // 10+ lessons - Level 4 (max) - darkest green
+    if (count === -1) return "bg-transparent";
+    if (count === 0) return "bg-[#ebedf0]";
+    if (count <= 3) return "bg-[#9be9a8]";
+    if (count <= 6) return "bg-[#40c463]";
+    if (count <= 9) return "bg-[#30a14e]";
+    return "bg-[#216e39]";
   };
 
-  // Format date for tooltip
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
@@ -318,7 +412,7 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
 
   return (
     <div className="w-full">
-      {/* Stats Header - LeetCode style */}
+      {/* Stats Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold text-slate-800">
@@ -343,9 +437,7 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
       {/* Heatmap Grid */}
       <div className="overflow-x-auto pb-2">
         <div className="inline-flex flex-col gap-1 min-w-full">
-          {/* Grid with day labels */}
           <div className="flex gap-[3px]">
-            {/* Day labels column */}
             <div className="flex flex-col gap-[3px] pr-2 w-8">
               {dayLabels.map((label, idx) => (
                 <div
@@ -357,7 +449,6 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
               ))}
             </div>
 
-            {/* Weeks */}
             {weeks.map((week, weekIdx) => (
               <div key={weekIdx} className="flex flex-col gap-[3px]">
                 {week.map((day, dayIdx) => (
@@ -366,10 +457,9 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
                     className={`w-[11px] h-[11px] rounded-[3px] ${getColor(
                       day.count
                     )} 
-                      ${
-                        day.isToday
-                          ? "ring-1 ring-emerald-600 ring-offset-1"
-                          : ""
+                      ${day.isToday
+                        ? "ring-1 ring-emerald-600 ring-offset-1"
+                        : ""
                       }
                       ${day.date ? "cursor-pointer" : ""}`}
                     onMouseEnter={(e) => handleMouseEnter(e, day)}
@@ -384,7 +474,7 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
           <div className="flex gap-[3px] pl-8">
             {monthPositions.map((pos, idx) => {
               const nextPos = monthPositions[idx + 1]?.weekIndex || 53;
-              const width = (nextPos - pos.weekIndex) * 14; // 11px cell + 3px gap
+              const width = (nextPos - pos.weekIndex) * 14;
               return (
                 <div
                   key={idx}
@@ -399,7 +489,7 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
         </div>
       </div>
 
-      {/* Legend - centered */}
+      {/* Legend */}
       <div className="flex items-center justify-center gap-2 mt-2 text-[10px] text-slate-400">
         <span>Less</span>
         <div className="flex gap-[2px]">
@@ -436,4 +526,3 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
     </div>
   );
 }
-

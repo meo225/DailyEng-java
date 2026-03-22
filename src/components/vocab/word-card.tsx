@@ -69,7 +69,7 @@ export function WordCard({ word, onAddFlashcard }: WordCardProps) {
         </div>
 
         {/* Collocations */}
-        {word.collocations.length > 0 && (
+        {word.collocations && word.collocations.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">
               Collocations

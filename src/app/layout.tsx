@@ -9,6 +9,8 @@ import { LazyLayoutComponents } from "@/components/layout/lazy-layout-components
 import "@/app/globals.css";
 import { Suspense } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
+import { XpToastProvider } from "@/components/xp/xp-toast";
+import { LevelUpProvider } from "@/components/xp/xp-level-up-modal";
 
 
 const inter = Inter({
@@ -52,6 +54,8 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <UserProfileProvider>
+              <XpToastProvider>
+              <LevelUpProvider>
               <Suspense fallback={<div>Loading...</div>}>
                 <NavigationProvider>
                   <ConditionalLayout>
@@ -60,6 +64,8 @@ export default function RootLayout({
                 </NavigationProvider>
                 <LazyLayoutComponents />
               </Suspense>
+              </LevelUpProvider>
+              </XpToastProvider>
             </UserProfileProvider>
           </ThemeProvider>
         </SessionProvider>

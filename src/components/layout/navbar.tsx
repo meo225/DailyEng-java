@@ -8,6 +8,7 @@ import dynamic from "next/dynamic"
 import { Menu, X, ChevronDown } from "lucide-react"
 import { LanguageSwitcher } from "./language-switcher"
 import { useTranslation } from "@/hooks/use-translation"
+import { XpBar } from "./xp-bar"
 import { useNavigation } from "@/contexts/NavigationContext"
 import {
   DropdownMenu,
@@ -139,6 +140,9 @@ export function Navbar() {
 
           {/* Right Section — dynamic import, never SSR'd */}
           <div className="flex items-center gap-2">
+            <div className="hidden md:block">
+              <XpBar />
+            </div>
             <div className="hidden sm:block">
               <LanguageSwitcher />
             </div>
@@ -159,6 +163,10 @@ export function Navbar() {
         {/* Mobile Nav */}
         {mobileOpen && (
           <div className="md:hidden border-t border-gray-100 px-4 pb-4 pt-3 space-y-1">
+            {/* Mobile XP bar */}
+            <div className="px-1 py-2 mb-2 border-b border-gray-100 pb-3">
+              <XpBar />
+            </div>
             <div className="px-3 py-2 flex items-center justify-between border-b border-gray-100 mb-2 pb-3">
               <span className="text-sm font-semibold text-gray-500">{t("common.language")}</span>
               <LanguageSwitcher />

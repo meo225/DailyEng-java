@@ -59,7 +59,7 @@ const tagVariants = cva(
 )
 
 // Icon mapping for each variant
-const variantIcons: Record<string, React.ElementType> = {
+const variantIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   completed: CheckCircle2,
   done: CheckCircle2,
   active: Play,
@@ -104,7 +104,7 @@ const variantLabels: Record<string, string> = {
 
 export interface TagProps extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof tagVariants> {
   showIcon?: boolean
-  icon?: React.ElementType
+  icon?: React.ComponentType<{ className?: string }>
 }
 
 function Tag({ className, variant = "default", size, showIcon = true, icon, children, ...props }: TagProps) {

@@ -910,3 +910,106 @@
     display: none;
   }
 }
+
+/* ================================================================
+   XP SYSTEM — Gamification Animations
+   ================================================================ */
+
+/* XP bar gradient fill — Ultramarine → Neon Lime */
+.xp-bar-gradient {
+  background: linear-gradient(90deg,
+    var(--primary-500) 0%,
+    var(--primary-400) 40%,
+    var(--accent-400) 100%
+  );
+}
+
+/* Pulse effect when XP is awarded */
+@keyframes xp-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(79, 70, 229, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+}
+
+.xp-pulse {
+  animation: xp-pulse 0.6s ease-out;
+}
+
+/* Streak flame flicker — subtle warmth animation */
+@keyframes streak-flicker {
+  0%, 100% { transform: scaleY(1) rotate(0deg); opacity: 1; }
+  25% { transform: scaleY(1.05) rotate(-2deg); opacity: 0.9; }
+  50% { transform: scaleY(0.95) rotate(1deg); opacity: 1; }
+  75% { transform: scaleY(1.03) rotate(-1deg); opacity: 0.95; }
+}
+
+.streak-flame {
+  animation: streak-flicker 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 3px rgba(249, 115, 22, 0.4));
+}
+
+/* Respect reduced motion for XP animations */
+@media (prefers-reduced-motion: reduce) {
+  .xp-pulse,
+  .streak-flame,
+  .level-up-particle {
+    animation: none !important;
+  }
+}
+
+/* ================================================================
+   LEVEL-UP — Celebration particle animation
+   ================================================================ */
+
+@keyframes level-up-particle {
+  0% { transform: scale(0) translate(0, 0); opacity: 1; }
+  50% { opacity: 0.8; }
+  100% {
+    transform: scale(1.5) translate(
+      calc((var(--dx, 1)) * 80px),
+      calc((var(--dy, -1)) * 100px)
+    );
+    opacity: 0;
+  }
+}
+
+.level-up-particle {
+  --dx: 1;
+  --dy: -1;
+  animation: level-up-particle 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.level-up-particle:nth-child(odd) { --dx: -1; --dy: -1.2; }
+.level-up-particle:nth-child(3n) { --dx: 0.5; --dy: -1.5; }
+.level-up-particle:nth-child(4n) { --dx: -0.8; --dy: -0.6; }
+
+/* ================================================================
+   LEADERBOARD — Podium staggered entrance
+   ================================================================ */
+
+@keyframes podium-enter {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.podium-enter {
+  animation: podium-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.podium-enter:nth-child(1) { animation-delay: 100ms; }
+.podium-enter:nth-child(2) { animation-delay: 0ms; }
+.podium-enter:nth-child(3) { animation-delay: 200ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .level-up-particle,
+  .podium-enter {
+    animation: none !important;
+    opacity: 1;
+  }
+}

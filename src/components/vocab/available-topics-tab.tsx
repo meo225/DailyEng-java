@@ -104,7 +104,7 @@ export function AvailableTopicsTab({
                   type="vocabulary"
                   isBookmarked={bookmarkedTopics.includes(topic.id)}
                   onBookmarkToggle={onBookmarkToggle}
-                  thumbnail={topic.thumbnail}
+                  thumbnail={topic.thumbnail ?? undefined}
                 />
               ))}
             </div>

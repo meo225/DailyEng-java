@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { uploadToCloudinary } from "@/lib/cloudinary";
-import { prisma } from "@/lib/prisma";
+import { apiClient } from "@/lib/api-client";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -52,11 +52,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: uploadResult.error }, { status: 500 });
     }
 
-    // Update user's image in database
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { image: uploadResult.url },
-    });
+    // Update user's image in database via Spring Boot API
+    await apiClient.put("/user/profile", { image: uploadResult.url });
 
     return NextResponse.json({
       success: true,

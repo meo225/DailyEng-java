@@ -25,6 +25,7 @@ import {
   ArrowLeft,
 } from "lucide-react"
 import { ProtectedRoute, PageIcons } from "@/components/auth/protected-route"
+import { useXpToast } from "@/components/xp/xp-toast"
 import type { NotebookItem } from "./NotebookPageClient"
 
 interface FlashcardReviewClientProps {
@@ -43,6 +44,7 @@ export default function FlashcardReviewClient({ notebookItems }: FlashcardReview
   const [shadowingOpen, setShadowingOpen] = useState(false)
   const [currentSentence, setCurrentSentence] = useState(0)
   const [isRecording, setIsRecording] = useState(false)
+  const xpToast = useXpToast();
 
   const currentItem = notebookItems[currentCardIndex]
 
@@ -71,6 +73,17 @@ export default function FlashcardReviewClient({ notebookItems }: FlashcardReview
             handleNextCard()
           } else {
             setSessionCompleteOpen(true)
+            // Award XP for mastered cards in session
+            const masteredCount = learnedCards.size;
+            if (masteredCount > 0 && xpToast) {
+              xpToast.showXpToast({
+                xpAwarded: masteredCount * 10,
+                streakBonus: 0,
+                totalXp: 0,
+                streak: 0,
+                isNewDay: false,
+              });
+            }
           }
           setCardAnimation("")
         }, 500)
@@ -92,6 +105,17 @@ export default function FlashcardReviewClient({ notebookItems }: FlashcardReview
             handleNextCard()
           } else {
             setSessionCompleteOpen(true)
+            // Award XP for mastered cards in session
+            const totalMastered = learnedCards.size; // learnedCards already includes the current item
+            if (totalMastered > 0 && xpToast) {
+              xpToast.showXpToast({
+                xpAwarded: totalMastered * 10,
+                streakBonus: 0,
+                totalXp: 0,
+                streak: 0,
+                isNewDay: false,
+              });
+            }
           }
           setCardAnimation("")
         }, 500)
@@ -100,7 +124,7 @@ export default function FlashcardReviewClient({ notebookItems }: FlashcardReview
 
     window.addEventListener("keydown", handleKeyPress)
     return () => window.removeEventListener("keydown", handleKeyPress)
-  }, [isFlipped, currentCardIndex, notebookItems.length, sessionCompleteOpen])
+  }, [isFlipped, currentCardIndex, notebookItems.length, sessionCompleteOpen, learnedCards, xpToast])
 
   useEffect(() => {
     setIsFlipped(false)
@@ -473,6 +497,19 @@ export default function FlashcardReviewClient({ notebookItems }: FlashcardReview
                     </div>
                   </div>
                 </div>
+
+                {/* XP Reward Summary */}
+                {learnedCards.size > 0 && (
+                  <div className="flex items-center justify-center gap-2 mt-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary-50 to-accent-50 border border-primary-100">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-sm">
+                      <Zap size={16} className="text-white" fill="white" />
+                    </div>
+                    <span className="text-lg font-black text-primary-700">
+                      +{learnedCards.size * 10}
+                    </span>
+                    <span className="text-sm font-semibold text-primary-500">XP earned</span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3 pt-2">

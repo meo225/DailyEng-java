@@ -40,7 +40,7 @@ export function BookmarksTab({
                 type="vocabulary"
                 isBookmarked={true}
                 onBookmarkToggle={onBookmarkToggle}
-                thumbnail={topic.thumbnail}
+                thumbnail={topic.thumbnail ?? undefined}
               />
             ))}
           </div>
