@@ -9,3 +9,7 @@
 ## 2026-03-21 - [Prevented Unnecessary Re-renders in TopicCard grids]
 **Learning:** Widely used grid and list components like `TopicCard` are rendered numerous times in views such as `SearchResults` and `AvailableTopicsTab`. Changes to parent states (e.g., active tabs, search queries, or bookmark toggles) cause all child cards to re-render, even if their individual props are stable. This is a common React performance bottleneck when rendering lists.
 **Action:** Use `React.memo` on heavily re-used UI components (like `TopicCard` and its sub-components `SpeakingThumbnail`) when they mostly receive stable primitive props or strings, significantly reducing re-renders across list and grid views during parent state changes.
+
+## 2025-02-19 - React Context Value Memoization
+**Learning:** Context provider values created inline (e.g., `value={{ profile, isLoading, refreshProfile }}`) cause all consumers to re-render whenever the provider component re-renders, even if the actual data hasn't changed.
+**Action:** Always wrap context values in `useMemo` with appropriate dependencies to maintain stable references and prevent unnecessary re-renders of all consuming components.

@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useCallback,
   useRef,
+  useMemo,
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserProfile } from "@/actions/user";
@@ -80,8 +81,13 @@ export function UserProfileProvider({
     await fetchProfile();
   }, [fetchProfile]);
 
+  const value = useMemo(
+    () => ({ profile, isLoading, refreshProfile }),
+    [profile, isLoading, refreshProfile]
+  );
+
   return (
-    <UserProfileContext.Provider value={{ profile, isLoading, refreshProfile }}>
+    <UserProfileContext.Provider value={value}>
       {children}
     </UserProfileContext.Provider>
   );
