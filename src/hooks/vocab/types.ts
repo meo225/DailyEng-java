@@ -5,12 +5,12 @@ export interface VocabTopic {
   title: string;
   description: string;
   level: string;
-  category: string;
-  subcategory: string;
+  category: string | null;
+  subcategory: string | null;
   wordCount: number;
   estimatedTime: number;
-  progress: number;
-  thumbnail?: string;
+  progress?: number;
+  thumbnail?: string | null;
 }
 
 export interface DictionaryWord {

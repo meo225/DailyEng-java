@@ -13,7 +13,7 @@ export const handlers = [
   }),
 
   http.post("/api/topics", async ({ request }) => {
-    const data = await request.json()
+    const data = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({ ...data, id: Date.now().toString() }, { status: 201 })
   }),
 
@@ -34,13 +34,13 @@ export const handlers = [
   }),
 
   http.post("/api/quizzes/submit", async ({ request }) => {
-    const { topicId, answers } = await request.json()
-    const questions = mockQuizzes[topicId] || []
+    const body = (await request.json()) as { topicId: string; answers: Record<string, string> }
+    const questions = mockQuizzes[body.topicId] || []
     let correct = 0
 
     const feedback: Record<string, boolean> = {}
     for (const q of questions) {
-      const isCorrect = answers[q.id] === q.correctAnswer
+      const isCorrect = body.answers[q.id] === q.correctAnswer
       feedback[q.id] = isCorrect
       if (isCorrect) correct++
     }
@@ -57,13 +57,13 @@ export const handlers = [
   }),
 
   http.post("/api/ai/create-topic", async ({ request }) => {
-    const { prompt } = await request.json()
+    const body = (await request.json()) as { prompt: string }
     return HttpResponse.json(
       {
         id: Date.now().toString(),
         topicId: "custom",
         title: "Custom Scenario",
-        description: prompt,
+        description: body.prompt,
         goal: "Practice conversation",
         context: "Generated from your prompt",
       },
@@ -72,7 +72,7 @@ export const handlers = [
   }),
 
   http.post("/api/speaking/submit-turn", async ({ request }) => {
-    const { sessionId, text } = await request.json()
+    const body = (await request.json()) as { sessionId: string; text: string }
     const responses = [
       "That's great! Can you tell me more about that?",
       "I understand. What else would you like to share?",
@@ -96,7 +96,7 @@ export const handlers = [
   }),
 
   http.post("/api/flashcards", async ({ request }) => {
-    const data = await request.json()
+    const data = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({ ...data, id: Date.now().toString(), createdAt: new Date() }, { status: 201 })
   }),
 
@@ -106,7 +106,7 @@ export const handlers = [
   }),
 
   http.post("/api/srs/review", async ({ request }) => {
-    const { cardId, quality } = await request.json()
+    const body = (await request.json()) as { cardId: string; quality: number }
     return HttpResponse.json({
       nextReviewDate: new Date(),
       interval: 1,
@@ -116,15 +116,15 @@ export const handlers = [
 
   // Plan
   http.post("/api/plan/setup", async ({ request }) => {
-    const data = await request.json()
+    const data = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({ ...data, id: Date.now().toString(), createdAt: new Date() }, { status: 201 })
   }),
 
   // AI
   http.post("/api/ai/translate", async ({ request }) => {
-    const { text, targetLang } = await request.json()
+    const body = (await request.json()) as { text: string; targetLang: string }
     return HttpResponse.json({
-      translation: `Translated to ${targetLang}`,
+      translation: `Translated to ${body.targetLang}`,
       feedback: {
         meaning: "Accurate translation",
         grammar: "Correct grammar",
@@ -134,10 +134,10 @@ export const handlers = [
   }),
 
   http.post("/api/ai/feedback", async ({ request }) => {
-    const { text, type } = await request.json()
+    const body = (await request.json()) as { text: string; type: string }
     return HttpResponse.json({
-      pronunciation: type === "speaking" ? Math.floor(Math.random() * 40) + 60 : undefined,
-      fluency: type === "speaking" ? Math.floor(Math.random() * 40) + 60 : undefined,
+      pronunciation: body.type === "speaking" ? Math.floor(Math.random() * 40) + 60 : undefined,
+      fluency: body.type === "speaking" ? Math.floor(Math.random() * 40) + 60 : undefined,
       grammar: Math.floor(Math.random() * 40) + 60,
       content: Math.floor(Math.random() * 40) + 60,
       suggestions: ["Try to speak more clearly", "Good vocabulary usage"],

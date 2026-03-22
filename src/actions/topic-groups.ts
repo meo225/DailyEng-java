@@ -1,35 +1,54 @@
-"use server";
+/**
+ * Topic Groups API client — calls Spring Boot controllers.
+ *
+ * Replaces the old Prisma-based server actions with apiClient calls.
+ */
 
-import { prisma } from "@/lib/prisma";
-import type { HubType } from "@prisma/client";
+import { apiClient } from "@/lib/api-client";
+
+// ======================== Types ========================
+
+interface TopicGroup {
+  id: string;
+  name: string;
+  order: number;
+  hubType: string;
+  subcategories: string[];
+}
+
+interface Topic {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  description: string;
+  level: string;
+  wordCount: number;
+  estimatedTime: number;
+  thumbnail: string | null;
+  category: string | null;
+  subcategory: string | null;
+  order: number;
+  topicGroupId: string | null;
+}
+
+// ======================== Actions ========================
 
 /**
- * Get all topic groups for a specific hub type (speaking or grammar)
+ * Get all topic groups for a specific hub type (speaking, grammar, or vocab)
  */
-export async function getTopicGroups(hubType: HubType) {
-  return await prisma.topicGroup.findMany({
-    where: { hubType },
-    orderBy: { order: "asc" },
-  });
+export async function getTopicGroups(hubType: string): Promise<TopicGroup[]> {
+  // Each hub has its own controller with /topic-groups
+  return apiClient.get<TopicGroup[]>(`/${hubType}/topic-groups`);
 }
 
 /**
- * Get a topic group with its topics (for grammar)
+ * Get grammar topics by group name and optional subcategory
  */
-export async function getGrammarTopicsByGroup(groupName: string, subcategory?: string) {
-  const group = await prisma.topicGroup.findFirst({
-    where: {
-      name: groupName,
-      hubType: "grammar",
-    },
-  });
-
-  if (!group) return [];
-
-  return await prisma.topic.findMany({
-    where: {
-      topicGroupId: group.id,
-      ...(subcategory && { subcategory }),
-    },
-  });
+export async function getGrammarTopicsByGroup(
+  groupName: string,
+  subcategory?: string
+): Promise<Topic[]> {
+  const params = new URLSearchParams({ groupName });
+  if (subcategory) params.append("subcategory", subcategory);
+  return apiClient.get<Topic[]>(`/grammar/topics?${params.toString()}`);
 }

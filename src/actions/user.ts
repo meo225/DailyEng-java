@@ -1,8 +1,10 @@
 "use server";
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { Level } from "@prisma/client";
+import { cookies } from "next/headers";
+
+// ============================================
+// USER PROFILE ACTIONS (MIGRATED TO JAVA HTTP API)
+// ============================================
 
 export interface UserProfile {
   id: string;
@@ -12,7 +14,7 @@ export interface UserProfile {
   dateOfBirth: Date | null;
   gender: string | null;
   address: string | null;
-  level: Level | null;
+  level: string | null;
   image: string | null;
 }
 
@@ -23,7 +25,25 @@ export interface UserProfileUpdateData {
   dateOfBirth?: Date | null;
   gender?: string;
   address?: string;
-  level?: Level;
+  level?: string;
+}
+
+/**
+ * Forward access_token cookie as Authorization header to the Java API.
+ */
+async function fetchJava(path: string, options: RequestInit = {}) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+
+  const API_BASE =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+  const headers = new Headers(options.headers || {});
+  headers.set("Content-Type", "application/json");
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  return fetch(`${API_BASE}${path}`, { ...options, headers });
 }
 
 // Get current user's profile
@@ -33,54 +53,30 @@ export async function getUserProfile(): Promise<{
   error?: string;
 }> {
   try {
-    const session = await auth();
+    const res = await fetchJava("/users/me");
 
-    if (!session?.user?.id) {
-      return { user: null, isGoogleUser: false, error: "Not authenticated" };
+    if (!res.ok) {
+      if (res.status === 401) {
+        return { user: null, isGoogleUser: false, error: "Not authenticated" };
+      }
+      return { user: null, isGoogleUser: false, error: "Failed to fetch profile" };
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phoneNumber: true,
-        dateOfBirth: true,
-        gender: true,
-        address: true,
-        level: true,
-        image: true,
-        accounts: {
-          select: {
-            provider: true,
-          },
-        },
-      },
-    });
-
-    if (!user) {
-      return { user: null, isGoogleUser: false, error: "User not found" };
-    }
-
-    // Check if user signed up via Google
-    const isGoogleUser = user.accounts.some(
-      (account) => account.provider === "google"
-    );
+    const data = await res.json();
 
     return {
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        dateOfBirth: user.dateOfBirth,
-        gender: user.gender,
-        address: user.address,
-        level: user.level,
-        image: user.image,
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+        gender: data.gender,
+        address: data.address,
+        level: data.level,
+        image: data.image,
       },
-      isGoogleUser,
+      isGoogleUser: data.isGoogleUser ?? false,
     };
   } catch (error) {
     console.error("Error fetching user profile:", error);
@@ -93,68 +89,24 @@ export async function updateUserProfile(
   data: UserProfileUpdateData
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return { success: false, error: "Not authenticated" };
-    }
-
-    // Get current user to check if Google user
-    const currentUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: {
-        accounts: {
-          select: { provider: true },
-        },
-      },
+    const res = await fetchJava("/users/me", {
+      method: "PUT",
+      body: JSON.stringify({
+        name: data.name,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender,
+        address: data.address,
+        level: data.level,
+      }),
     });
 
-    if (!currentUser) {
-      return { success: false, error: "User not found" };
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      const errorMessage = errorData?.error || "Failed to update profile";
+      return { success: false, error: errorMessage };
     }
-
-    const isGoogleUser = currentUser.accounts.some(
-      (account) => account.provider === "google"
-    );
-
-    // Prepare update data
-    const updateData: UserProfileUpdateData = { ...data };
-
-    // If Google user, don't allow email change
-    if (isGoogleUser && data.email && data.email !== currentUser.email) {
-      return {
-        success: false,
-        error: "Cannot change email for Google-linked accounts",
-      };
-    }
-
-    // Validate email format if provided and not Google user
-    if (!isGoogleUser && data.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(data.email)) {
-        return { success: false, error: "Invalid email format" };
-      }
-
-      // Check if email is already taken by another user
-      const existingUser = await prisma.user.findUnique({
-        where: { email: data.email },
-      });
-
-      if (existingUser && existingUser.id !== session.user.id) {
-        return { success: false, error: "Email is already in use" };
-      }
-    }
-
-    // Validate level if provided
-    if (data.level && !Object.values(Level).includes(data.level)) {
-      return { success: false, error: "Invalid level value" };
-    }
-
-    // Update user
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: updateData,
-    });
 
     return { success: true };
   } catch (error) {

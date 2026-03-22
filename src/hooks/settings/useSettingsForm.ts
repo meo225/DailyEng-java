@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { updateUserProfile } from "@/actions/user";
-import { Level } from "@prisma/client";
 import type { SettingsFormData } from "./types";
 import { parseDate, formatDate } from "./types";
 
@@ -72,7 +71,7 @@ export function useSettingsForm({
         dateOfBirth,
         gender: formData.gender || undefined,
         address: formData.address || undefined,
-        level: (formData.level as Level) || undefined,
+        level: formData.level || undefined,
       });
 
       if (result.success) {
