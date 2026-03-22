@@ -65,6 +65,15 @@ public class NotebookController extends BaseController {
         return ResponseEntity.ok(notebookService.getNotebookItems(userId, id));
     }
 
+    /** GET /notebooks/items — list all items across notebooks (optional ?notebookId= filter) */
+    @GetMapping("/items")
+    public ResponseEntity<List<NotebookItemResponse>> getAllItems(
+            @RequestParam(required = false) String notebookId
+    ) {
+        var userId = requireUserId();
+        return ResponseEntity.ok(notebookService.getAllItems(userId, notebookId));
+    }
+
     /** POST /notebooks/items — create a new item */
     @PostMapping("/items")
     public ResponseEntity<NotebookItemResponse> createItem(

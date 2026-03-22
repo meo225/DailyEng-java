@@ -66,6 +66,7 @@ public final class NotebookDtos {
             List<String> meaning, List<String> vietnamese,
             Object examples, String partOfSpeech, String level,
             String note, List<String> tags, String notebookId,
+            String notebookName, String notebookColor,
             int masteryLevel, boolean isStarred,
             String lastReviewed, String nextReview,
             String createdAt

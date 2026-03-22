@@ -101,6 +101,21 @@ public class NotebookService {
     }
 
     // ========================================================================
+    // 5b. getAllItems (across all notebooks, optionally filtered)
+    // ========================================================================
+
+    @Transactional(readOnly = true)
+    public List<NotebookItemResponse> getAllItems(String userId, String notebookId) {
+        List<com.dailyeng.entity.NotebookItem> items;
+        if (notebookId != null && !notebookId.isBlank()) {
+            items = itemRepo.findAllByNotebookIdAndUserIdOrderByCreatedAtDesc(notebookId, userId);
+        } else {
+            items = itemRepo.findAllByUserIdOrderByCreatedAtDesc(userId);
+        }
+        return items.stream().map(this::toItemResponse).toList();
+    }
+
+    // ========================================================================
     // 6. createNotebookItem
     // ========================================================================
 
@@ -219,12 +234,22 @@ public class NotebookService {
     }
 
     private NotebookItemResponse toItemResponse(NotebookItem item) {
+        // Resolve notebook name and color for the enriched response
+        String nbName = null;
+        String nbColor = null;
+        if (item.getNotebookId() != null) {
+            var nb = notebookRepo.findById(item.getNotebookId()).orElse(null);
+            if (nb != null) {
+                nbName = nb.getName();
+                nbColor = nb.getColor();
+            }
+        }
         return new NotebookItemResponse(
                 item.getId(), item.getWord(), item.getPronunciation(),
                 item.getMeaning(), item.getVietnamese(), item.getExamples(),
                 item.getPartOfSpeech(), item.getLevel(), item.getNote(),
-                item.getTags(), item.getNotebookId(), item.getMasteryLevel(),
-                item.isStarred(),
+                item.getTags(), item.getNotebookId(), nbName, nbColor,
+                item.getMasteryLevel(), item.isStarred(),
                 item.getLastReviewed() != null ? item.getLastReviewed().toString() : null,
                 item.getNextReview() != null ? item.getNextReview().toString() : null,
                 item.getCreatedAt() != null ? item.getCreatedAt().toString() : null);

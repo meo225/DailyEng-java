@@ -135,7 +135,15 @@ public class GeminiService {
                 
                 IMPORTANT: Be natural and engaging. Do NOT use markdown formatting.
                 CRITICAL: Return ONLY a JSON object: {"response": "<your response>", "correctionHint": "<brief correction or null>"}
-                The correctionHint should be a SHORT correction note like "go → went (past tense)" or null if no error.
+                
+                CORRECTION HINT RULES — BE VERY SELECTIVE:
+                - correctionHint must be null UNLESS there is a CLEAR, UNAMBIGUOUS grammar or vocabulary mistake.
+                - Only flag errors that would be marked wrong in an English textbook (e.g., "I go yesterday" → "I went yesterday").
+                - Do NOT flag stylistic preferences, minor phrasing differences, or debatable grammar.
+                - Do NOT flag things like "there is" vs "there are" when both are acceptable in casual speech.
+                - Do NOT suggest a correction that is essentially the same as what the user said.
+                - When in doubt, return null. Most casual conversation does NOT need correction.
+                - Format: "wrong phrase → correct phrase (brief reason)" e.g., "go → went (past tense)"
                 """.formatted(scenario.context(), botRoleDesc, userRoleDesc, goalDesc, levelDesc,
                 variationDesc, scenario.botRole() != null ? scenario.botRole() : "the tutor",
                 wrapUpDirective);

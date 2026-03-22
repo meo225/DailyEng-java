@@ -1,6 +1,7 @@
 package com.dailyeng.service;
 
 import com.dailyeng.dto.speaking.SpeakingDtos.*;
+import com.dailyeng.dto.xp.XpDtos;
 import com.dailyeng.entity.*;
 import com.dailyeng.entity.enums.Role;
 import com.dailyeng.exception.ResourceNotFoundException;
@@ -37,6 +38,7 @@ public class SpeakingSessionService {
     private final SpeakingTurnErrorRepository turnErrorRepo;
     private final UserRepository userRepo;
     private final GeminiService geminiService;
+    private final XpService xpService;
 
     // ========================================================================
     // startSession
@@ -280,6 +282,12 @@ public class SpeakingSessionService {
         session.setFeedbackRating(analysis.feedbackRating());
         session.setFeedbackTip(analysis.feedbackTip());
         sessionRepo.save(session);
+
+        // Award XP for completing the session
+        xpService.awardXp(userId, XpDtos.XP_SPEAKING_SESSION);
+        int totalWords = userTurns.stream().mapToInt(t -> t.getWordCount() != null ? t.getWordCount() : 0).sum();
+        int durationMinutes = session.getDuration() != null ? session.getDuration() / 60 : 5;
+        xpService.recordActivity(userId, 1, durationMinutes, totalWords);
 
         // ── Enhancement #1: Adaptive difficulty ──
         String newLevel = null;
