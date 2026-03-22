@@ -10,4 +10,5 @@ public interface UserVocabProgressRepository extends JpaRepository<UserVocabProg
     Optional<UserVocabProgress> findByUserIdAndVocabItemId(String userId, String vocabItemId);
     List<UserVocabProgress> findByUserId(String userId);
     List<UserVocabProgress> findByUserIdAndNextReviewBefore(String userId, LocalDateTime dateTime);
+    List<UserVocabProgress> findByUserIdAndVocabItemIdIn(String userId, List<String> vocabItemIds);
 }

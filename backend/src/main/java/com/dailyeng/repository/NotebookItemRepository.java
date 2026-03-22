@@ -15,4 +15,5 @@ public interface NotebookItemRepository extends JpaRepository<NotebookItem, Stri
     Optional<NotebookItem> findByIdAndUserId(String id, String userId);
     List<NotebookItem> findAllByNotebookIdAndUserIdOrderByCreatedAtDesc(String notebookId, String userId);
     long countByNotebookId(String notebookId);
+    List<NotebookItem> findAllByUserIdOrderByCreatedAtDesc(String userId);
 }
