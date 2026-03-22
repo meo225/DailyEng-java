@@ -1,8 +1,13 @@
 package com.dailyeng.service;
 
-import com.dailyeng.entity.Flashcard;
-import com.dailyeng.exception.ResourceNotFoundException;
-import com.dailyeng.repository.FlashcardRepository;
+import com.dailyeng.entity.ProfileStats;
+import com.dailyeng.entity.UserVocabProgress;
+import com.dailyeng.entity.UserVocabProgress.SrsState;
+import com.dailyeng.entity.VocabItem;
+import com.dailyeng.repository.ProfileStatsRepository;
+import com.dailyeng.repository.ReviewLogRepository;
+import com.dailyeng.repository.UserVocabProgressRepository;
+import com.dailyeng.repository.VocabItemRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,185 +21,204 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for {@link SrsService} — SM-2 spaced repetition algorithm.
+ * Unit tests for {@link SrsService}.
  */
 @ExtendWith(MockitoExtension.class)
 class SrsServiceTest {
 
-    @Mock
-    private FlashcardRepository flashcardRepo;
+    @Mock private UserVocabProgressRepository progressRepo;
+    @Mock private VocabItemRepository vocabItemRepo;
+    @Mock private ProfileStatsRepository profileStatsRepo;
+    @Mock private ReviewLogRepository reviewLogRepo;
+    @Mock private XpService xpService;
 
-    @InjectMocks
-    private SrsService srsService;
+    @InjectMocks private SrsService srsService;
 
-    private static final String USER_ID = "user-123";
-    private static final String CARD_ID = "card-456";
-
-    private Flashcard createCard(int interval, double easeFactor, int repetitions) {
-        var card = Flashcard.builder()
-                .userId(USER_ID)
-                .front("hello")
-                .back("xin chào")
-                .interval(interval)
-                .easeFactor(easeFactor)
-                .repetitions(repetitions)
-                .nextReviewDate(LocalDateTime.now().minusDays(1))
-                .build();
-        card.setId(CARD_ID);
-        return card;
-    }
+    private static final String USER_ID = "user-srs-123";
+    private static final String VOCAB_ID = "vocab-abc";
 
     // ========================================================================
-    // reviewCard — SM-2 algorithm
+    // reviewVocabItem
     // ========================================================================
 
     @Nested
-    @DisplayName("reviewCard — SM-2 algorithm")
-    class ReviewCard {
+    @DisplayName("reviewVocabItem")
+    class ReviewVocabItem {
 
         @Test
-        @DisplayName("incorrect answer (quality < 3) resets repetitions and interval")
-        void incorrectReset() {
-            var card = createCard(6, 2.5, 5);
-            when(flashcardRepo.findById(CARD_ID)).thenReturn(Optional.of(card));
-            when(flashcardRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        @DisplayName("creates new progress on first review and logs it")
+        void createsNewProgress() {
+            when(progressRepo.findByUserIdAndVocabItemId(USER_ID, VOCAB_ID))
+                    .thenReturn(Optional.empty());
+            var newProgress = UserVocabProgress.builder()
+                    .userId(USER_ID).vocabItemId(VOCAB_ID).build();
+            newProgress.setId("p-1");
+            when(progressRepo.save(any(UserVocabProgress.class))).thenReturn(newProgress);
+            when(profileStatsRepo.findByUserId(USER_ID)).thenReturn(Optional.empty());
+            when(reviewLogRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-            var result = srsService.reviewCard(USER_ID, CARD_ID, 2);
+            var result = srsService.reviewVocabItem(USER_ID, VOCAB_ID, 3);
 
-            assertEquals(1, result.newInterval());
-            assertEquals(0, result.newRepetitions());
-            assertTrue(result.newEaseFactor() <= 2.5);
-            verify(flashcardRepo).save(card);
+            assertNotNull(result);
+            assertTrue(result.stability() > 0);
+            assertEquals("REVIEW", result.srsState());
+            assertEquals(0, result.xpAwarded());
+            verify(reviewLogRepo).save(any()); // review logged
         }
 
         @Test
-        @DisplayName("first correct answer sets interval to 1 day")
-        void firstCorrect() {
-            var card = createCard(0, 2.5, 0);
-            when(flashcardRepo.findById(CARD_ID)).thenReturn(Optional.of(card));
-            when(flashcardRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        @DisplayName("runs FSRS algorithm on existing progress")
+        void runsAlgorithm() {
+            var progress = UserVocabProgress.builder()
+                    .userId(USER_ID).vocabItemId(VOCAB_ID)
+                    .stability(3.0).difficulty(5.0).repetitions(2)
+                    .srsState(SrsState.REVIEW)
+                    .lastReviewed(LocalDateTime.now().minusDays(3))
+                    .build();
+            progress.setId("p-1");
+            when(progressRepo.findByUserIdAndVocabItemId(USER_ID, VOCAB_ID))
+                    .thenReturn(Optional.of(progress));
+            when(progressRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+            when(profileStatsRepo.findByUserId(USER_ID)).thenReturn(Optional.empty());
+            when(reviewLogRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-            var result = srsService.reviewCard(USER_ID, CARD_ID, 4);
+            var result = srsService.reviewVocabItem(USER_ID, VOCAB_ID, 3);
 
-            assertEquals(1, result.newInterval());
-            assertEquals(1, result.newRepetitions());
+            assertTrue(result.stability() > 3.0, "Stability should grow after Good");
+            assertTrue(result.intervalDays() >= 1);
+            verify(progressRepo).save(any(UserVocabProgress.class));
         }
 
         @Test
-        @DisplayName("second correct answer sets interval to 3 days")
-        void secondCorrect() {
-            var card = createCard(1, 2.5, 1);
-            when(flashcardRepo.findById(CARD_ID)).thenReturn(Optional.of(card));
-            when(flashcardRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        @DisplayName("uses personalized weights when available")
+        void usesPersonalizedWeights() {
+            var stats = ProfileStats.builder().userId(USER_ID)
+                    .fsrsWeights(new double[]{
+                        0.5, 1.5, 4.0, 20.0, 7.0, 0.5, 1.0, 0.005, 1.5, 0.15,
+                        1.0, 2.0, 0.1, 0.05, 2.0, 0.0001, 3.0
+                    }).build();
+            stats.setId("ps-1");
+            when(profileStatsRepo.findByUserId(USER_ID)).thenReturn(Optional.of(stats));
 
-            var result = srsService.reviewCard(USER_ID, CARD_ID, 4);
+            var progress = UserVocabProgress.builder()
+                    .userId(USER_ID).vocabItemId(VOCAB_ID)
+                    .stability(3.0).difficulty(5.0).repetitions(2)
+                    .srsState(SrsState.REVIEW)
+                    .lastReviewed(LocalDateTime.now().minusDays(3))
+                    .build();
+            progress.setId("p-1");
+            when(progressRepo.findByUserIdAndVocabItemId(USER_ID, VOCAB_ID))
+                    .thenReturn(Optional.of(progress));
+            when(progressRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+            when(reviewLogRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-            assertEquals(3, result.newInterval());
-            assertEquals(2, result.newRepetitions());
+            var result = srsService.reviewVocabItem(USER_ID, VOCAB_ID, 3);
+
+            assertNotNull(result);
+            assertTrue(result.stability() > 0);
         }
 
         @Test
-        @DisplayName("third+ correct answer multiplies interval by ease factor")
-        void thirdCorrect() {
-            var card = createCard(3, 2.5, 2);
-            when(flashcardRepo.findById(CARD_ID)).thenReturn(Optional.of(card));
-            when(flashcardRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        @DisplayName("awards XP when mastery threshold crossed")
+        void awardsXpOnMastery() {
+            var progress = UserVocabProgress.builder()
+                    .userId(USER_ID).vocabItemId(VOCAB_ID)
+                    .stability(10.0).difficulty(3.0).repetitions(8)
+                    .srsState(SrsState.REVIEW).masteryLevel(95)
+                    .lastReviewed(LocalDateTime.now().minusDays(10))
+                    .build();
+            progress.setId("p-1");
+            when(progressRepo.findByUserIdAndVocabItemId(USER_ID, VOCAB_ID))
+                    .thenReturn(Optional.of(progress));
+            when(progressRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+            when(profileStatsRepo.findByUserId(USER_ID)).thenReturn(Optional.empty());
+            when(reviewLogRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+            when(xpService.awardXp(eq(USER_ID), anyInt()))
+                    .thenReturn(new com.dailyeng.dto.xp.XpDtos.XpAwardResult(10, 310, 1, 0, false));
 
-            var result = srsService.reviewCard(USER_ID, CARD_ID, 4);
+            var result = srsService.reviewVocabItem(USER_ID, VOCAB_ID, 3);
 
-            assertEquals(8, result.newInterval()); // round(3 * 2.5) = 8
-            assertEquals(3, result.newRepetitions());
-        }
-
-        @Test
-        @DisplayName("ease factor never goes below 1.3")
-        void easeFactorFloor() {
-            var card = createCard(1, 1.3, 3);
-            when(flashcardRepo.findById(CARD_ID)).thenReturn(Optional.of(card));
-            when(flashcardRepo.save(any())).thenAnswer(i -> i.getArgument(0));
-
-            // quality=0 causes max ease factor drop
-            var result = srsService.reviewCard(USER_ID, CARD_ID, 0);
-
-            assertTrue(result.newEaseFactor() >= 1.3,
-                    "Ease factor should not go below 1.3, got " + result.newEaseFactor());
-        }
-
-        @Test
-        @DisplayName("ease factor never exceeds 2.5")
-        void easeFactorCeiling() {
-            var card = createCard(3, 2.5, 3);
-            when(flashcardRepo.findById(CARD_ID)).thenReturn(Optional.of(card));
-            when(flashcardRepo.save(any())).thenAnswer(i -> i.getArgument(0));
-
-            // quality=5 is max, could push ease factor upward
-            var result = srsService.reviewCard(USER_ID, CARD_ID, 5);
-
-            assertTrue(result.newEaseFactor() <= 2.5,
-                    "Ease factor should not exceed 2.5, got " + result.newEaseFactor());
-        }
-
-        @Test
-        @DisplayName("throws when card not found")
-        void cardNotFound() {
-            when(flashcardRepo.findById("nonexistent")).thenReturn(Optional.empty());
-            assertThrows(ResourceNotFoundException.class,
-                    () -> srsService.reviewCard(USER_ID, "nonexistent", 4));
-        }
-
-        @Test
-        @DisplayName("throws when card belongs to different user")
-        void cardOwnershipMismatch() {
-            var card = createCard(1, 2.5, 0);
-            when(flashcardRepo.findById(CARD_ID)).thenReturn(Optional.of(card));
-
-            assertThrows(ResourceNotFoundException.class,
-                    () -> srsService.reviewCard("other-user", CARD_ID, 4));
+            assertEquals(100, result.masteryLevel());
+            assertEquals(10, result.xpAwarded());
+            verify(xpService).awardXp(USER_ID, 10);
         }
     }
 
     // ========================================================================
-    // getCardsDue
+    // optimizeWeights
     // ========================================================================
 
-    @Test
-    @DisplayName("getCardsDue returns due cards with count")
-    void getCardsDue() {
-        var card = createCard(1, 2.5, 1);
-        card.setCreatedAt(LocalDateTime.now());
-        when(flashcardRepo.findByUserIdAndNextReviewDateBefore(eq(USER_ID), any()))
-                .thenReturn(List.of(card));
+    @Nested
+    @DisplayName("optimizeWeights")
+    class OptimizeWeights {
 
-        var result = srsService.getCardsDue(USER_ID);
+        @Test
+        @DisplayName("returns null when insufficient reviews")
+        void insufficientReviews() {
+            when(reviewLogRepo.countByUserId(USER_ID)).thenReturn(50L);
 
-        assertEquals(1, result.totalDue());
-        assertEquals(1, result.cards().size());
+            assertNull(srsService.optimizeWeights(USER_ID));
+            verify(reviewLogRepo, never()).findByUserIdOrderByCreatedAtAsc(any());
+        }
     }
 
     // ========================================================================
-    // getReviewStats — categorization
+    // getReviewStats
     // ========================================================================
 
-    @Test
-    @DisplayName("getReviewStats categorizes cards: new, learning, review")
-    void reviewStatsCategorization() {
-        var newCard = createCard(0, 2.5, 0);       // reps=0 → new
-        var learningCard = createCard(1, 2.5, 2);   // reps<3 → learning
-        var reviewCard = createCard(6, 2.5, 5);     // reps>=3 → review
+    @Nested
+    @DisplayName("getReviewStats")
+    class GetReviewStats {
 
-        when(flashcardRepo.findByUserIdAndNextReviewDateBefore(eq(USER_ID), any()))
-                .thenReturn(List.of(newCard, learningCard, reviewCard));
-        when(flashcardRepo.countByUserId(USER_ID)).thenReturn(10L);
+        @Test
+        @DisplayName("returns empty stats for new user")
+        void emptyForNewUser() {
+            when(progressRepo.findByUserId(USER_ID)).thenReturn(List.of());
 
-        var stats = srsService.getReviewStats(USER_ID);
+            var result = srsService.getReviewStats(USER_ID);
 
-        assertEquals(3, stats.due());
-        assertEquals(1, stats.newCards());
-        assertEquals(1, stats.learning());
-        assertEquals(1, stats.review());
-        assertEquals(10, stats.total());
+            assertEquals(0, result.dueToday());
+            assertEquals(0, result.totalReviewed());
+        }
+    }
+
+    // ========================================================================
+    // getStudySession
+    // ========================================================================
+
+    @Nested
+    @DisplayName("getStudySession")
+    class GetStudySession {
+
+        @Test
+        @DisplayName("mixes due items and new items")
+        void mixesDueAndNew() {
+            var vocab1 = VocabItem.builder().build(); vocab1.setId("v1");
+            var vocab2 = VocabItem.builder().build(); vocab2.setId("v2");
+            var vocab3 = VocabItem.builder().build(); vocab3.setId("v3");
+            when(vocabItemRepo.findByTopicId("topic-1"))
+                    .thenReturn(List.of(vocab1, vocab2, vocab3));
+
+            var dueProgress = UserVocabProgress.builder()
+                    .userId(USER_ID).vocabItemId("v1")
+                    .srsState(SrsState.REVIEW).stability(2.0)
+                    .lastReviewed(LocalDateTime.now().minusDays(5))
+                    .nextReview(LocalDateTime.now().minusDays(1))
+                    .build();
+            dueProgress.setId("p-1");
+            when(progressRepo.findByUserIdAndVocabItemIdIn(eq(USER_ID), anyList()))
+                    .thenReturn(List.of(dueProgress));
+            when(vocabItemRepo.findById("v1")).thenReturn(Optional.of(vocab1));
+
+            var result = srsService.getStudySession(USER_ID, "topic-1", 20);
+
+            assertEquals(1, result.reviewCount());
+            assertEquals(2, result.newCount());
+            assertEquals(3, result.totalCount());
+        }
     }
 }

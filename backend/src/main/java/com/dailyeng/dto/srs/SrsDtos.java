@@ -2,12 +2,12 @@ package com.dailyeng.dto.srs;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 
 import java.util.List;
 
 /**
- * All SRS (Spaced Repetition System) module DTOs as Java 21 records.
- * Compact and immutable request/response types.
+ * All SRS (Spaced Repetition System) DTOs as Java 21 records.
  */
 public final class SrsDtos {
 
@@ -15,30 +15,50 @@ public final class SrsDtos {
 
     // ============================== Requests ==============================
 
-    public record ReviewCardRequest(
-            @Min(0) @Max(5) int quality
+    public record ReviewRequest(
+            @NotBlank String vocabItemId,
+            @Min(1) @Max(4) int rating
     ) {}
 
     // ============================== Responses ==============================
 
-    public record FlashcardResponse(
-            String id, String front, String back,
-            String topicId, int interval, double easeFactor,
-            int repetitions, String nextReviewDate, String lastReviewed,
-            String createdAt
+    public record ReviewResponse(
+            String nextReviewDate,
+            int intervalDays,
+            double stability,
+            double difficulty,
+            double retrievability,
+            int masteryLevel,
+            String srsState,
+            int xpAwarded
     ) {}
 
-    public record ReviewResultResponse(
-            FlashcardResponse card, int newInterval,
-            double newEaseFactor, int newRepetitions
+    public record DueItemResponse(
+            String vocabItemId,
+            String word,
+            String meaning,
+            String pronunciation,
+            String partOfSpeech,
+            String exampleSentence,
+            double retrievability,
+            long daysSinceReview,
+            int masteryLevel,
+            String srsState
     ) {}
 
     public record ReviewStatsResponse(
-            int due, int newCards, int learning,
-            int review, int total
+            int dueToday,
+            int dueThisWeek,
+            int totalReviewed,
+            int masteredCount,
+            double retentionRate,
+            int newCount
     ) {}
 
-    public record DueCardsResponse(
-            List<FlashcardResponse> cards, int totalDue
+    public record StudySessionResponse(
+            List<DueItemResponse> items,
+            int newCount,
+            int reviewCount,
+            int totalCount
     ) {}
 }
