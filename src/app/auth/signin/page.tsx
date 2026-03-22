@@ -14,7 +14,6 @@ const stats: SignInStat[] = [
 
 export default async function SignInPage() {
   // In the future, you can fetch data from DB, API, or File System here
-  // const stats = await fetchStats()
 
   return <SignInPageClient stats={stats} />;
 }
