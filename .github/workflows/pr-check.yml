@@ -37,21 +37,6 @@ jobs:
     name: Frontend Build
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: pass
-          POSTGRES_DB: db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -67,20 +52,9 @@ jobs:
       - name: Lint
         run: npm run lint --if-present
 
-      - name: Generate Prisma Schema & Push
-        run: |
-          npx prisma generate
-          npx prisma db push
-        env:
-          DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
-          DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
-
       - name: Build
         run: npm run build
         env:
-          # Dummy values so Next.js build doesn't fail on missing env vars
-          DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
-          DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
           AUTH_SECRET: "dummy-secret-for-ci"
           JWT_SECRET: "dummy-jwt-for-ci"
           NEXT_PUBLIC_API_URL: "http://localhost:8080/api"
