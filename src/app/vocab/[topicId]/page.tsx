@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 
 import VocabTopicPageClient from "@/components/page/VocabTopicPageClient";
 import { getVocabTopicById } from "@/actions/vocab";

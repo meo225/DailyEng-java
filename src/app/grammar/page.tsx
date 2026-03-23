@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Suspense } from "react";
 import { ProtectedRoute, PageIcons } from "@/components/auth/protected-route";
 import { HubHero } from "@/components/hub";

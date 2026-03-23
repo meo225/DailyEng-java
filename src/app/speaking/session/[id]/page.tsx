@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import SpeakingSessionClient from "@/components/page/SpeakingSessionClient";
 import type {
   InitialTurn,

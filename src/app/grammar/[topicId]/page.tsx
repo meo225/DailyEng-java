@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import GrammarTopicPageClient from "@/components/page/GrammarTopicPageClient";
 import { getGrammarTopicById } from "@/actions/grammar";
 import { notFound } from "next/navigation";
