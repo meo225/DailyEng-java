@@ -40,7 +40,6 @@ const faqs: FAQ[] = [
 
 export default async function HelpPage() {
   // In the future, you can fetch data from DB, API, or File System here
-  // const faqs = await fetchFAQs()
 
   return <HelpPageClient faqs={faqs} />;
 }
