@@ -67,11 +67,6 @@ jobs:
       - name: Lint
         run: npm run lint --if-present
 
-      - name: Generate Prisma Schema & Push
-        run: echo "Skipped: Prisma has been removed from this project."
-        env:
-          DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
-          DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
 
       - name: Build
         run: npm run build
