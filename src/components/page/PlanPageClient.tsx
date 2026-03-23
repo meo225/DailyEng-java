@@ -26,9 +26,11 @@ import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Mock functions - will be replaced with actual server actions later
+// Real API functions
+import { apiClient } from "@/lib/api-client";
+
 const toggleTaskCompletion = async (taskId: string, completed: boolean) => {
-  console.log("Mock: toggleTaskCompletion", taskId, completed);
+  await apiClient.put(`/study/tasks/${taskId}/toggle`, { completed });
   return { success: true };
 };
 
@@ -37,12 +39,12 @@ const updateTaskTime = async (
   startTime: string,
   endTime: string
 ) => {
-  console.log("Mock: updateTaskTime", taskId, startTime, endTime);
+  await apiClient.put(`/study/tasks/${taskId}/time`, { startTime, endTime });
   return { success: true };
 };
 
-const updateExamDate = async (userId: string, date: Date) => {
-  console.log("Mock: updateExamDate", userId, date);
+const updateExamDate = async (_userId: string, date: Date) => {
+  await apiClient.put("/study/plan/exam-date", { examDate: date.toISOString() });
   return { success: true };
 };
 

@@ -152,56 +152,32 @@ public class AuthController {
     // ======================== Cookie Helpers ========================
 
     private void setCookies(HttpServletResponse response, String accessToken, String refreshToken) {
-        setAccessTokenCookie(response, accessToken);
-        setRefreshTokenCookie(response, refreshToken);
+        var cookieConfig = appProperties.getCookie();
+        response.addCookie(buildCookie("access_token", accessToken, cookieConfig.getAccessMaxAge()));
+        response.addCookie(buildCookie("refresh_token", refreshToken, cookieConfig.getRefreshMaxAge()));
     }
 
     private void setAccessTokenCookie(HttpServletResponse response, String accessToken) {
-        var cookieConfig = appProperties.getCookie();
-        Cookie cookie = new Cookie("access_token", accessToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieConfig.isSecure());
-        cookie.setPath("/");
-        cookie.setMaxAge(cookieConfig.getAccessMaxAge());
-        if (cookieConfig.getDomain() != null && !cookieConfig.getDomain().isBlank()) {
-            cookie.setDomain(cookieConfig.getDomain());
-        }
-        cookie.setAttribute("SameSite", cookieConfig.getSameSite());
-        response.addCookie(cookie);
-    }
-
-    private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        var cookieConfig = appProperties.getCookie();
-        Cookie cookie = new Cookie("refresh_token", refreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieConfig.isSecure());
-        cookie.setPath("/");
-        cookie.setMaxAge(cookieConfig.getRefreshMaxAge());
-        if (cookieConfig.getDomain() != null && !cookieConfig.getDomain().isBlank()) {
-            cookie.setDomain(cookieConfig.getDomain());
-        }
-        cookie.setAttribute("SameSite", cookieConfig.getSameSite());
-        response.addCookie(cookie);
+        response.addCookie(buildCookie("access_token", accessToken, appProperties.getCookie().getAccessMaxAge()));
     }
 
     private void clearCookies(HttpServletResponse response) {
+        response.addCookie(buildCookie("access_token", "", 0));
+        response.addCookie(buildCookie("refresh_token", "", 0));
+    }
+
+    private Cookie buildCookie(String name, String value, int maxAge) {
         var cookieConfig = appProperties.getCookie();
-
-        Cookie accessCookie = new Cookie("access_token", "");
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(cookieConfig.isSecure());
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(0);
-        accessCookie.setAttribute("SameSite", cookieConfig.getSameSite());
-        response.addCookie(accessCookie);
-
-        Cookie refreshCookie = new Cookie("refresh_token", "");
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(cookieConfig.isSecure());
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(0);
-        refreshCookie.setAttribute("SameSite", cookieConfig.getSameSite());
-        response.addCookie(refreshCookie);
+        Cookie cookie = new Cookie(name, value);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(cookieConfig.isSecure());
+        cookie.setPath("/");
+        cookie.setMaxAge(maxAge);
+        if (cookieConfig.getDomain() != null && !cookieConfig.getDomain().isBlank()) {
+            cookie.setDomain(cookieConfig.getDomain());
+        }
+        cookie.setAttribute("SameSite", cookieConfig.getSameSite());
+        return cookie;
     }
 
     /**

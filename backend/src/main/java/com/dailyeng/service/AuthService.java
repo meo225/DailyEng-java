@@ -19,7 +19,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -27,7 +27,6 @@ import java.util.HexFormat;
 
 /**
  * Authentication service handling register, login, Google OAuth, and password management.
- * Ports business logic from src/actions/auth.ts + src/lib/auth.ts.
  */
 @Slf4j
 @Service
@@ -43,10 +42,10 @@ public class AuthService {
     private final EmailService emailService;
     private final AppProperties appProperties;
     private final ObjectMapper objectMapper;
+    private final RestClient.Builder restClientBuilder;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo?id_token=";
-    private static final RestTemplate REST_TEMPLATE = new RestTemplate();
 
     // ========================
     // Registration & Login
@@ -224,7 +223,11 @@ public class AuthService {
     private JsonNode verifyGoogleToken(String idToken) {
         try {
             String url = GOOGLE_TOKENINFO_URL + idToken;
-            String responseBody = REST_TEMPLATE.getForObject(url, String.class);
+            String responseBody = restClientBuilder.build()
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .body(String.class);
             return objectMapper.readTree(responseBody);
         } catch (Exception e) {
             log.error("Failed to verify Google ID token: {}", e.getMessage());

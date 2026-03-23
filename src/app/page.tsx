@@ -18,8 +18,20 @@ import { TestEnglishSection } from "@/components/home/TestEnglishSection"
 import { BuildStudyPlanSection } from "@/components/home/BuildStudyPlanSection"
 import { FinalCtaSection } from "@/components/home/FinalCtaSection"
 
-// Static review data (mock — will be fetched from Hibernate backend in the future)
-import { reviews } from "@/data/reviews"
+// Reviews fetched from backend, with static fallback
+import { reviews as fallbackReviews } from "@/data/reviews"
+import type { Review } from "@/types/home"
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+async function fetchReviews(): Promise<Review[]> {
+  try {
+    const res = await fetch(`${API_BASE}/site-content/reviews`, { next: { revalidate: 3600 } });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  } catch {
+    return fallbackReviews;
+  }
+}
 
 // ─── Below-fold CLIENT components: dynamic import ──
 // These have 'use client' — dynamic() code-splits them into separate chunks
@@ -81,6 +93,7 @@ const partnerLogos: PartnerLogo[] = [
 // ─── Page ──────────────────────────────────────────
 
 export default async function HomePage() {
+  const reviews = await fetchReviews();
   return (
     <div className="min-h-screen bg-background font-sans selection:bg-primary-200 selection:text-primary-900">
       <HeroSection />

@@ -1,19 +1,26 @@
-// Server Component - No "use client" directive
-// Data fetching happens here on the server
-
+// Server Component - Sign In page fetches stats from backend
 import SignInPageClient from "@/components/page/SignInPageClient";
 import type { SignInStat } from "@/components/page/SignInPageClient";
 
-// Mock data - In the future, this can be replaced with actual data fetching
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
-const stats: SignInStat[] = [
-  { value: "50K+", label: "Active Learners" },
-  { value: "1000+", label: "Lessons" },
-  { value: "4.9", label: "User Rating" },
-];
+async function fetchStats(): Promise<SignInStat[]> {
+  try {
+    const res = await fetch(`${API_BASE}/site-content/signin_stats`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  } catch {
+    return [
+      { value: "50K+", label: "Active Learners" },
+      { value: "1000+", label: "Lessons" },
+      { value: "4.9", label: "User Rating" },
+    ];
+  }
+}
 
 export default async function SignInPage() {
-  // In the future, you can fetch data from DB, API, or File System here
-
+  const stats = await fetchStats();
   return <SignInPageClient stats={stats} />;
 }

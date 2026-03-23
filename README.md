@@ -1,39 +1,49 @@
 # DailyEng
 
-DailyEng is an AI-powered English Learning Platform designed to provide comprehensive tools for improving vocabulary, grammar, and speaking skills. Combining a sleek, interactive frontend with a robust Spring Boot backend, it leverages generative AI and advanced speech recognition to deliver personalized learning experiences.
+An AI-powered, full-stack English Learning Platform designed for interactive learning, pronunciation assessment, and spaced repetition (FSRS). The application is built with a decoupled architecture featuring a modern React frontend and a robust Java backend.
 
 ## Key Features
 
-- **Personalized Study Plans**: Gamified learning with daily missions, achievements, and XP tracking.
-- **Interactive Vocabulary & Grammar Hubs**: Flashcards, spacing repetition systems (SRS), quizzes, and a comprehensive database of definitions and collocations.
-- **AI Speaking Scenarios**: Realistic conversational roleplays powered by Azure Speech (STT/TTS) and Google Gemini for dynamic context. Includes fluency and pronunciation scoring.
-- **Progress Tracking**: Granular tracking across different skills (Reading, Writing, Listening, Speaking) with leaderboards for community engagement.
-- **Rich Aesthetics**: A visually stunning frontend utilizing 3D assets (Three.js), modern motion design (Framer Motion, AnimeJS), and Tailwind CSS.
+- **Interactive Speaking Practice**: Real-time speech-to-text, text-to-speech, and pronunciation assessment using Azure Speech AI.
+- **FSRS Spaced Repetition**: Advanced vocabulary retention using the Free Spaced Repetition Scheduler algorithm with personalized weight optimization.
+- **Placement Testing & Study Plans**: Adaptive English level testing and automated generation of personalized study schedules.
+- **Grammar & Vocabulary Notebooks**: Personalized learning material tracking with AI-generated examples and explanations.
+- **Comprehensive Dashboard**: XP tracking, study streaks, daily tasks, and progress analytics.
 
 ---
 
 ## Tech Stack
 
-- **Frontend Framework**: Next.js 15 (React 19)
-- **Backend Framework**: Spring Boot 3.4 (Java 21)
-- **Database**: PostgreSQL 15
-- **ORM & Migrations**: Prisma (Frontend typing/schema), Flyway (Backend migrations)
-- **Authentication**: NextAuth.js (Auth.js) / JWT
-- **UI/Styling**: Tailwind CSS, Radix UI primitives, AnimeJS, Framer Motion, @react-three/fiber
-- **Testing**: Vitest (Frontend), JUnit/Spring Boot Test (Backend)
-- **AI / External APIs**: Google Gemini (GenAI), Azure Speech (STT/TTS), Pexels, Cloudinary, Resend
-- **Monitoring**: Sentry
+The application uses a separated frontend/backend architecture:
+
+### Frontend
+- **Framework**: Next.js 15 (App Router, React 19)
+- **Styling**: Tailwind CSS v4, Framer Motion, Anime.js, React Three Fiber (3D)
+- **UI Components**: Radix UI (shadcn/ui), Lucide React
+- **State Management**: Zustand, React Hook Form
+- **Language**: TypeScript
+
+### Backend
+- **Language**: Java 21
+- **Framework**: Spring Boot 3.4
+- **Database**: PostgreSQL 16
+- **Database Migrations**: Flyway
+- **Authentication**: JWT (JSON Web Tokens) with HttpOnly cookies, Google OAuth 2.0
+- **AI Integrations**: Azure Cognitive Services (Speech), Google Gemini (Generative AI)
+- **Build Tool**: Maven
 
 ---
 
 ## Prerequisites
 
-Ensure your development environment meets the following requirements:
+Before starting, ensure you have the following installed:
 
-- **Node.js**: v22 or higher (for the Next.js frontend)
-- **Java**: JDK 21+ (for the Spring Boot backend)
-- **Maven**: (Required for Java package management)
-- **Docker**: (For easily running the local PostgreSQL database)
+- **Node.js**: v20 or higher
+- **Java**: JDK 21
+- **Maven**: 3.9+
+- **PostgreSQL**: 15 or higher (or Docker)
+- **Azure Account**: For Speech services (TTS/STT/Pronunciation Assessment)
+- **Google Cloud Platform Account**: For OAuth and Gemini AI (optional but recommended)
 
 ---
 
@@ -42,69 +52,95 @@ Ensure your development environment meets the following requirements:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/DailyEng-java.git
+git clone https://github.com/your-username/DailyEng-java.git
 cd DailyEng-java
 ```
 
 ### 2. Database Setup
 
-Start the PostgreSQL database using Docker Compose:
+Start a local PostgreSQL instance. Using Docker is the easiest way:
 
 ```bash
-docker-compose up -d postgres
+docker run --name dailyeng-postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=dailyeng \
+  -p 5432:5432 \
+  -d postgres:16
 ```
 
-This will spin up a PostgreSQL 15 instance on `localhost:5432` with the database name `dailyeng`.
+### 3. Backend Setup (Spring Boot)
 
-### 3. Backend Setup
-
-The backend API is built with Spring Boot and resides in the `backend/` directory.
+Navigate to the backend directory:
 
 ```bash
 cd backend
 ```
 
-Copy the example environment file:
+Copy the example environment file and configure it:
 
 ```bash
 cp .env.example .env
 ```
 
-Configure your `.env` variables (e.g., provide your `JWT_SECRET`, database credentials, and any AI/API keys like `GEMINI_API_KEY`).
+Review the `.env` file and configure the necessary variables. At a minimum, ensure your database connection is correct:
 
-Start the Spring Boot server using the provided dev script:
+```properties
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/dailyeng
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=postgres
 
-```bash
-./start-dev.sh
+# Generate a strong 32+ character JWT secret
+JWT_SECRET=your_super_secret_jwt_key_here_make_it_long
 ```
-*(Alternatively, you can run `mvn spring-boot:run`)*
 
-The backend will be available at `http://localhost:8080/api`. Note that **Flyway** will automatically run schema migrations on startup.
-
-### 4. Frontend Setup
-
-The Next.js frontend is located at the root of the repository. Open a new terminal session in the project root:
+Run the application (this will automatically apply Flyway migrations):
 
 ```bash
-# Install dependencies
+mvn spring-boot:run
+```
+
+The backend API will start on `http://localhost:8080`.
+
+### 4. Frontend Setup (Next.js)
+
+Open a new terminal and navigate back to the project root:
+
+```bash
+cd ..
+```
+
+Install dependencies:
+
+```bash
 npm install
-
-# Copy the example environment variables
-cp .env.example .env
-
-# Generate Prisma Client (essential for Next.js and type-safety)
-npx prisma generate
+# or
+yarn install
 ```
 
-Ensure the variables in `.env` point to your local backend and database properly. (By default `NEXT_PUBLIC_API_URL` should be `http://localhost:8080/api`).
+Copy the environment file:
 
-Start the Next.js development server:
+```bash
+cp .env.local.example .env.local
+# or if .env.example exists:
+cp .env.example .env.local
+```
+
+Ensure the API URL points to your local backend:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080/api
+```
+
+Start the development server:
 
 ```bash
 npm run dev
+# or 
+yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
 ---
 
@@ -112,58 +148,59 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Directory Structure
 
-```text
+``` text
 DailyEng-java/
-├── backend/                   # Spring Boot Backend
+├── backend/                     # Spring Boot Application
 │   ├── src/main/java/com/dailyeng/
-│   │   ├── config/            # Security, DB, and Bean configs
-│   │   ├── controller/        # REST Controllers
-│   │   ├── dto/               # Data Transfer Objects
-│   │   ├── entity/            # JPA Entities
-│   │   ├── repository/        # Spring Data Repositories
-│   │   ├── security/          # JWT Filters and Providers
-│   │   ├── service/           # Business Logic
-│   │   └── websocket/         # WebSocket handlers
-│   ├── src/main/resources/
-│   │   ├── application.yml    # Main Spring properties
-│   │   └── db/migration/      # Flyway SQL migration scripts
-│   ├── pom.xml                # Maven Dependencies
-│   └── start-dev.sh           # Backend launcher
-├── prisma/                    # Database models and seeders
-│   ├── schema.prisma          # Shared Schema Definition
-│   └── seed_*.ts              # Rich data generation scripts
-├── src/                       # Next.js Frontend
-│   ├── app/                   # App Router pages and layouts
-│   ├── components/            # Reusable React components (Radix/Tailwind)
-│   ├── data/                  # Static definitions and queries
-│   ├── hooks/                 # Custom React hooks
-│   ├── lib/                   # Utility functions, API clients
-│   └── styles/                # Global CSS (global.css)
-├── package.json               # Node.js Dependencies
-└── next.config.mjs            # Next.js Configuration
+│   │   ├── config/              # Spring configurations (CORS, Properties)
+│   │   ├── controller/          # REST API endpoints
+│   │   ├── dto/                 # Data Transfer Objects (Java Records)
+│   │   ├── entity/              # JPA Entities (Database mapping)
+│   │   ├── exception/           # Global exception handling
+│   │   ├── repository/          # Spring Data JPA repositories
+│   │   ├── security/            # JWT filters and auth configuration
+│   │   └── service/             # Business logic layer
+│   └── src/main/resources/
+│       ├── application.yml      # Spring Boot properties
+│       └── db/migration/        # Flyway SQL migration scripts (V1 -> V10)
+│
+├── src/                         # Next.js Application
+│   ├── app/                     # Next.js App Router pages and layouts
+│   ├── actions/                 # Server actions for API communication
+│   ├── components/              # Reusable React components
+│   │   ├── auth/                # Sign-in/up components
+│   │   ├── dashboard/           # Dashboard UI
+│   │   ├── speaking/            # Audio recording and assessment UI
+│   │   └── ui/                  # Base Radix/shadcn components
+│   ├── contexts/                # React Context providers (Auth, etc.)
+│   ├── hooks/                   # Custom React hooks (useAudioRecorder, etc.)
+│   ├── lib/                     # Utilities (apiClient, formatters)
+│   └── types/                   # TypeScript interfaces
+│
+├── public/                      # Static assets (images, fonts, 3d models)
+├── components.json              # shadcn/ui configuration
+├── next.config.mjs              # Next.js configuration
+└── package.json                 # Node dependencies
 ```
 
 ### Request Lifecycle
 
-1. **Client interaction**: User interacts with Next.js React components.
-2. **API Call**: Next.js client-side or server-actions call the Spring Boot API (`http://localhost:8080/api`).
-3. **Authentication**: Spring Security intercepts the request via a JWT Filter mechanism.
-4. **Processing**: The Spring `@RestController` maps the request, hands off logic to the `Service` layer.
-5. **Database**: Service queries PostgreSQL using Spring Data JPA.
-6. **Response**: DTOs are serialized back as JSON to the Next.js client, which re-renders the UI contextually.
+1. **User Action**: User interacts with a React component (e.g., submits an audio recording).
+2. **Frontend API Call**: A Server Action or client-side fetch uses the `apiClient` (`src/lib/api-client.ts`) to make an HTTP request.
+3. **Authentication**: The `apiClient` automatically attaches the HttpOnly `access_token` cookie (or forwards it during Server SSR).
+4. **Backend Security**: Spring Security (`JwtAuthenticationFilter`) validates the JWT and sets the `SecurityContext`.
+5. **Controller Layer**: A Spring `RestController` receives the request, validates the DTO automatically using `@Valid`, and delegates to a Service.
+6. **Service Layer**: The `Service` executes business logic (e.g., calling Azure Speech SDK or running FSRS algorithm).
+7. **Database Interaction**: The Service uses a `Repository` to read/write JPA Entities to PostgreSQL.
+8. **Response**: The Controller returns a DTO mapped to JSON, which the frontend renders.
 
-### Key Components
+### Data Model Highlights
 
-- **Authentication System**: Utilizes OAuth (Google) via NextAuth.js combined with standard JWTs issued and verified by the Spring Boot backend (`app.jwt.secret`).
-- **Data Persistence**: Prisma acts as the SSOT schema. Schema updates are authored in `schema.prisma`. However, database schema alterations are applied on the backend by Flyway using pure SQL scripts in `backend/src/main/resources/db/migration`, enforcing strict database versioning.
-- **AI Integrations**: Gemini SDK powers dynamic text processing (roleplay scenario generation and conversational contexts) while Azure Cognitive Speech converts spoken user audio to text and generates life-like TTS responses.
-- **Real-time Metrics**: For speaking scenarios, audio input is captured on the client, evaluated via Web Speech APIs for confidence, duration, and pace, and validated synchronously against the backend's learning rubrics.
-
-### Core Database Schema Context
-- **Users & Auth**: `User`, `Account`, `Session`, linking OAuth and custom profiles.
-- **Learning Content**: `Topic`, `VocabItem`, `ListeningTask`, `SpeakingScenario`. Allows grouping under `TopicGroup` hierarchies.
-- **Progress Tracking**: `UserTopicProgress`, `UserVocabProgress`, `UserLessonProgress`, mapping users to mastery percentages and implementing Spaced Repetition logic.
-- **Gamification**: `DailyMission`, `ProfileStats` (Tracks XP, streaks, coins), and `LeaderboardEntry`.
+- **User**: Core identity, linked to Accounts (OAuth), ProfileStats (XP/Streak), and Sessions.
+- **SiteContent**: Flexible JSONB storage for CMS-like data (FAQs, reviews, grammar samples).
+- **SpeakingSession / SpeakingTurn**: Tracks multi-turn conversational AI sessions with detailed scoring (Azure Speech).
+- **VocabItem**: Tracks individual vocabulary knowledge using FSRS (Free Spaced Repetition Scheduler) markers (stability, difficulty, retrievability).
+- **StudyPlan / StudyTask**: Manages personalized daily learning goals.
 
 ---
 
@@ -171,125 +208,101 @@ DailyEng-java/
 
 ### Backend (`backend/.env`)
 
-| Variable | Description |
-|----------|-------------|
-| `SPRING_DATASOURCE_URL` | PostgreSQL URL (`jdbc:postgresql://localhost:5432/dailyeng`) |
-| `SPRING_DATASOURCE_USERNAME` | Database username (`postgres`) |
-| `SPRING_DATASOURCE_PASSWORD` | Database password (`postgres`) |
-| `JWT_SECRET` | Secret base64 line for token signing (> 32 chars long) |
-| `GEMINI_API_KEY` | Google Gemini API Key |
-| `AZURE_SPEECH_KEY` | Azure Cognitive Speech API Key |
-| `AZURE_SPEECH_REGION` | Azure Speech region (e.g. `eastjp`, `eastus`) |
-| `GOOGLE_CLIENT_ID` / `SECRET` | Google OAuth credentials |
-| `RESEND_API_KEY` | Resend key for transactional emails |
-| `PEXELS_API_KEY` | Pexels API Key for image search features |
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `SPRING_DATASOURCE_URL` | PostgreSQL JDBC connection string | `jdbc:postgresql://localhost:5432/dailyeng` |
+| `SPRING_DATASOURCE_USERNAME` | Database username | `postgres` |
+| `SPRING_DATASOURCE_PASSWORD` | Database password | `postgres` |
+| `JWT_SECRET` | Secret key for signing JWTs | (32+ character random string) |
+| `GOOGLE_CLIENT_ID` | For Google OAuth login | `123-abc.apps.googleusercontent.com` |
+| `AZURE_SPEECH_KEY` | Azure Cognitive Services key | `xyz123...` |
+| `AZURE_SPEECH_REGION` | Azure region | `eastus` |
+| `GEMINI_API_KEY` | Google Gemini API key | `AIzaSy...` |
 
-### Frontend (`.env`)
+### Frontend (`.env.local`)
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | Direct Prisma connection string (`postgresql://postgres:postgres@localhost:5432/dailyeng`) |
-| `NEXT_PUBLIC_API_URL` | The endpoint for backend API (`http://localhost:8080/api`) |
-| `NEXTAUTH_URL` | The URL for NextAuth callbacks (`http://localhost:3000`) |
-| `AUTH_SECRET` | Secret for NextAuth session encryption |
-| `CLOUDINARY_URL` | URL configuration for Cloudinary uploads |
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `NEXT_PUBLIC_API_URL` | Base URL for the Spring Boot backend | `http://localhost:8080/api` |
+| `NEXT_PUBLIC_APP_URL` | The URL where the frontend is hosted | `http://localhost:3000` |
 
 ---
 
 ## Available Scripts
 
-### Frontend (Node.js)
+### Frontend (Root directory)
 
 | Command | Description |
-|---------|-------------|
-| `npm run dev` | Start the Next.js Dev Server |
-| `npm run build` | Build the Next.js application for production |
-| `npm run start` | Start the production server locally |
-| `npm run lint` | Run ESLint to analyze code |
-| `npm run test` | Run the Vitest testing suite natively |
-| `npm run test:ui` | Run Vitest with the graphical UI |
-| `npm run seed:vocab` | Execute Prisma scripts to seed initial vocabulary |
+| ------- | ----------- |
+| `npm run dev` | Starts the Next.js development server |
+| `npm run build` | Builds the Next.js application for production |
+| `npm run start` | Starts the production server |
+| `npm run lint` | Runs ESLint to check for code issues |
+| `npm run test` | Runs the Vitest test suite |
 
-### Backend (Maven)
+### Backend (`/backend` directory)
 
 | Command | Description |
-|---------|-------------|
-| `./start-dev.sh` | Bash script wrapper to load `.env` and start Spring Boot |
-| `mvn spring-boot:run` | Start the Spring Boot Application directly |
-| `mvn clean install` | Clean cache and compile the Java JAR |
-| `mvn test` | Run backend JUnit/Mockito tests |
-
----
-
-## Testing
-
-### Frontend
-The frontend uses `Vitest` for ultra-fast, native ES module testing.
-
-```bash
-# Run tests
-npm run test
-
-# Run tests with coverage
-npm run test:coverage
-```
-
-### Backend
-The backend utilizes JUnit 5, Mockito, and Spring Security Test to ensure stability. Tests should isolate controllers using `@WebMvcTest` and mock services, with integration tests running against a test profile database.
-
-```bash
-cd backend
-mvn test
-```
+| ------- | ----------- |
+| `mvn spring-boot:run` | Runs the Spring Boot application |
+| `mvn compile` | Compiles the Java code |
+| `mvn test` | Runs the JUnit test suite |
+| `mvn clean package` | Builds the executable `.jar` file for production |
 
 ---
 
 ## Deployment
 
-### Backend (Providing via Docker)
+The application consists of a statically built (or Node-hosted) frontend and a Java backend. They can be deployed separately.
 
-You can containerize the Spring Boot application. Ensure you provide environment variables at runtime:
+### Backend (Spring Boot)
 
-```bash
-# Within the backend dir
-mvn clean package -DskipTests
+The backend compiles into a standalone executable JAR.
 
-# Build Image
-docker build -t dailyeng-api .
+1. Build the production JAR:
+   ```bash
+   cd backend
+   mvn clean package -DskipTests
+   ```
+2. The executable will be located at `backend/target/dailyeng-api-0.1.0.jar`.
+3. Deploy this JAR to a VPS (using systemd), AWS Elastic Beanstalk, Render (Web Service using Docker or Java environment), or Heroku.
+4. Ensure the production PostgreSQL database is accessible and environment variables (JWT secret, API keys) are set. Flyway will automatically migrate the database on startup.
 
-# Run Image
-docker run -p 8080:8080 \
-  -e SPRING_DATASOURCE_URL=jdbc:postgresql://production-db:5432/dailyeng \
-  -e JWT_SECRET=your_prod_secret \
-  dailyeng-api
-```
+### Frontend (Next.js)
 
-### Frontend (Platform Deployment - Vercel)
+The frontend is optimized for deployment on Vercel.
 
-The Next.js framework is highly optimized for Vercel. Connect the GitHub repository directly to a new Vercel project.
-1. Add environment variables from `.env` payload in the Vercel dashboard.
-2. Build Command: `npm run build` (Preconfigured by default).
-3. The platform will automatically deploy commits to your `main` branch.
+1. Connect your GitHub repository to Vercel.
+2. Set the Framework Preset to "Next.js".
+3. Set the Root Directory to the project root (if not automatically detected).
+4. Add the `NEXT_PUBLIC_API_URL` environment variable pointing to your deployed backend.
+5. Deploy.
+
+Alternatively, you can build a Docker image for the frontend using the standard Next.js Dockerfile template.
 
 ---
 
-## Troubleshooting
+## System Architecture Diagrams
 
-### Flyway Migration Errors
-**Error**: `Relation "Account" does not exist` or similar metadata errors on boot.
-**Solution**: Ensure your PostgreSQL database is completely empty before running the application if you change core baseline scripts. Flyway expects the baseline version to match the schema context. You can wipe the DB (`docker rm -f dailyeng-postgres && docker-compose up -d`) and start the backend to recreate schemas globally.
+### Authentication Flow (JWT in HttpOnly Cookies)
 
-### Prisma Schema Mismatch
-**Error**: Prisma client throws validation errors when mutating data.
-**Solution**: The database schema may have evolved via Flyway. In the project root, ensure you fetch the latest Introspection state if it deviates, but primarily rely on regenerating the client:
-```bash
-npx prisma generate
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant NextJS as Next.js Server
+    participant API as Spring Boot API
+    
+    Browser->>API: POST /api/auth/login (Credentials)
+    API-->>Browser: Set-Cookie access_token (HttpOnly) & refresh_token
+    
+    Note over Browser,API: Subsequent API calls
+    Browser->>API: GET /api/user/me (Cookies automatically sent)
+    API->>API: JwtAuthenticationFilter validates cookie
+    API-->>Browser: User Data
+    
+    Note over Browser,NextJS: Server-Side Rendering (SSR)
+    Browser->>NextJS: GET /dashboard (Includes Cookies)
+    NextJS->>API: GET /api/user/me (Forward Cookies)
+    API-->>NextJS: User Data
+    NextJS-->>Browser: Rendered HTML
 ```
-
-### Azure Speech Errors
-**Error**: `WebSocket upgrade failed` or 401 Unauthorized via STT functionality.
-**Solution**: Double-check `AZURE_SPEECH_REGION`. `eastus` vs `eastjp` must perfectly map the configuration tied to your specific Azure portal resource.
-
-### NextAuth Callbacks Failing
-**Error**: Google Sign-in redirects to an error page or `http://localhost:3000` is rejected.
-**Solution**: In Google Cloud Console, ensure `http://localhost:3000/api/auth/callback/google` is expressly added to authorized redirect URIs for your OAuth client ID.

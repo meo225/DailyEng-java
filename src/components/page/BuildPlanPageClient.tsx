@@ -91,11 +91,46 @@ function getOptionIcon(iconId?: string): React.ReactNode {
 
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
+import { apiClient } from "@/lib/api-client"
 
-// Mock function - will be replaced with actual server action later
-const generateStudySchedule = async (userId: string, courseIds: string[], days: number[]) => {
-  console.log("Mock: generateStudySchedule", userId, courseIds, days)
-  return { success: true }
+// Map survey answers to backend CreatePlanRequest
+const GOAL_MAP: Record<string, string> = {
+  career: "work",
+  study: "intermediate",
+  exam: "exam",
+  travel: "travel",
+  personal: "casual",
+}
+
+const TIME_MAP: Record<string, number> = {
+  "15min": 2,   // ~1.75 hrs/week
+  "30min": 4,   // ~3.5 hrs/week
+  "1hour": 7,   // 7 hrs/week
+  "2hours": 14, // 14 hrs/week
+}
+
+const generateStudySchedule = async (
+  _userId: string,
+  _courseIds: string[],
+  _days: number[],
+  answers: Record<number, string[]>
+) => {
+  // Q1 = goal, Q3 = time per day, Q8 = topics of interest
+  const goalAnswer = answers[1]?.[0] || "personal";
+  const timeAnswer = answers[3]?.[0] || "30min";
+  const interests = answers[8] || ["General"];
+
+  const goal = GOAL_MAP[goalAnswer] || "casual";
+  const hoursPerWeek = TIME_MAP[timeAnswer] || 4;
+
+  await apiClient.post("/study/plan", {
+    goal,
+    level: "B1", // Default — will be updated from placement test results if available
+    hoursPerWeek,
+    interests,
+  });
+
+  return { success: true };
 }
 
 // ... imports remain the same
@@ -123,7 +158,7 @@ export default function BuildPlanPageClient({ questions, allCourses }: BuildPlan
   const handleBuildPlan = async () => {
     setIsLoading(true);
     try {
-      await generateStudySchedule(user?.id || "", selectedCourses, selectedDays);
+      await generateStudySchedule(user?.id || "", selectedCourses, selectedDays, answers);
       router.push("/plan");
     } catch (error) {
       console.error("Failed to build plan:", error);

@@ -65,6 +65,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/speaking/speech/voices").permitAll()
                         .requestMatchers(HttpMethod.POST, "/speaking/speech/synthesize").permitAll()
                         .requestMatchers(HttpMethod.GET, "/topic-groups/**").permitAll()
+                        // CMS content, placement test questions, dictionary (public)
+                        .requestMatchers(HttpMethod.GET, "/site-content/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/placement-test/questions").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/dictionary/**").permitAll()
                         // Actuator
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/actuator/info").permitAll()

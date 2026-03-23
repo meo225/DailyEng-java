@@ -1,20 +1,27 @@
-// Server Component - No "use client" directive
-// Data fetching happens here on the server
-
+// Server Component - Sign Up page fetches benefits from backend
 import SignUpPageClient from "@/components/page/SignUpPageClient";
 
-// Mock data - In the future, this can be replaced with actual data fetching
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
-const benefits = [
-  "Access to 1000+ interactive lessons",
-  "AI-powered speaking practice",
-  "Personalized learning paths",
-  "Progress tracking & analytics",
-  "Vocabulary builder with spaced repetition",
-];
+async function fetchBenefits(): Promise<string[]> {
+  try {
+    const res = await fetch(`${API_BASE}/site-content/signup_benefits`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  } catch {
+    return [
+      "Access to 1000+ interactive lessons",
+      "AI-powered speaking practice",
+      "Personalized learning paths",
+      "Progress tracking & analytics",
+      "Vocabulary builder with spaced repetition",
+    ];
+  }
+}
 
 export default async function SignUpPage() {
-  // In the future, you can fetch data from DB, API, or File System here
-
+  const benefits = await fetchBenefits();
   return <SignUpPageClient benefits={benefits} />;
 }
