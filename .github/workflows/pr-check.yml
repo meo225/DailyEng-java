@@ -37,46 +37,32 @@ jobs:
     name: Frontend Build
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: pass
-          POSTGRES_DB: db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
 
       - name: Set up Node 24
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Lint
-        run: npm run lint --if-present
+        run: pnpm lint
 
-      - name: Generate Prisma Schema & Push
-        run: |
-          npx prisma generate
-          npx prisma db push
-        env:
-          DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
-          DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
+      - name: Test
+        run: pnpm test
 
       - name: Build
-        run: npm run build
+        run: pnpm build
         env:
           # Dummy values so Next.js build doesn't fail on missing env vars
           DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
