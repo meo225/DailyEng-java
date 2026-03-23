@@ -21,6 +21,7 @@ import {
   type NotificationResult,
 } from "@/actions/notification";
 import { useUserProfile } from "@/contexts/UserProfileContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Type labels for NotificationType enum
 const typeLabels: Record<string, string> = {
@@ -94,8 +95,8 @@ export default function NotificationsPageClient({
   totalPages: initialTotalPages,
   currentPage: initialCurrentPage,
   unreadCount: initialUnreadCount,
-  userName,
-  userId,
+  userName: propsUserName,
+  userId: propsUserId,
 }: NotificationsPageClientProps) {
   const [isPending, startTransition] = useTransition();
   const [notifications, setNotifications] = useState(initialNotifications);
@@ -105,6 +106,11 @@ export default function NotificationsPageClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get real user info from auth context (server props may be empty)
+  const { user } = useAuth();
+  const userId = user?.id || propsUserId;
+  const userName = user?.name || propsUserName;
 
   // Get avatar from profile context
   const { profile } = useUserProfile();

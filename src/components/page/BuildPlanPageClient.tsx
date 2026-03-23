@@ -90,6 +90,7 @@ function getOptionIcon(iconId?: string): React.ReactNode {
 
 
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/AuthContext"
 
 // Mock function - will be replaced with actual server action later
 const generateStudySchedule = async (userId: string, courseIds: string[], days: number[]) => {
@@ -101,6 +102,7 @@ const generateStudySchedule = async (userId: string, courseIds: string[], days: 
 
 export default function BuildPlanPageClient({ questions, allCourses }: BuildPlanPageClientProps) {
   const router = useRouter()
+  const { user } = useAuth()
   const [stage, setStage] = useState<"intro" | "questions" | "results" | "schedule">("intro")
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<Record<number, string[]>>({})
@@ -121,8 +123,7 @@ export default function BuildPlanPageClient({ questions, allCourses }: BuildPlan
   const handleBuildPlan = async () => {
     setIsLoading(true);
     try {
-      // Hardcoded user-1 for now
-      await generateStudySchedule("user-1", selectedCourses, selectedDays);
+      await generateStudySchedule(user?.id || "", selectedCourses, selectedDays);
       router.push("/plan");
     } catch (error) {
       console.error("Failed to build plan:", error);

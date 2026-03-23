@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import type { TestStep, Question, ReadingPassage } from "./types"
+import { calculateCEFRLevel } from "./types"
+import { apiClient } from "@/lib/api-client"
 
 // ─── Hook ──────────────────────────────────────────
 
@@ -169,6 +171,20 @@ export function usePlacementTest({
       setCompletedTests((prev) => [...prev, feedbackTestId])
       const newCompleted = [...completedTests, feedbackTestId]
       if (newCompleted.length === testSteps.length) {
+        // All sections done — calculate and submit results to backend
+        const updatedScores = { ...testScores }
+        const overallScore = Math.round(
+          Object.values(updatedScores).reduce((a, b) => a + b, 0) / newCompleted.length
+        )
+        const cefrResult = calculateCEFRLevel(overallScore)
+        
+        // Submit to backend (fire-and-forget)
+        apiClient.post('/placement-test/submit', {
+          score: overallScore,
+          level: cefrResult.level,
+          breakdown: updatedScores,
+        }).catch((err) => console.warn("[placement-test] Failed to save result:", err))
+        
         setShowResults(true)
       }
     }

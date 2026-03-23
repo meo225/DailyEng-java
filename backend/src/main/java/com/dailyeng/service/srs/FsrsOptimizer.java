@@ -4,7 +4,6 @@ import com.dailyeng.entity.ReviewLog;
 import com.dailyeng.entity.UserVocabProgress.SrsState;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -25,7 +24,8 @@ import java.util.List;
 @Slf4j
 public final class FsrsOptimizer {
 
-    private FsrsOptimizer() {}
+    private FsrsOptimizer() {
+    }
 
     /** Minimum review logs needed before optimization can run. */
     public static final int MIN_REVIEWS_FOR_OPTIMIZATION = 100;
@@ -39,12 +39,12 @@ public final class FsrsOptimizer {
 
     // Weight bounds to prevent divergence
     private static final double[] LOWER_BOUNDS = {
-        0.01, 0.01, 0.01, 0.01, 1.0, 0.01, 0.01, 0.001, 0.01, 0.01,
-        0.01, 0.01, 0.001, 0.001, 0.5, 0.0001, 0.5
+            0.01, 0.01, 0.01, 0.01, 1.0, 0.01, 0.01, 0.001, 0.01, 0.01,
+            0.01, 0.01, 0.001, 0.001, 0.5, 0.0001, 0.5
     };
     private static final double[] UPPER_BOUNDS = {
-        5.0, 10.0, 50.0, 200.0, 15.0, 5.0, 10.0, 1.0, 5.0, 5.0,
-        5.0, 10.0, 1.0, 1.0, 10.0, 1.0, 10.0
+            5.0, 10.0, 50.0, 200.0, 15.0, 5.0, 10.0, 1.0, 5.0, 5.0,
+            5.0, 10.0, 1.0, 1.0, 10.0, 1.0, 10.0
     };
 
     // ========================================================================
@@ -59,8 +59,8 @@ public final class FsrsOptimizer {
      */
     public static double[] optimize(List<ReviewLog> reviewLogs) {
         if (reviewLogs.size() < MIN_REVIEWS_FOR_OPTIMIZATION) {
-            log.info("⏳ Insufficient reviews for optimization: {}/{}", 
-                     reviewLogs.size(), MIN_REVIEWS_FOR_OPTIMIZATION);
+            log.info("⏳ Insufficient reviews for optimization: {}/{}",
+                    reviewLogs.size(), MIN_REVIEWS_FOR_OPTIMIZATION);
             return null;
         }
 
@@ -138,7 +138,8 @@ public final class FsrsOptimizer {
         double totalLoss = 0;
         int count = 0;
         for (var review : reviews) {
-            if (review.getState() == SrsState.NEW || review.getStability() <= 0) continue;
+            if (review.getState() == SrsState.NEW || review.getStability() <= 0)
+                continue;
             boolean recalled = review.getRating() >= 2;
             double predicted = clamp(
                     predictRetrievability(weights, review.getStability(), review.getElapsedDays()),
@@ -158,7 +159,8 @@ public final class FsrsOptimizer {
      * R(t) = (1 + t / (9 * S))^(-1), but S itself depends on weights.
      */
     private static double predictRetrievability(double[] weights, double stability, double elapsedDays) {
-        if (stability <= 0) return 0;
+        if (stability <= 0)
+            return 0;
         return Math.pow(1 + elapsedDays / (9.0 * stability), -1);
     }
 
@@ -168,8 +170,7 @@ public final class FsrsOptimizer {
      */
     private static void computeGradients(
             double[] weights, ReviewLog review, boolean recalled,
-            double currentPred, double[] gradients
-    ) {
+            double currentPred, double[] gradients) {
         double delta = 1e-5;
         for (int i = 0; i < NUM_WEIGHTS; i++) {
             double origWeight = weights[i];
@@ -214,8 +215,8 @@ public final class FsrsOptimizer {
             // Lapse formula with weights
             double newStab = Math.max(weights[13],
                     weights[10] * Math.pow(difficulty, -weights[11])
-                              * (Math.pow(stability + 1, weights[12]) - 1)
-                              * Math.exp(weights[13]));
+                            * (Math.pow(stability + 1, weights[12]) - 1)
+                            * Math.exp(weights[13]));
             return predictRetrievability(weights, newStab, 0);
         }
 

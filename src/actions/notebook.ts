@@ -227,20 +227,33 @@ export type DictionaryGrammarResult = {
 // For now, return empty results since Prisma calls from client-side won't work  
 export async function searchDictionaryWords(
   query: string,
-  _limit: number = 10
+  limit: number = 10
 ): Promise<DictionaryWordResult[]> {
   if (!query.trim() || query.length < 2) return [];
-  // TODO: Migrate to backend endpoint POST /dictionary/words/search
-  console.warn("[notebook] searchDictionaryWords: needs backend migration");
-  return [];
+  try {
+    const response = await apiClient.get<{ results: DictionaryWordResult[]; total: number }>(
+      `/dictionary/words/search?q=${encodeURIComponent(query.trim())}&limit=${limit}`
+    );
+    return response.results;
+  } catch {
+    console.warn("[notebook] searchDictionaryWords: backend call failed");
+    return [];
+  }
 }
 
 export async function searchDictionaryGrammar(
   query: string,
-  _limit: number = 10
+  limit: number = 10
 ): Promise<DictionaryGrammarResult[]> {
   if (!query.trim() || query.length < 2) return [];
-  // TODO: Migrate to backend endpoint POST /dictionary/grammar/search
-  console.warn("[notebook] searchDictionaryGrammar: needs backend migration");
-  return [];
+  try {
+    const response = await apiClient.get<{ results: DictionaryGrammarResult[]; total: number }>(
+      `/dictionary/grammar/search?q=${encodeURIComponent(query.trim())}&limit=${limit}`
+    );
+    return response.results;
+  } catch {
+    console.warn("[notebook] searchDictionaryGrammar: backend call failed");
+    return [];
+  }
 }
+

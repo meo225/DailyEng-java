@@ -24,6 +24,7 @@ import { GamificationRoadmap } from "@/components/plan/gamification-roadmap"
 import Image from "next/image";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Mock functions - will be replaced with actual server actions later
 const toggleTaskCompletion = async (taskId: string, completed: boolean) => {
@@ -110,6 +111,7 @@ export default function PlanPageClient({
   stats,
 }: PlanPageClientProps) {
   const router = useRouter()
+  const { user } = useAuth()
   const [selectedPlanId, setSelectedPlanId] = useState<string>(todayLessons[0]?.id || "")
   const [isEditing, setIsEditing] = useState(false)
   const [completedLessons, setCompletedLessons] = useState<string[]>([])
@@ -138,7 +140,7 @@ export default function PlanPageClient({
   const handleUpdateExamDate = async () => {
     try {
       const date = new Date(tempExamDate)
-      await updateExamDate("user-1", date) // TODO: use real user id
+      await updateExamDate(user?.id || "", date)
       setIeltsExam({
         ...ieltsExam,
         examDate: tempExamDate,
