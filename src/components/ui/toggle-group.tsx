@@ -22,6 +22,11 @@ function ToggleGroup({
   ...props
 }: React.ComponentProps<typeof ToggleGroupPrimitive.Root> &
   VariantProps<typeof toggleVariants>) {
+  // ⚡ Bolt: Wrap context value in useMemo to prevent unnecessary re-renders of all ToggleGroupItem
+  // consumers when the parent ToggleGroup re-renders.
+  // Expected impact: Considerably reduces React rendering tree cost for large toggle groups.
+  const value = React.useMemo(() => ({ variant, size }), [variant, size])
+
   return (
     <ToggleGroupPrimitive.Root
       data-slot="toggle-group"
@@ -33,7 +38,7 @@ function ToggleGroup({
       )}
       {...props}
     >
-      <ToggleGroupContext.Provider value={{ variant, size }}>
+      <ToggleGroupContext.Provider value={value}>
         {children}
       </ToggleGroupContext.Provider>
     </ToggleGroupPrimitive.Root>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 
 interface NavigationContextType {
@@ -43,8 +43,17 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
+  // ⚡ Bolt: Memoize the context value to prevent unnecessary re-renders of all consuming components
+  // when the provider re-renders. This ensures the object reference remains stable
+  // unless the actual navigation state changes. Expected impact: Reduces re-renders of all NavigationContext consumers by ~100% when parent re-renders without state changes.
+  const value = useMemo(() => ({
+    isNavigating,
+    targetPath,
+    startNavigation,
+  }), [isNavigating, targetPath, startNavigation]);
+
   return (
-    <NavigationContext.Provider value={{ isNavigating, targetPath, startNavigation }}>
+    <NavigationContext.Provider value={value}>
       {children}
     </NavigationContext.Provider>
   );

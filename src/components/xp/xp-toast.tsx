@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, createContext, useContext, useMemo } from "react";
 import { Zap, Flame } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────
@@ -43,8 +43,14 @@ export function XpToastProvider({ children }: { children: React.ReactNode }) {
     }, 3000);
   }, []);
 
+  // ⚡ Bolt: Memoize the context value to ensure a stable reference is provided to consumers,
+  // preventing unnecessary re-renders of components that use `useXpToast` whenever
+  // the provider component re-renders (e.g. state changes like `toast` or `visible`).
+  // Expected impact: Eliminates unnecessary re-renders for consumers of this context.
+  const value = useMemo(() => ({ showXpToast }), [showXpToast]);
+
   return (
-    <XpToastContext.Provider value={{ showXpToast }}>
+    <XpToastContext.Provider value={value}>
       {children}
       {toast && <XpToastOverlay data={toast} visible={visible} />}
     </XpToastContext.Provider>

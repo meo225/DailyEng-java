@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, createContext, useContext, useMemo } from "react";
 import { Trophy, Sparkles, Star } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────
@@ -39,8 +39,14 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
     }, 4000);
   }, []);
 
+  // ⚡ Bolt: Memoize the context value to guarantee a stable object reference is passed to context
+  // consumers. This prevents components relying on `useLevelUp` from unnecessarily re-rendering
+  // every time the provider state (`data`, `phase`) updates.
+  // Expected impact: Eliminates unnecessary re-renders for consumers.
+  const value = useMemo(() => ({ showLevelUp }), [showLevelUp]);
+
   return (
-    <LevelUpContext.Provider value={{ showLevelUp }}>
+    <LevelUpContext.Provider value={value}>
       {children}
       {data && phase !== "hidden" && <LevelUpOverlay data={data} phase={phase} />}
     </LevelUpContext.Provider>
