@@ -36,9 +36,9 @@ export function TestDashboard({
         </div>
 
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-3">English Placement Test</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-3">Language Placement Test</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Complete each test in order to receive your comprehensive English level assessment.
+            Complete each test in order to receive your comprehensive language level assessment.
           </p>
         </div>
 

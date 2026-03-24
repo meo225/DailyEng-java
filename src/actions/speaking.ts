@@ -363,13 +363,17 @@ export async function analyzeAndScoreSession(
   );
 }
 
+export interface SessionHintResponse {
+  hint: string;
+  hintTranslation: string | null;
+}
+
 export async function getSessionHint(
   sessionId: string
-): Promise<string> {
-  const result = await apiClient.post<{ hint: string }>(
+): Promise<SessionHintResponse> {
+  return apiClient.post<SessionHintResponse>(
     `/speaking/sessions/${sessionId}/hint`
   );
-  return result.hint;
 }
 
 export async function getSessionDetailsById(

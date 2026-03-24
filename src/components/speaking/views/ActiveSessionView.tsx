@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import {
   Bot,
@@ -14,7 +15,8 @@ import {
   Pencil,
 } from "lucide-react";
 import type { Turn } from "@/hooks/speaking-session/types";
-import VoiceWaveform from "@/components/speaking/VoiceWaveform";
+
+const VoiceWaveform = dynamic(() => import("@/components/speaking/VoiceWaveform"), { ssr: false });
 
 interface ActiveSessionViewProps {
   scenario: { title: string };
@@ -24,6 +26,7 @@ interface ActiveSessionViewProps {
   isProcessing: boolean;
   mediaStream: MediaStream | null;
   hintText: string | null;
+  hintTranslation: string | null;
   isLoadingHint: boolean;
   sessionMode: "scripted" | "unscripted";
   showQuitDialog: boolean;
@@ -53,6 +56,7 @@ export default function ActiveSessionView({
   isProcessing,
   mediaStream,
   hintText,
+  hintTranslation,
   isLoadingHint,
   sessionMode,
   showQuitDialog,
@@ -118,6 +122,7 @@ export default function ActiveSessionView({
 
           <InputBar
             hintText={hintText}
+            hintTranslation={hintTranslation}
             isLoadingHint={isLoadingHint}
             isRecording={isRecording}
             isTranscribing={isTranscribing}
@@ -317,7 +322,7 @@ function MessageBubble({
                 : "bg-white text-foreground border border-border rounded-tl-sm"
             }`}
           >
-            <p className="leading-relaxed">{turn.text}</p>
+            <MessageText text={turn.text} isUser={isUser} />
           </div>
           <div
             className={`flex gap-2 mt-1 px-1 ${
@@ -352,6 +357,54 @@ function MessageBubble({
   );
 }
 
+/** Parses [Kanji](furigana) syntax and renders HTML ruby tags */
+function FuriganaText({ text }: { text: string }) {
+  const regex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<span key={lastIndex}>{text.slice(lastIndex, match.index)}</span>);
+    }
+    parts.push(
+      <ruby key={match.index} className="mx-0.5">
+        {match[1]}
+        <rt className="text-[10px] text-muted-foreground/80 font-medium tracking-widest">{match[2]}</rt>
+      </ruby>
+    );
+    lastIndex = regex.lastIndex;
+  }
+  
+  if (lastIndex < text.length) {
+    parts.push(<span key={lastIndex}>{text.slice(lastIndex)}</span>);
+  }
+
+  return <>{parts}</>;
+}
+
+/** Splits text from parenthetical translation and renders them separately */
+function MessageText({ text, isUser }: { text: string; isUser: boolean }) {
+  // Match trailing parenthetical: "Japanese text (English translation)"
+  const match = text.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+  if (!match) {
+    return <p className="leading-relaxed"><FuriganaText text={text} /></p>;
+  }
+  const mainText = match[1];
+  const translation = match[2];
+  return (
+    <div>
+      <p className="leading-relaxed"><FuriganaText text={mainText} /></p>
+      <p className={`text-xs mt-1 italic leading-snug ${
+        isUser ? "text-white/60" : "text-muted-foreground/60"
+      }`}>
+        {translation}
+      </p>
+    </div>
+  );
+}
+
 function TypingIndicator({ t }: { t: (key: string) => string }) {
   return (
     <div className="flex justify-start">
@@ -375,6 +428,7 @@ function TypingIndicator({ t }: { t: (key: string) => string }) {
 
 function InputBar({
   hintText,
+  hintTranslation,
   isLoadingHint,
   isRecording,
   isTranscribing,
@@ -387,6 +441,7 @@ function InputBar({
   t,
 }: {
   hintText: string | null;
+  hintTranslation: string | null;
   isLoadingHint: boolean;
   isRecording: boolean;
   isTranscribing: boolean;
@@ -403,6 +458,7 @@ function InputBar({
       {hintText && (
         <HintCard
           hintText={hintText}
+          hintTranslation={hintTranslation}
           sessionMode={sessionMode}
           onSpeakHint={onSpeakHint}
           onDismiss={onDismissHint}
@@ -512,17 +568,22 @@ function InputBar({
 
 function HintCard({
   hintText,
+  hintTranslation,
   sessionMode,
   onSpeakHint,
   onDismiss,
   t,
 }: {
   hintText: string;
+  hintTranslation: string | null;
   sessionMode: "scripted" | "unscripted";
   onSpeakHint: () => void;
   onDismiss: () => void;
   t: (key: string) => string;
 }) {
+  const mainText = hintText;
+  const translation = hintTranslation;
+
   return (
     <div className="mb-3 mx-auto max-w-lg motion-safe:animate-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50/80 border border-amber-200/60 shadow-md shadow-amber-100/40">
@@ -543,8 +604,13 @@ function HintCard({
               )}
             </p>
             <p className="text-[14px] text-amber-950 leading-relaxed font-medium">
-              &ldquo;{hintText}&rdquo;
+              &ldquo;<FuriganaText text={mainText} />&rdquo;
             </p>
+            {translation && (
+              <p className="text-xs mt-1.5 italic leading-snug text-amber-900/60">
+                {translation}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button

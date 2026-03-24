@@ -12,6 +12,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useAppStore } from "@/lib/store";
 
 interface PracticeItem {
     id: string
@@ -49,6 +50,9 @@ const generateMoreQuestions = (difficulty: "easy" | "medium" | "hard", type: "wr
 }
 
 export function VocabPracticeMode() {
+    const learningLanguage = useAppStore((state) => state.learningLanguage);
+    const langStr = learningLanguage === "ja" ? "Japanese" : "English";
+
     const [mode, setMode] = useState<"writing" | "speaking">("writing")
 
     // Separate state for each mode
@@ -217,7 +221,7 @@ export function VocabPracticeMode() {
                     <div className="space-y-2">
                         <div className="flex justify-between">
                             <span className="text-xs font-bold text-primary-500 uppercase tracking-wider">
-                                {currentQuestion.type === "writing" ? "Translate to English" : "Speak in English"}
+                                {currentQuestion.type === "writing" ? `Translate to ${langStr}` : `Speak in ${langStr}`}
                             </span>
                             {currentQuestion.difficulty && (
                                 <span className={cn(

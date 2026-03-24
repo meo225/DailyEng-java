@@ -6,6 +6,7 @@ import {
   getSpeakingHistoryStats,
   deleteSession,
 } from "@/actions/speaking";
+import { useAppStore } from "@/lib/store";
 import type { HistorySession, HistoryStats } from "./types";
 
 // ─── Hook ──────────────────────────────────────────
@@ -16,6 +17,7 @@ interface UseHistoryParams {
 }
 
 export function useHistory({ userId, activeTab }: UseHistoryParams) {
+  const learningLanguage = useAppStore((state) => state.learningLanguage);
   const [historySessions, setHistorySessions] = useState<HistorySession[]>([]);
   const [historyStats, setHistoryStats] = useState<HistoryStats | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -26,8 +28,18 @@ export function useHistory({ userId, activeTab }: UseHistoryParams) {
     null
   );
   const historyFetched = useRef(false);
+  const prevLanguage = useRef(learningLanguage);
 
-  // ── Lazy-load history stats (once) ──
+  // ── Reset stats fetch guard when language changes ──
+  useEffect(() => {
+    if (prevLanguage.current !== learningLanguage) {
+      historyFetched.current = false;
+      prevLanguage.current = learningLanguage;
+      setHistoryPage(1);
+    }
+  }, [learningLanguage]);
+
+  // ── Lazy-load history stats (once per language) ──
   useEffect(() => {
     if (!userId || activeTab !== "history" || historyFetched.current) return;
 
@@ -36,7 +48,7 @@ export function useHistory({ userId, activeTab }: UseHistoryParams) {
     getSpeakingHistoryStats(userId)
       .then((stats) => setHistoryStats(stats))
       .finally(() => setHistoryStatsLoading(false));
-  }, [userId, activeTab]);
+  }, [userId, activeTab, learningLanguage]);
 
   // ── Fetch history sessions ──
   useEffect(() => {
@@ -58,7 +70,7 @@ export function useHistory({ userId, activeTab }: UseHistoryParams) {
         setHistoryTotalPages(result.totalPages);
       })
       .finally(() => setHistoryLoading(false));
-  }, [userId, activeTab, historyPage, historyRatingFilter]);
+  }, [userId, activeTab, historyPage, historyRatingFilter, learningLanguage]);
 
   // ── Delete a session (optimistic) ──
   const handleDeleteSession = useCallback(
@@ -89,3 +101,4 @@ export function useHistory({ userId, activeTab }: UseHistoryParams) {
     handleDeleteSession,
   };
 }
+

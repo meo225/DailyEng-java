@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation"
 import dynamic from "next/dynamic"
 import { Menu, X, ChevronDown } from "lucide-react"
 import { LanguageSwitcher } from "./language-switcher"
+import { LearningLanguageSwitcher } from "./learning-language-switcher"
 import { useTranslation } from "@/hooks/use-translation"
 import { XpBar } from "./xp-bar"
 import { useNavigation } from "@/contexts/NavigationContext"
@@ -84,7 +85,7 @@ export function Navbar() {
           >
             <Image
               src="/logo.webp"
-              alt="DailyEng Logo"
+              alt="DailyLang Logo"
               width={36}
               height={36}
               className="rounded-xl object-cover shadow-sm"
@@ -93,7 +94,7 @@ export function Navbar() {
             />
             <div>
               <span className="hidden text-xl sm:inline text-gray-800">Daily</span>
-              <span className="hidden text-xl sm:inline text-primary-600 font-extrabold">Eng</span>
+              <span className="hidden text-xl sm:inline text-primary-600 font-extrabold">Lang</span>
             </div>
           </Link>
 
@@ -144,6 +145,9 @@ export function Navbar() {
               <XpBar />
             </div>
             <div className="hidden sm:block">
+              <LearningLanguageSwitcher />
+            </div>
+            <div className="hidden sm:block">
               <LanguageSwitcher />
             </div>
             <NavbarAuthSection />
@@ -166,6 +170,10 @@ export function Navbar() {
             {/* Mobile XP bar */}
             <div className="px-1 py-2 mb-2 border-b border-gray-100 pb-3">
               <XpBar />
+            </div>
+            <div className="px-3 py-2 flex items-center justify-between border-b border-gray-100 mb-2 pb-3">
+              <span className="text-sm font-semibold text-gray-500">Learning Language</span>
+              <LearningLanguageSwitcher />
             </div>
             <div className="px-3 py-2 flex items-center justify-between border-b border-gray-100 mb-2 pb-3">
               <span className="text-sm font-semibold text-gray-500">{t("common.language")}</span>

@@ -8,6 +8,7 @@ import ActiveSessionView from "@/components/speaking/views/ActiveSessionView";
 import HistoryView from "@/components/speaking/views/HistoryView";
 import RecordReviewView from "@/components/speaking/views/RecordReviewView";
 import CompletionView from "@/components/speaking/views/CompletionView";
+import { useAppStore } from "@/lib/store";
 
 // Re-export types for backward compatibility
 export type {
@@ -28,6 +29,7 @@ export default function SpeakingSessionClient(
 ) {
   const session = useSpeakingSession(props);
   const { scenario } = props;
+  const learningLanguage = useAppStore((s) => s.learningLanguage);
 
   // No scenario data — show skeleton
   if (!scenario) {
@@ -68,6 +70,7 @@ export default function SpeakingSessionClient(
           isProcessing={session.isProcessing}
           mediaStream={session.recording.mediaStream}
           hintText={session.hintText}
+          hintTranslation={session.hintTranslation}
           isLoadingHint={session.isLoadingHint}
           sessionMode={session.sessionMode}
           showQuitDialog={session.showQuitDialog}
@@ -76,7 +79,7 @@ export default function SpeakingSessionClient(
           conversationRef={session.conversationRef}
           onToggleRecording={session.recording.handleToggleRecording}
           onRequestHint={session.requestHint}
-          onDismissHint={() => session.setHintText(null)}
+          onDismissHint={() => { session.setHintText(null); session.setHintTranslation(null); }}
           onSpeakText={session.tts.speakText}
           onSpeakHint={async () => {
             if (session.tts.isSpeakingRef.current) {
@@ -119,6 +122,7 @@ export default function SpeakingSessionClient(
         <CompletionView
           assessmentData={session.assessmentData}
           sessionMode={session.sessionMode}
+          language={learningLanguage}
           backUrl={session.backUrl}
           onRetry={session.resetSession}
           router={session.router}
@@ -143,6 +147,7 @@ export default function SpeakingSessionClient(
           loadedSessionData={session.feedback.loadedSessionData}
           fromParam={session.fromParam}
           backUrl={session.backUrl}
+          language={learningLanguage}
           onBack={() => {
             session.setViewState("history");
             session.feedback.setSelectedRecordId(null);

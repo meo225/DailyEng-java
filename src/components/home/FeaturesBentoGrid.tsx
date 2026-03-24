@@ -20,11 +20,11 @@ export function FeaturesBentoGrid() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <RevealOnScroll className="text-center mb-16">
           <h2 className="text-4xl sm:text-4xl font-bold text-primary-800 mb-6">
-            Why Learners Choose DailyEng
+            Why Learners Choose DailyLang
           </h2>
           <p className="text-xl text-gray-600">
             We combine advanced AI with proven learning methods to help you
-            achieve fluency faster.
+            achieve fluency faster — in English, Japanese, and beyond.
           </p>
         </RevealOnScroll>
 
@@ -52,11 +52,11 @@ function SpeakFromDayOneCard() {
           <h3 className="text-2xl font-bold mb-4">
             Speak From Day One
           </h3>
-          <p className="text-gray-600 leading-relaxed mb-6">
-            Don't just read about English. Practice real-life
-            conversations with our AI tutor who listens, corrects your
-            pronunciation, and helps you sound natural.
-          </p>
+            <p className="text-gray-600 leading-relaxed mb-6">
+              Don't just read about a language. Practice real-life
+              conversations with our AI tutor who listens, corrects your
+              pronunciation, and helps you sound natural — in English or Japanese.
+            </p>
           <ul className="space-y-2">
             <li className="flex items-center gap-2 text-sm text-gray-700">
               <CheckCircle2 className="w-4 h-4 text-accent-500" />{" "}
@@ -94,8 +94,8 @@ function ContextualLearningCard() {
             Contextual Learning
           </h3>
           <p className="text-gray-600 text-sm leading-relaxed">
-            Learn vocabulary and grammar in the context of stories and
-            articles, not isolated lists.
+            Learn vocabulary and grammar in context — from English articles
+            to Japanese manga and real-world scenarios.
           </p>
         </div>
         <div className="mt-6 rounded-xl overflow-hidden bg-gradient-to-br from-secondary-50 to-purple-50 border border-secondary-100 p-3.5 space-y-2">
@@ -166,9 +166,9 @@ function DoraraCompanionCard() {
             Dorara Companion
           </h3>
           <p className="text-gray-600 leading-relaxed mb-6">
-            Stuck on a word? Need grammar help? Dorara is your 24/7 AI
-            companion ready to explain concepts instantly inside any
-            lesson.
+            Stuck on a kanji? Need grammar help? Dorara is your 24/7 AI
+            companion ready to explain concepts in any language, instantly
+            inside any lesson.
           </p>
           <Button
             variant="secondary"

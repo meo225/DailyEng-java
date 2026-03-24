@@ -1,15 +1,17 @@
-// Server Component - No "use client" directive
-// Data fetching happens here on the server
+"use client";
 
 import BuildPlanPageClient from "@/components/page/BuildPlanPageClient";
 import type { Question, Course } from "@/components/page/BuildPlanPageClient";
+import { useAppStore } from "@/lib/store";
 
-// Mock data - In the future, this can be replaced with actual data fetching
+// Mock data generator
 
-const questions: Question[] = [
+const getQuestions = (lang: "en" | "ja"): Question[] => {
+  const langName = lang === "ja" ? "Japanese" : "English";
+  return [
   {
     id: 1,
-    question: "What is your primary goal for learning English?",
+    question: `What is your primary goal for learning ${langName}?`,
     iconId: "briefcase",
     subtitle: "This helps us recommend the most relevant courses for you",
     options: [
@@ -56,44 +58,69 @@ const questions: Question[] = [
     iconId: "target",
     subtitle: "Select all that apply",
     multiSelect: true,
-    options: [
-      {
-        id: "ielts",
-        value: "ielts",
-        label: "IELTS",
-        description: "International English Language Testing System",
-      },
-      {
-        id: "toefl",
-        value: "toefl",
-        label: "TOEFL",
-        description: "Test of English as a Foreign Language",
-      },
-      {
-        id: "toeic",
-        value: "toeic",
-        label: "TOEIC",
-        description: "Test of English for International Communication",
-      },
-      {
-        id: "cambridge",
-        value: "cambridge",
-        label: "Cambridge (FCE/CAE/CPE)",
-        description: "Cambridge English Qualifications",
-      },
-      {
-        id: "duolingo",
-        value: "duolingo",
-        label: "Duolingo English Test",
-        description: "Modern adaptive English test",
-      },
-      {
-        id: "none",
-        value: "none",
-        label: "No specific exam",
-        description: "I'm not preparing for any exam",
-      },
-    ],
+      options: lang === "ja" ? [
+        {
+          id: "jlpt",
+          value: "jlpt",
+          label: "JLPT",
+          description: "Japanese-Language Proficiency Test",
+        },
+        {
+          id: "eju",
+          value: "eju",
+          label: "EJU",
+          description: "Examination for Japanese University Admission",
+        },
+        {
+          id: "bjt",
+          value: "bjt",
+          label: "BJT",
+          description: "Business Japanese Proficiency Test",
+        },
+        {
+          id: "none",
+          value: "none",
+          label: "No specific exam",
+          description: "I'm not preparing for any exam",
+        },
+      ] : [
+        {
+          id: "ielts",
+          value: "ielts",
+          label: "IELTS",
+          description: "International English Language Testing System",
+        },
+        {
+          id: "toefl",
+          value: "toefl",
+          label: "TOEFL",
+          description: "Test of English as a Foreign Language",
+        },
+        {
+          id: "toeic",
+          value: "toeic",
+          label: "TOEIC",
+          description: "Test of English for International Communication",
+        },
+        {
+          id: "cambridge",
+          value: "cambridge",
+          label: "Cambridge (FCE/CAE/CPE)",
+          description: "Cambridge English Qualifications",
+        },
+        {
+          id: "duolingo",
+          value: "duolingo",
+          label: "Duolingo English Test",
+          description: "Modern adaptive English test",
+        },
+        {
+          id: "none",
+          value: "none",
+          label: "No specific exam",
+          description: "I'm not preparing for any exam",
+        },
+      ],
   },
   {
     id: 3,
@@ -219,7 +246,7 @@ const questions: Question[] = [
   },
   {
     id: 6,
-    question: "What type of English do you need most?",
+    question: `What type of ${langName} do you need most?`,
     iconId: "globe",
     options: [
       {
@@ -239,7 +266,7 @@ const questions: Question[] = [
       {
         id: "academic",
         value: "academic",
-        label: "Academic English",
+        label: `Academic ${langName}`,
         iconId: "graduation-cap",
         description: "University and research",
       },
@@ -338,7 +365,7 @@ const questions: Question[] = [
   },
   {
     id: 9,
-    question: "What challenges do you face when learning English?",
+    question: `What challenges do you face when learning ${langName}?`,
     iconId: "target",
     subtitle: "Select all that apply",
     multiSelect: true,
@@ -410,7 +437,7 @@ const questions: Question[] = [
         id: "practical",
         value: "practical",
         label: "Real-world Application",
-        description: "Using English in daily life",
+        description: `Using ${langName} in daily life`,
       },
       {
         id: "goals",
@@ -427,13 +454,16 @@ const questions: Question[] = [
     ],
   },
 ];
+};
 
-const allCourses: Course[] = [
+const getCourses = (lang: "en" | "ja"): Course[] => {
+  const isJa = lang === "ja";
+  return [
   {
-    id: "ielts-complete",
-    title: "IELTS Complete Preparation",
+    id: "exam-complete",
+    title: isJa ? "JLPT Complete Preparation" : "IELTS Complete Preparation",
     description:
-      "Comprehensive IELTS preparation covering all four skills with practice tests and expert strategies.",
+      `Comprehensive ${isJa ? 'JLPT' : 'IELTS'} preparation covering all four skills with practice tests and expert strategies.`,
     duration: "12 weeks",
     level: "Intermediate - Advanced",
     category: "Exam Prep",
@@ -456,8 +486,8 @@ const allCourses: Course[] = [
     match: 85,
   },
   {
-    id: "business-english",
-    title: "Business English Mastery",
+    id: "business-language",
+    title: `Business ${isJa ? 'Japanese' : 'English'} Mastery`,
     description:
       "Professional communication skills for the workplace including meetings, presentations, and emails.",
     duration: "10 weeks",
@@ -534,10 +564,10 @@ const allCourses: Course[] = [
     match: 78,
   },
   {
-    id: "toefl-prep",
-    title: "TOEFL iBT Preparation",
+    id: "exam-prep",
+    title: isJa ? "EJU Preparation" : "TOEFL iBT Preparation",
     description:
-      "Complete preparation for the TOEFL iBT test with strategies and practice.",
+      `Complete preparation for the ${isJa ? 'EJU' : 'TOEFL'} test with strategies and practice.`,
     duration: "10 weeks",
     level: "Intermediate - Advanced",
     category: "Exam Prep",
@@ -576,7 +606,7 @@ const allCourses: Course[] = [
     id: "pronunciation-perfect",
     title: "Perfect Pronunciation",
     description:
-      "Master English pronunciation with AI-powered feedback and practice.",
+      "Master pronunciation with AI-powered feedback and practice.",
     duration: "6 weeks",
     level: "All Levels",
     category: "Speaking",
@@ -586,8 +616,13 @@ const allCourses: Course[] = [
     match: 85,
   },
 ];
+};
 
-export default async function BuildPlanPage() {
-  // In the future, you can fetch data from DB, API, or File System here
-  return <BuildPlanPageClient questions={questions} allCourses={allCourses} />;
+export default function BuildPlanPage() {
+  const learningLanguage = useAppStore((state) => state.learningLanguage);
+
+  const questions = getQuestions(learningLanguage as "en" | "ja");
+  const courses = getCourses(learningLanguage as "en" | "ja");
+
+  return <BuildPlanPageClient questions={questions} allCourses={courses} />;
 }

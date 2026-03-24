@@ -9,6 +9,7 @@ import { useAppStore } from "@/lib/store";
  */
 export function useTextToSpeech() {
   const ttsVoice = useAppStore((state) => state.ttsVoice);
+  const learningLanguage = useAppStore((state) => state.learningLanguage);
   const isSpeakingRef = useRef(false);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   /** Holds the resolve callback of the in-flight speakText promise. */
@@ -35,11 +36,17 @@ export function useTextToSpeech() {
     try {
       const API_BASE =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-      const response = await fetch(`${API_BASE}/speaking/speech/synthesize`, {
+      // Strip parenthetical English translations so TTS only reads the target language
+      // Also strip furigana [Kanji](reading) syntax, keeping only the kanji surface form
+      const ttsText = text
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // [駅](えき) → 駅
+        .replace(/\s*\([^)]*\)\s*$/g, "")         // trailing (English) → removed
+        .trim();
+      const response = await fetch(`${API_BASE}/speaking/speech/synthesize?targetLanguage=${learningLanguage}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ text, voice: ttsVoice }),
+        body: JSON.stringify({ text: ttsText, voice: ttsVoice }),
       });
 
       if (!response.ok) {

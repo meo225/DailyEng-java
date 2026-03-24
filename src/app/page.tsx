@@ -1,20 +1,21 @@
-// Server Component - No "use client" directive
-// Server components are directly imported (zero client JS)
-// Only truly interactive (client) components use dynamic() for code splitting
+// Server Component with auth redirect
+// Authenticated users → redirect to /vocab (app dashboard)
+// Unauthenticated users → see the marketing landing page
 
+import { redirect } from "next/navigation"
 import dynamic from "next/dynamic"
 import type { FeatureTab, PartnerLogo } from "@/types/home"
+import { auth } from "@/lib/auth"
 
 // ─── Above-fold: eagerly imported ──────────────────
+import { PublicNavbar } from "@/components/home/public-navbar"
 import { HeroSection } from "@/components/home/HeroSection"
 import { LogosMarquee } from "@/components/home/LogosMarquee"
 import { SocialProofSection } from "@/components/home/SocialProofSection"
 import { FeaturesBentoGrid } from "@/components/home/FeaturesBentoGrid"
 
 // ─── Below-fold SERVER components: direct import ───
-// These are server components — they contribute ZERO client JS.
-// Using dynamic() on them would incorrectly force them into the client bundle.
-import { TestEnglishSection } from "@/components/home/TestEnglishSection"
+import { TestLanguageSection } from "@/components/home/TestLanguageSection"
 import { BuildStudyPlanSection } from "@/components/home/BuildStudyPlanSection"
 import { FinalCtaSection } from "@/components/home/FinalCtaSection"
 
@@ -34,9 +35,6 @@ async function fetchReviews(): Promise<Review[]> {
 }
 
 // ─── Below-fold CLIENT components: dynamic import ──
-// These have 'use client' — dynamic() code-splits them into separate chunks
-// so their JS isn't parsed/evaluated until needed.
-
 const FeatureTabsSection = dynamic(
   () => import("@/components/home/FeatureTabsSection").then((m) => ({ default: m.FeatureTabsSection })),
 )
@@ -69,7 +67,7 @@ const featureTabs: FeatureTab[] = [
     label: "Personal Study Plan",
     title: "Personal Study Plan",
     description:
-      "DailyEng adapts to your goals. Whether you're practicing for school, work, or exams — we guide your progress with a personalized learning roadmap.",
+      "DailyLang adapts to your goals. Whether you're practicing for school, work, or exams — we guide your progress with a personalized learning roadmap.",
     image: "/personal-study-plan.jpg",
   },
   {
@@ -88,14 +86,24 @@ const partnerLogos: PartnerLogo[] = [
   { src: "/cambridge-logo.jpg", alt: "Cambridge" },
   { src: "/toefl-logo.png", alt: "TOEFL" },
   { src: "/ielts-logo.png", alt: "IELTS" },
+  { src: "/jlpt-logo.png", alt: "JLPT" },
+  { src: "/jtest-logo.png", alt: "J-TEST" },
+  { src: "/nattest-logo.png", alt: "NAT-TEST" },
 ]
 
 // ─── Page ──────────────────────────────────────────
 
 export default async function HomePage() {
+  // Server-side auth check: redirect authenticated users to the app dashboard
+  const session = await auth();
+  if (session?.user) {
+    redirect("/vocab");
+  }
+
   const reviews = await fetchReviews();
   return (
     <div className="min-h-screen bg-background font-sans selection:bg-primary-200 selection:text-primary-900">
+      <PublicNavbar />
       <HeroSection />
       <LogosMarquee partnerLogos={partnerLogos} />
       <SocialProofSection />
@@ -111,7 +119,7 @@ export default async function HomePage() {
 
       {/* Server components — direct import, zero client JS */}
       <div className="content-lazy">
-        <TestEnglishSection />
+        <TestLanguageSection />
       </div>
       <div className="content-lazy">
         <BuildStudyPlanSection />

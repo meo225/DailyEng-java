@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAppStore } from "@/lib/store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +13,10 @@ import {
   getGrammarBookmarkIds,
   getGrammarBookmarks,
 } from "@/actions/bookmark";
+import {
+  getGrammarTopicGroups,
+  getGrammarTopicsWithProgress,
+} from "@/actions/grammar";
 import {
   HubHero,
   TopicGroupsSidebar,
@@ -87,10 +92,13 @@ export default function GrammarPageClient({
   showHero = true,
 }: GrammarPageClientProps) {
   const { user } = useAuth();
+  const learningLanguage = useAppStore((state) => state.learningLanguage);
   const [isPending, startTransition] = useTransition();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string>("Tenses");
+  const [selectedGroup, setSelectedGroup] = useState<string>(
+    grammarGroups[0]?.name || "Tenses"
+  );
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("All");
   const [activeTab, setActiveTab] = useState<TabType>("topics");
   const [bookmarkedTopics, setBookmarkedTopics] =
@@ -102,6 +110,26 @@ export default function GrammarPageClient({
   >([]);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const bookmarksPerPage = 8;
+
+  // Live state for groups and topics (initially from SSR props, refetched on language change)
+  const [liveGroups, setLiveGroups] = useState<TopicGroup[]>(grammarGroups);
+  const [liveTopics, setLiveTopics] = useState<GrammarTopic[]>(grammarTopics);
+
+  // Refetch grammar data when language changes
+  useEffect(() => {
+    getGrammarTopicGroups()
+      .then((groups) => {
+        setLiveGroups(groups);
+        if (groups.length > 0) {
+          setSelectedGroup(groups[0].name);
+          setSelectedSubcategory("All");
+        }
+      });
+    getGrammarTopicsWithProgress(user?.id)
+      .then((result) => {
+        setLiveTopics(result.topics.map(mapDbTopicToGrammarTopic));
+      });
+  }, [learningLanguage, user?.id]);
 
   // Fetch bookmark IDs on mount
   useEffect(() => {
@@ -169,10 +197,10 @@ export default function GrammarPageClient({
   const isSearchMode = searchQuery.trim().length > 0;
 
   const currentSubcategories =
-    grammarGroups.find((g) => g.name === selectedGroup)?.subcategories || [];
+    liveGroups.find((g) => g.name === selectedGroup)?.subcategories || [];
 
   // Filter topics based on search or normal mode (similar to Speaking Room)
-  const filteredTopics = grammarTopics.filter((topic) => {
+  const filteredTopics = liveTopics.filter((topic) => {
     // In search mode, search ALL topics
     if (isSearchMode) {
       const matchesSearch =
@@ -315,7 +343,7 @@ export default function GrammarPageClient({
             <div className="grid lg:grid-cols-5 gap-8 mt-6">
               <div className="lg:col-span-1 space-y-6">
                 <TopicGroupsSidebar
-                  groups={grammarGroups}
+                  groups={liveGroups}
                   selectedGroup={selectedGroup}
                   onGroupChange={(name, firstSub) => {
                     setSelectedGroup(name);

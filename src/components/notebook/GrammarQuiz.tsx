@@ -71,7 +71,7 @@ export function GrammarQuiz({
                     <p className="text-sm font-semibold text-gray-600">Fill in the blank:</p>
                     <p className="text-sm text-gray-400 italic">Vietnamese: {item.examples[0].vi}</p>
                     <Input
-                      placeholder="Type your answer in English..."
+                      placeholder="Type your answer in the target language..."
                       value={quizAnswers[item.id] || ""}
                       onChange={(e) => onQuizAnswer(item.id, e.target.value)}
                       className="h-10 rounded-xl border-primary-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100"

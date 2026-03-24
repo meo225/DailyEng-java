@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAppStore } from "@/lib/store";
 import { useTranslation } from "@/hooks/use-translation";
 import {
   startSessionWithGreeting,
@@ -12,7 +11,7 @@ import {
   analyzeAndScoreSession,
   getSessionHint,
 } from "@/actions/speaking";
-import { buildAssessmentData, buildScoresWithIcons } from "@/lib/speaking-session-utils";
+import { buildAssessmentData } from "@/lib/speaking-session-utils";
 import { useTextToSpeech } from "./useTextToSpeech";
 import { useAudioRecording } from "./useAudioRecording";
 import { useSessionFeedback } from "./useSessionFeedback";
@@ -54,6 +53,7 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
     "unscripted"
   );
   const [hintText, setHintText] = useState<string | null>(null);
+  const [hintTranslation, setHintTranslation] = useState<string | null>(null);
   const [isLoadingHint, setIsLoadingHint] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isStartingSession, setIsStartingSession] = useState(false);
@@ -185,8 +185,9 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
 
       if (sessionMode === "scripted" && result.sessionId) {
         try {
-          const hint = await getSessionHint(result.sessionId);
-          setHintText(hint);
+          const hintResult = await getSessionHint(result.sessionId);
+          setHintText(hintResult.hint);
+          setHintTranslation(hintResult.hintTranslation ?? null);
         } catch {
           console.error("Failed to auto-fetch hint for scripted session start");
         }
@@ -236,6 +237,7 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
 
     setTurns((prev) => [...prev, userTurn]);
     setHintText(null);
+    setHintTranslation(null);
 
     try {
       const result = await submitTurn(sessionId, text, undefined, speechMetrics);
@@ -267,8 +269,9 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
 
       if (sessionMode === "scripted" && sessionId) {
         try {
-          const hint = await getSessionHint(sessionId);
-          setHintText(hint);
+          const hintResult = await getSessionHint(sessionId);
+          setHintText(hintResult.hint);
+          setHintTranslation(hintResult.hintTranslation ?? null);
         } catch {
           console.error("Failed to auto-fetch hint in scripted mode");
         }
@@ -337,8 +340,9 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
     setIsLoadingHint(true);
     setHintText(null);
     try {
-      const hint = await getSessionHint(sessionId);
-      setHintText(hint);
+      const hintResult = await getSessionHint(sessionId);
+      setHintText(hintResult.hint);
+      setHintTranslation(hintResult.hintTranslation ?? null);
     } catch {
       toast.error("Failed to get hint");
     } finally {
@@ -415,7 +419,9 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
     sessionMode,
     setSessionMode,
     hintText,
+    hintTranslation,
     setHintText,
+    setHintTranslation,
     isLoadingHint,
     isProcessing,
     isStartingSession,

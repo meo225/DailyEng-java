@@ -100,21 +100,21 @@ export function ReviewsMarquee({ reviews, onViewAll }: ReviewsMarqueeProps) {
         >
           {/* Column 1 - Scroll Up */}
           <div className="space-y-6 animate-scroll-up hover:paused">
-            {reviews.map((review, idx) => (
+            {[...reviews, ...reviews].map((review, idx) => (
               <ReviewCard key={`col1-${idx}`} review={review} />
             ))}
           </div>
 
           {/* Column 2 - Scroll Down */}
           <div className="space-y-6 animate-scroll-down hover:paused hidden md:block">
-            {[...reviews].reverse().map((review, idx) => (
+            {[...reviews, ...reviews].reverse().map((review, idx) => (
               <ReviewCard key={`col2-${idx}`} review={review} variant="verified" />
             ))}
           </div>
 
           {/* Column 3 - Scroll Up */}
           <div className="space-y-6 animate-scroll-up hover:paused hidden lg:block">
-            {reviews.map((review, idx) => (
+            {[...reviews, ...reviews].map((review, idx) => (
               <ReviewCard key={`col3-${idx}`} review={review} variant="toefl" />
             ))}
           </div>

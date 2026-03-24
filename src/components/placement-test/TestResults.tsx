@@ -44,7 +44,7 @@ export function TestResults({ testSteps, testScores, overallScore, onRestart }: 
             <Trophy className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Test Completed!</h1>
-          <p className="text-muted-foreground">Here&apos;s your comprehensive English assessment</p>
+          <p className="text-muted-foreground">Here&apos;s your comprehensive language assessment</p>
         </div>
 
         {/* CEFR Level Card */}

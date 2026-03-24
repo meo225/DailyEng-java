@@ -13,12 +13,17 @@ interface ChatMessage {
   timestamp: Date
 }
 
+import { useAppStore } from "@/lib/store";
+
 export default function VocabHelperChatbot() {
+  const learningLanguage = useAppStore((state) => state.learningLanguage);
+  const langStr = learningLanguage === "ja" ? "Japanese" : "English";
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
       role: "assistant",
-      content: "Hi! I'm your vocabulary helper. Ask me anything about words, meanings, or how to say something in English!",
+      content: `Hi! I'm your vocabulary helper. Ask me anything about words, meanings, or how to say something in ${langStr}!`,
       timestamp: new Date(),
     },
   ])
@@ -149,7 +154,7 @@ export default function VocabHelperChatbot() {
                       const utterance = new SpeechSynthesisUtterance(
                         message.content
                       );
-                      utterance.lang = "en-US";
+                      utterance.lang = learningLanguage === "ja" ? "ja-JP" : "en-US";
                       window.speechSynthesis.speak(utterance);
                     }
                   }}

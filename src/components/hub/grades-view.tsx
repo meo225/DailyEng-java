@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { Card } from "@/components/ui/card"
 import {
   TrendingUp,
@@ -12,8 +13,46 @@ import {
   PenTool,
   HelpCircle,
 } from "lucide-react"
-import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+
+// Lazy-load recharts components to reduce initial bundle size
+const RechartsRadar = dynamic(
+  () => import("recharts").then((mod) => {
+    const { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } = mod;
+    // Return a wrapper component that renders the chart
+    const RechartsRadarChart = ({ data }: { data: any[] }) => (
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart data={data}>
+          <PolarGrid stroke="hsl(var(--border))" />
+          <PolarAngleAxis dataKey="skill" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+          <PolarRadiusAxis
+            angle={30}
+            domain={[0, 100]}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+          />
+          <Radar
+            name="Score"
+            dataKey="score"
+            stroke="hsl(var(--secondary-500))"
+            fill="hsl(var(--secondary-400))"
+            fillOpacity={0.5}
+          />
+          <ChartTooltip content={<ChartTooltipContent />} />
+        </RadarChart>
+      </ResponsiveContainer>
+    );
+    RechartsRadarChart.displayName = "RechartsRadarChart";
+    return RechartsRadarChart;
+  }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
+        Loading chart...
+      </div>
+    ),
+  }
+)
 
 interface LessonGrade {
   id: string
@@ -109,25 +148,7 @@ export function GradesView({ lessonGrades, skillScores, overallProgress, average
             }}
             className="h-[250px]"
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={skillScores}>
-                <PolarGrid stroke="hsl(var(--border))" />
-                <PolarAngleAxis dataKey="skill" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                <PolarRadiusAxis
-                  angle={30}
-                  domain={[0, 100]}
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                />
-                <Radar
-                  name="Score"
-                  dataKey="score"
-                  stroke="hsl(var(--secondary-500))"
-                  fill="hsl(var(--secondary-400))"
-                  fillOpacity={0.5}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-              </RadarChart>
-            </ResponsiveContainer>
+            <RechartsRadar data={skillScores} />
           </ChartContainer>
         </div>
 

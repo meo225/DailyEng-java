@@ -62,7 +62,8 @@ async function fetchJava(path: string, options: RequestInit = {}) {
 export async function sendDoraraMessage(
   messages: DoraraChatMessage[],
   userMessage: string,
-  currentPage: string
+  currentPage: string,
+  learningLanguage: string = "en"
 ): Promise<DoraraChatResponse> {
   try {
     const res = await fetchJava("/dorara/chat", {
@@ -75,6 +76,7 @@ export async function sendDoraraMessage(
         })),
         userMessage,
         currentPage,
+        targetLanguage: learningLanguage
       }),
     });
     return {

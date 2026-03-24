@@ -172,14 +172,17 @@ const ERROR_WORD_STYLES: Record<string, string> = {
 export default function PronunciationAssessmentReview({
   data,
   mode = "unscripted",
+  language = "en",
   onBack,
   onRetry,
 }: {
   data: AssessmentData;
   mode?: "scripted" | "unscripted";
+  language?: string;
   onBack: () => void;
   onRetry: () => void;
 }) {
+  const isJapanese = language === "ja";
   const [enabledErrors, setEnabledErrors] = useState<Record<string, boolean>>(
     Object.fromEntries(ALL_ERROR_TYPES.map((e) => [e.key, true]))
   );
@@ -216,7 +219,9 @@ export default function PronunciationAssessmentReview({
               Assessment Result
             </h1>
             <p className="text-sm text-slate-400 mt-0.5">
-              Click any word to view IPA phonemes · Click a turn to expand details
+              {isJapanese
+                ? "各文字をクリックして音節を表示 · ターンをクリックで詳細表示"
+                : "Click any word to view IPA phonemes · Click a turn to expand details"}
             </p>
           </div>
           <div className="flex items-center gap-3 mb-1">
@@ -290,7 +295,7 @@ export default function PronunciationAssessmentReview({
 
                       {/* Words */}
                       <div className="px-4 pb-3.5">
-                        <div className="leading-[2.6] text-[15px]">
+                        <div className={`leading-[2.6] text-[15px] ${isJapanese ? "tracking-wide" : ""}`}>
                           {turn.words.length > 0 ? (
                             turn.words.map((w, i) => {
                               const isErr = w.errorType !== "None";
@@ -307,7 +312,7 @@ export default function PronunciationAssessmentReview({
                                     : "select-none text-red-500 font-medium";
 
                               return (
-                                <span key={i} className="relative inline-block mr-1.5">
+                                <span key={i} className={`relative inline-block ${isJapanese ? "mr-0" : "mr-1.5"}`}>
                                   <span
                                     className={`${wordClass} cursor-pointer transition-all duration-100 rounded-md px-0.5
                                       hover:bg-indigo-50 hover:text-indigo-700
@@ -320,8 +325,8 @@ export default function PronunciationAssessmentReview({
                                     {w.word}
                                   </span>
 
-                                  {/* IPA Tooltip */}
-                                  {isWS && w.phonemes && w.phonemes.length > 0 && (
+                                  {/* Word Detail Tooltip */}
+                                  {isWS && ((w.phonemes && w.phonemes.length > 0) || (w.syllables && w.syllables.length > 0)) && (
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-50">
                                       <div className="bg-slate-800 text-white rounded-xl shadow-xl shadow-slate-900/20 px-3.5 py-2.5 whitespace-nowrap">
                                         <div className="text-sm text-center mb-2 font-medium">
@@ -331,9 +336,9 @@ export default function PronunciationAssessmentReview({
                                             {Math.round(w.accuracyScore)}
                                           </span>
                                         </div>
-                                        {/* Syllables (if available) */}
+                                        {/* Syllables / Mora */}
                                         {w.syllables && w.syllables.length > 0 && (
-                                          <div className="mb-2.5 pb-2.5 border-b border-slate-700/50">
+                                          <div className={isJapanese ? "" : "mb-2.5 pb-2.5 border-b border-slate-700/50"}>
                                             <div className="flex gap-1.5 justify-center">
                                               {w.syllables.map((s, si) => {
                                                 const sc = scoreColor(s.accuracyScore);
@@ -352,7 +357,8 @@ export default function PronunciationAssessmentReview({
                                           </div>
                                         )}
 
-                                        {/* Phonemes */}
+                                        {/* Phonemes (English only — Japanese uses mora above) */}
+                                        {!isJapanese && w.phonemes && w.phonemes.length > 0 && (
                                         <div className="flex gap-1 justify-center">
                                           {w.phonemes.map((p, pi) => {
                                             const pc = scoreColor(p.accuracyScore);
@@ -368,6 +374,7 @@ export default function PronunciationAssessmentReview({
                                             );
                                           })}
                                         </div>
+                                        )}
                                         <div className="absolute left-1/2 -translate-x-1/2 bottom-full w-0 h-0 border-l-[7px] border-r-[7px] border-b-[7px] border-l-transparent border-r-transparent border-b-slate-800" />
                                       </div>
                                     </div>
@@ -447,18 +454,18 @@ export default function PronunciationAssessmentReview({
                   const count = errorCounts[errorType.key] || 0;
                   return (
                     <div key={errorType.key} className="group/error">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className={`w-5 h-5 rounded-md ${count > 0 ? errorType.color : "bg-slate-200"} flex items-center justify-center text-white text-[11px] font-bold`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className={`min-w-[20px] h-5 px-1 rounded-md shrink-0 ${count > 0 ? errorType.color : "bg-slate-200"} flex items-center justify-center text-white text-[11px] font-bold`}>
                             {count}
                           </span>
-                          <span className={`text-sm ${count > 0 ? "text-slate-600" : "text-slate-400"} flex items-center gap-1`}>
-                            {errorType.label}
+                          <span className={`text-sm truncate ${count > 0 ? "text-slate-600" : "text-slate-400"} flex items-center gap-1`}>
+                            <span className="truncate">{errorType.label}</span>
                             <TooltipProvider delayDuration={0}>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="flex items-center justify-center cursor-help rounded-full hover:bg-slate-100 p-0.5 transition-colors">
-                                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <span className="flex items-center justify-center shrink-0 cursor-help rounded-full hover:bg-slate-100 p-0.5 transition-colors">
+                                    <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                     </svg>
                                   </span>
@@ -472,7 +479,7 @@ export default function PronunciationAssessmentReview({
                         </div>
                         <button
                           onClick={() => toggleError(errorType.key)}
-                          className={`relative rounded-full transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${enabledErrors[errorType.key] ? "bg-indigo-500" : "bg-slate-200"
+                          className={`shrink-0 relative rounded-full transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${enabledErrors[errorType.key] ? "bg-indigo-500" : "bg-slate-200"
                             }`}
                           role="switch"
                           aria-checked={enabledErrors[errorType.key]}
@@ -503,9 +510,9 @@ export default function PronunciationAssessmentReview({
             <div className="flex items-center gap-7">
               <ScoreRing score={data.pronunciationScore} />
               <div className="flex-1 space-y-3">
-                <MetricBar label="Accuracy" score={data.accuracyScore} hint="How correctly each sound is pronounced" />
-                <MetricBar label="Fluency" score={data.fluencyScore} hint="Smoothness and natural pace of speech" />
-                <MetricBar label="Prosody" score={data.prosodyScore} hint="Intonation, stress, and rhythm patterns" />
+                <MetricBar label={isJapanese ? "正確さ (Accuracy)" : "Accuracy"} score={data.accuracyScore} hint={isJapanese ? "各音の発音精度" : "How correctly each sound is pronounced"} />
+                <MetricBar label={isJapanese ? "流暢さ (Fluency)" : "Fluency"} score={data.fluencyScore} hint={isJapanese ? "滑らかさと自然なペース" : "Smoothness and natural pace of speech"} />
+                <MetricBar label={isJapanese ? "韻律 (Prosody)" : "Prosody"} score={data.prosodyScore} hint={isJapanese ? "イントネーション、アクセント、リズム" : "Intonation, stress, and rhythm patterns"} />
                 {mode === "scripted" && data.completenessScore !== undefined && (
                   <MetricBar label="Completeness" score={data.completenessScore} hint="How much of the script was spoken" />
                 )}
@@ -521,9 +528,9 @@ export default function PronunciationAssessmentReview({
             <div className="flex items-center gap-7">
               <ScoreRing score={data.contentScore} />
               <div className="flex-1 space-y-3">
-                <MetricBar label="Grammar" score={data.grammarScore} hint="Correctness of sentence structure" />
-                <MetricBar label="Topic Relevance" score={data.relevanceScore} hint="How well responses fit the scenario" />
-                <MetricBar label="Vocabulary" score={data.vocabularyScore} hint="Range and appropriateness of words used" />
+                <MetricBar label={isJapanese ? "文法 (Grammar)" : "Grammar"} score={data.grammarScore} hint={isJapanese ? "助詞・活用・敬語の正確さ" : "Correctness of sentence structure"} />
+                <MetricBar label={isJapanese ? "話題関連性 (Relevance)" : "Topic Relevance"} score={data.relevanceScore} hint={isJapanese ? "シナリオとの適合性" : "How well responses fit the scenario"} />
+                <MetricBar label={isJapanese ? "語彙 (Vocabulary)" : "Vocabulary"} score={data.vocabularyScore} hint={isJapanese ? "語彙の多様性と適切さ" : "Range and appropriateness of words used"} />
               </div>
             </div>
           </div>

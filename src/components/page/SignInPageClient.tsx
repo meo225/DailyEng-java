@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState, useTransition, lazy, Suspense } from "react";
+import { useState, useTransition, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,10 +13,11 @@ import {
   Languages,
   ArrowRight,
   Loader2,
+  Globe,
 } from "lucide-react";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 
-const AuthScene3D = lazy(() => import("@/components/auth/AuthScene3D"));
+const AuthScene3D = dynamic(() => import("@/components/auth/AuthScene3D"), { ssr: false });
 
 export interface SignInStat {
   value: string;
@@ -78,14 +80,24 @@ export default function SignInPageClient({ stats }: SignInPageClientProps) {
         <div className="auth-glass-overlay">
           <div className="flex flex-col justify-center h-full px-12 text-white">
             <h1 className="text-5xl font-bold mb-6 leading-tight">
-              Master English
+              Master Languages
               <br />
               <span className="text-accent-200">Your Way</span>
             </h1>
-            <p className="text-xl text-white/80 mb-8 max-w-md">
-              Join thousands of learners improving their English skills with our
+            <p className="text-xl text-white/80 mb-4 max-w-md">
+              Join thousands of learners improving their language skills with our
               AI-powered platform.
             </p>
+            <div className="flex items-center gap-3 mb-8">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white text-sm font-semibold border border-white/20">
+                <Globe className="w-3.5 h-3.5" />
+                English
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white text-sm font-semibold border border-white/20">
+                <Globe className="w-3.5 h-3.5" />
+                Japanese
+              </span>
+            </div>
 
             {/* Stats */}
             <div className="flex gap-8">

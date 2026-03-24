@@ -8,6 +8,7 @@ interface RecordReviewViewProps {
   loadedSessionData: LoadedSessionData | null;
   fromParam: string | null;
   backUrl: string;
+  language?: string;
   onBack: () => void;
   onRetry: () => void;
   router: { push: (url: string) => void };
@@ -19,6 +20,7 @@ export default function RecordReviewView({
   loadedSessionData,
   fromParam,
   backUrl,
+  language,
   onBack,
   onRetry,
   router,
@@ -40,6 +42,7 @@ export default function RecordReviewView({
   return (
     <PronunciationAssessmentReview
       data={assessmentData}
+      language={language}
       onBack={() => {
         if (fromParam === "history") {
           router.push(backUrl);

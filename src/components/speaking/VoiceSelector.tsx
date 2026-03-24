@@ -58,7 +58,31 @@ export const VOICE_OPTIONS: VoiceOption[] = [
   },
 ];
 
-const PREVIEW_TEXT = "Hello! I'm ready to practice speaking with you today.";
+export const JA_VOICE_OPTIONS: VoiceOption[] = [
+  {
+    id: "ja-JP-NanamiNeural", label: "Nanami", gender: "female",
+    style: "Friendly & casual", accent: "hsl(340, 65%, 55%)",
+    waveform: [0.3, 0.5, 0.8, 0.6, 0.9, 0.4, 0.7, 0.5, 0.8, 0.3, 0.6, 0.9],
+  },
+  {
+    id: "ja-JP-KeitaNeural", label: "Keita", gender: "male",
+    style: "Professional", accent: "hsl(220, 60%, 50%)",
+    waveform: [0.6, 0.8, 0.7, 0.9, 0.6, 0.8, 0.5, 0.9, 0.7, 0.6, 0.8, 0.5],
+  },
+  {
+    id: "ja-JP-MayuNeural", label: "Mayu", gender: "female",
+    style: "Warm", accent: "hsl(30, 80%, 55%)",
+    waveform: [0.4, 0.6, 0.5, 0.7, 0.5, 0.6, 0.4, 0.7, 0.5, 0.6, 0.4, 0.7],
+  },
+  {
+    id: "ja-JP-NaokiNeural", label: "Naoki", gender: "male",
+    style: "Calm", accent: "hsl(160, 45%, 45%)",
+    waveform: [0.5, 0.7, 0.4, 0.8, 0.5, 0.7, 0.6, 0.4, 0.8, 0.5, 0.7, 0.3],
+  }
+];
+
+const PREVIEW_TEXT_EN = "Hello! I'm ready to practice speaking with you today.";
+const PREVIEW_TEXT_JA = "こんにちは！今日も一緒に話す練習をしましょう。";
 
 // ─── Mini Waveform ────────────────────────────────
 
@@ -236,9 +260,24 @@ const VoiceCard = React.memo(function VoiceCard({
 const VoiceSelector = React.memo(function VoiceSelector() {
   const ttsVoice = useAppStore((s) => s.ttsVoice);
   const setTtsVoice = useAppStore((s) => s.setTtsVoice);
+  const learningLanguage = useAppStore((s) => s.learningLanguage);
+
+  const options = learningLanguage === "ja" ? JA_VOICE_OPTIONS : VOICE_OPTIONS;
 
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const previewText = learningLanguage === "ja" ? PREVIEW_TEXT_JA : PREVIEW_TEXT_EN;
+
+  // Auto-switch voice when language changes
+  useEffect(() => {
+    const currentIsJa = ttsVoice.startsWith("ja-");
+    const shouldBeJa = learningLanguage === "ja";
+    if (shouldBeJa && !currentIsJa) {
+      setTtsVoice(JA_VOICE_OPTIONS[0].id);
+    } else if (!shouldBeJa && currentIsJa) {
+      setTtsVoice(VOICE_OPTIONS[0].id);
+    }
+  }, [learningLanguage, ttsVoice, setTtsVoice]);
 
   // Inject waveform animation keyframes once
   useEffect(() => {
@@ -263,11 +302,11 @@ const VoiceSelector = React.memo(function VoiceSelector() {
     setPreviewingId(voiceId);
     try {
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-      const resp = await fetch(`${API_BASE}/speaking/speech/synthesize`, {
+      const resp = await fetch(`${API_BASE}/speaking/speech/synthesize?targetLanguage=${learningLanguage}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ text: PREVIEW_TEXT, voice: voiceId }),
+        body: JSON.stringify({ text: previewText, voice: voiceId }),
       });
       if (!resp.ok) throw new Error("fail");
       const blob = await resp.blob();
@@ -279,7 +318,7 @@ const VoiceSelector = React.memo(function VoiceSelector() {
       audio.onerror = cleanup;
       await audio.play();
     } catch { setPreviewingId(null); }
-  }, [previewingId]);
+  }, [previewingId, learningLanguage]);
 
   const handleSelect = useCallback((voiceId: string) => {
     setTtsVoice(voiceId);
@@ -302,7 +341,7 @@ const VoiceSelector = React.memo(function VoiceSelector() {
         }}
       >
         <div style={{ display: "flex", gap: 8, width: "max-content" }}>
-          {VOICE_OPTIONS.map((v) => (
+          {options.map((v) => (
             <VoiceCard
               key={v.id}
               voice={v}

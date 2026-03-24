@@ -49,7 +49,7 @@ export function FeatureTabsSection({ featureTabs }: FeatureTabsSectionProps) {
             Everything You Need to Fluency
           </h2>
           <p className="text-xl text-gray-600">
-            A complete ecosystem for English mastery
+            A complete ecosystem for language mastery
           </p>
         </RevealOnScroll>
 

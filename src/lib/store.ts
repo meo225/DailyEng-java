@@ -42,6 +42,9 @@ interface AppStore {
   language: string;
   setLanguage: (lang: string) => void;
 
+  learningLanguage: string;
+  setLearningLanguage: (lang: string) => void;
+
   ttsVoice: string;
   setTtsVoice: (voice: string) => void;
 }
@@ -50,6 +53,14 @@ interface AppStore {
 const getInitialLanguage = () => {
   if (typeof window !== "undefined") {
     return localStorage.getItem("language") || "en";
+  }
+  return "en";
+};
+
+// Helper to get initial learning language, prefer localStorage if available
+const getInitialLearningLanguage = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("learningLanguage") || "en";
   }
   return "en";
 };
@@ -121,6 +132,14 @@ export const useAppStore = create<AppStore>((set) => ({
       localStorage.setItem("language", lang);
     }
     set({ language: lang });
+  },
+
+  learningLanguage: getInitialLearningLanguage(),
+  setLearningLanguage: (lang) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("learningLanguage", lang);
+    }
+    set({ learningLanguage: lang });
   },
 
   ttsVoice: getInitialTtsVoice(),

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { useAppStore } from "@/lib/store";
 import type { TopicGroup } from "@/components/hub/topic-groups-sidebar";
 import {
   getSpeakingScenariosWithProgress,
@@ -29,6 +30,7 @@ export function useScenariosFilter({
   isSearchMode,
   onBookmarkIdsLoaded,
 }: UseScenariosFilterParams) {
+  const learningLanguage = useAppStore((state) => state.learningLanguage);
   // ── Topic groups ──
   const [topicGroups, setTopicGroups] =
     useState<TopicGroup[]>(initialTopicGroups);
@@ -52,27 +54,17 @@ export function useScenariosFilter({
   const initialFetchDone = useRef(false);
   const topicGroupsFetched = useRef(false);
 
-  // ── Initial parallel fetch ──
+  // ── Initial parallel fetch + refetch on language change ──
   useEffect(() => {
-    if (initialFetchDone.current) return;
-
-    if (initialTopicGroups.length > 0) {
-      topicGroupsFetched.current = true;
-      setTopicGroupsLoading(false);
-    }
-
     if (!userId) return;
 
     initialFetchDone.current = true;
     topicGroupsFetched.current = true;
-
-    const groupsPromise =
-      initialTopicGroups.length > 0
-        ? Promise.resolve(initialTopicGroups)
-        : getSpeakingTopicGroups();
+    setTopicGroupsLoading(true);
+    setScenariosLoading(true);
 
     Promise.all([
-      groupsPromise,
+      getSpeakingTopicGroups(),
       getSpeakingScenariosWithProgress(userId, {
         page: 1,
         limit: SCENARIOS_PER_PAGE,
@@ -98,7 +90,7 @@ export function useScenariosFilter({
         setScenariosLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, learningLanguage]);
 
   // ── Fetch scenarios on filter/pagination changes ──
   useEffect(() => {
@@ -126,6 +118,7 @@ export function useScenariosFilter({
     selectedSubcategory,
     selectedLevels,
     isSearchMode,
+    learningLanguage,
   ]);
 
   // ── Reset to page 1 on filter change ──

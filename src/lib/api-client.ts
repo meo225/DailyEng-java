@@ -34,6 +34,11 @@ class ApiClient {
       ...options?.headers,
     };
 
+    if (typeof window !== 'undefined') {
+      const learningLanguage = localStorage.getItem('learningLanguage') || 'en';
+      headers['X-Learning-Language'] = learningLanguage;
+    }
+
     // Only set Content-Type for JSON bodies (not FormData)
     if (body && !(body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';

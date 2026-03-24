@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useTransition } from "react";
+import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
@@ -22,25 +22,13 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
-import {
-  sendDoraraMessage,
-  DoraraChatMessage,
-} from "@/actions/dorara";
+import type { DoraraChatMessage } from "@/actions/dorara";
 import { DoraraMessageRenderer } from "@/components/dorara/dorara-message-renderer";
+import { useDoraraStream } from "@/hooks/useDoraraStream";
 
 const STORAGE_KEY = "dorara-chat-history-v2";
 const MAX_MESSAGES = 100;
-const INITIAL_MESSAGE: DoraraChatMessage = {
-  id: "initial",
-  role: "tutor",
-  content:
-    "Hey! I'm **Dorara**, your AI English companion.\n\nI know your learning journey — your XP, your strengths, your weak spots. Ask me anything and I'll tailor it to you.",
-  suggestedActions: [
-    "Teach me a new word",
-    "Quiz me on grammar",
-    "How do I use DailyEng?",
-  ],
-};
+// Initial message generation moved inside component
 
 // ── Context-aware quick actions ─────────────────────────────────────────
 
@@ -50,19 +38,19 @@ interface QuickAction {
   message: string;
 }
 
-function getQuickActionsForPage(pathname: string): QuickAction[] {
+function getQuickActionsForPage(pathname: string, langStr: string): QuickAction[] {
   const cleanPath = pathname.split("?")[0].replace(/\/$/, "") || "/";
 
   if (cleanPath === "/speaking" || cleanPath.startsWith("/speaking/")) {
     return [
       { icon: Mic, label: "Review my speaking", message: "How were my recent speaking sessions? What should I improve?" },
       { icon: Target, label: "Suggest a scenario", message: "What speaking scenario should I practice next based on my level?" },
-      { icon: Lightbulb, label: "Speaking tips", message: "Give me tips to improve my English speaking fluency!" },
+      { icon: Lightbulb, label: "Speaking tips", message: `Give me tips to improve my ${langStr} speaking fluency!` },
     ];
   }
   if (cleanPath === "/vocab" || cleanPath.startsWith("/vocab/")) {
     return [
-      { icon: BookOpen, label: "Teach me a word", message: "Teach me a useful English word that matches my level with examples!" },
+      { icon: BookOpen, label: "Teach me a word", message: `Teach me a useful ${langStr} word that matches my level with examples!` },
       { icon: Brain, label: "Quiz me", message: "Give me a vocabulary quiz question to test my knowledge!" },
       { icon: Zap, label: "Word of the day", message: "What's a great word of the day? Include phonetics and examples." },
     ];
@@ -71,7 +59,7 @@ function getQuickActionsForPage(pathname: string): QuickAction[] {
     return [
       { icon: GraduationCap, label: "Explain this rule", message: "Explain the grammar rule I'm studying with simple examples!" },
       { icon: Brain, label: "Grammar quiz", message: "Give me a grammar quiz question to practice!" },
-      { icon: Lightbulb, label: "Common mistakes", message: "What are common grammar mistakes Vietnamese learners make?" },
+      { icon: Lightbulb, label: "Common mistakes", message: `What are common grammar mistakes learners make?` },
     ];
   }
   if (cleanPath === "/notebook") {
@@ -85,13 +73,13 @@ function getQuickActionsForPage(pathname: string): QuickAction[] {
     return [
       { icon: Target, label: "Analyze progress", message: "Look at my learning stats and tell me what to focus on next!" },
       { icon: Sparkles, label: "Set a goal", message: "Help me set a realistic learning goal for this week!" },
-      { icon: Zap, label: "Motivate me", message: "Give me some motivation to keep learning English!" },
+      { icon: Zap, label: "Motivate me", message: `Give me some motivation to keep learning ${langStr}!` },
     ];
   }
 
   return [
-    { icon: BookOpen, label: "Teach me a word", message: "Teach me a useful English word with pronunciation, meaning, and an example sentence!" },
-    { icon: Brain, label: "Quiz me", message: "Give me a quick English quiz question to test my skills!" },
+    { icon: BookOpen, label: "Teach me a word", message: `Teach me a useful ${langStr} word with pronunciation, meaning, and an example sentence!` },
+    { icon: Brain, label: "Quiz me", message: `Give me a quick ${langStr} quiz question to test my skills!` },
     { icon: HelpCircle, label: "How to use DailyEng", message: "What features does DailyEng have? How should I start learning?" },
   ];
 }
@@ -102,18 +90,32 @@ export function Dorara() {
   const { user, status } = useAuth();
   const doraraOpen = useAppStore((state) => state.doraraOpen);
   const setDoraraOpen = useAppStore((state) => state.setDoraraOpen);
+  const learningLanguage = useAppStore((state) => state.learningLanguage);
   const pathname = usePathname();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [messages, setMessages] = useState<DoraraChatMessage[]>([INITIAL_MESSAGE]);
+  const [messages, setMessages] = useState<DoraraChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [isPending, startTransition] = useTransition();
   const [showLimitWarning, setShowLimitWarning] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const { streamedText, isStreaming, streamMessage } = useDoraraStream();
+
+  const langStr = learningLanguage === "ja" ? "Japanese" : "English";
+
+  const getInitialMessage = (): DoraraChatMessage => ({
+    id: "initial",
+    role: "tutor",
+    content: `Hey! I'm **Dorara**, your AI ${langStr} companion.\n\nI know your learning journey — your XP, your strengths, your weak spots. Ask me anything and I'll tailor it to you.`,
+    suggestedActions: [
+      "Teach me a new word",
+      "Quiz me on grammar",
+      "How do I use DailyEng?",
+    ],
+  });
 
   const isAuthenticated = status === "authenticated" && !!user;
-  const isLoading = isPending;
-  const quickActions = getQuickActionsForPage(pathname || "/");
+  const isLoading = isStreaming;
+  const quickActions = getQuickActionsForPage(pathname || "/", langStr);
   const lastTutorMessage = [...messages].reverse().find((m) => m.role === "tutor");
   const aiSuggestedActions = lastTutorMessage?.suggestedActions || [];
 
@@ -124,15 +126,24 @@ export function Dorara() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) setMessages(parsed);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+          } else {
+            setMessages([getInitialMessage()]);
+          }
+        } else {
+          setMessages([getInitialMessage()]);
         }
-      } catch (e) { console.error("Error loading chat:", e); }
+      } catch (e) { 
+        console.error("Error loading chat:", e); 
+        setMessages([getInitialMessage()]);
+      }
       setIsInitialized(true);
     }
   }, [isInitialized]);
 
   useEffect(() => {
-    if (isInitialized && typeof window !== "undefined") {
+    if (isInitialized && typeof window !== "undefined" && messages.length > 0) {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(messages)); }
       catch (e) { console.error("Error saving chat:", e); }
     }
@@ -163,21 +174,20 @@ export function Dorara() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    startTransition(async () => {
-      const result = await sendDoraraMessage(messages, messageText, pathname || "/");
-      setMessages((prev) => [...prev, {
-        id: (Date.now() + 1).toString(), role: "tutor",
-        content: result.error || result.response,
-        suggestedActions: result.suggestedActions,
-        vocabHighlights: result.vocabHighlights,
-        quizQuestion: result.quizQuestion,
-      }]);
-    });
+    // Stream AI response via SSE for real-time typing effect
+    const result = await streamMessage(messages, messageText, pathname || "/", learningLanguage);
+    setMessages((prev) => [...prev, {
+      id: (Date.now() + 1).toString(), role: "tutor",
+      content: (result as any).error || result.response,
+      suggestedActions: result.suggestedActions,
+      vocabHighlights: result.vocabHighlights,
+      quizQuestion: result.quizQuestion,
+    }]);
   };
 
 
   const handleClearHistory = () => {
-    setMessages([INITIAL_MESSAGE]);
+    setMessages([getInitialMessage()]);
     setShowLimitWarning(false);
     if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY);
   };
@@ -264,7 +274,7 @@ export function Dorara() {
                       </span>
                     </div>
                     <p className="text-[11px] text-white/60 font-medium">
-                      English Learning Companion
+                      {langStr} Learning Companion
                     </p>
                   </div>
                 </div>
@@ -360,18 +370,24 @@ export function Dorara() {
               </div>
             ))}
 
-            {/* Typing indicator */}
-            {isLoading && (
+            {/* Streaming AI response — live typing effect */}
+            {isStreaming && (
               <div className="flex justify-start">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 mr-2 flex items-center justify-center shadow-sm">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 mr-2 flex-shrink-0 flex items-center justify-center shadow-sm mt-0.5">
                   <Image src="/dorara-assistant.png" alt="" width={18} height={18} className="rounded-md" />
                 </div>
-                <div className="bg-white border border-gray-200/60 rounded-2xl rounded-bl-lg px-4 py-3 shadow-sm">
-                  <div className="flex gap-1 items-center">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: "0ms", animationDuration: "1.4s" }} />
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary-300 animate-bounce" style={{ animationDelay: "200ms", animationDuration: "1.4s" }} />
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary-200 animate-bounce" style={{ animationDelay: "400ms", animationDuration: "1.4s" }} />
-                  </div>
+                <div className="max-w-[82%] px-3.5 py-2.5 bg-white text-foreground rounded-2xl rounded-bl-lg border border-gray-200/60 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                  {streamedText ? (
+                    <DoraraMessageRenderer
+                      message={{ id: "streaming", role: "tutor", content: streamedText }}
+                    />
+                  ) : (
+                    <div className="flex gap-1 items-center py-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: "0ms", animationDuration: "1.4s" }} />
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary-300 animate-bounce" style={{ animationDelay: "200ms", animationDuration: "1.4s" }} />
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary-200 animate-bounce" style={{ animationDelay: "400ms", animationDuration: "1.4s" }} />
+                    </div>
+                  )}
                 </div>
               </div>
             )}

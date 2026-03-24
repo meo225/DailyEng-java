@@ -11,9 +11,9 @@ import {
 
 const STUDY_PLAN_GOALS = [
   "Pass IELTS/TOEFL exam",
+  "Pass JLPT exam",
   "Improve for career",
   "Travel confidently",
-  "Academic studies",
 ]
 
 const STUDY_PLAN_STATS = [

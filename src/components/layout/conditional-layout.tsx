@@ -14,7 +14,8 @@ const Footer = dynamic(
   { ssr: true }
 )
 
-const noNavRoutes = ["/placement-test", "/speaking/session", "/vocab/", "/grammar/", "/build-plan", "/auth"]
+const noNavPrefixRoutes = ["/placement-test", "/speaking/session", "/vocab/", "/grammar/", "/build-plan", "/auth", "/why-dailylang", "/how-it-works"]
+const noNavExactRoutes = ["/"]
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -23,7 +24,9 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   // Decide which path governs navbar visibility:
   // when navigating, use the target path so skeleton appears with correct chrome
   const effectivePath = isNavigating && targetPath ? targetPath : pathname
-  const shouldHideNav = noNavRoutes.some((route) => effectivePath.startsWith(route))
+  const shouldHideNav =
+    noNavExactRoutes.includes(effectivePath) ||
+    noNavPrefixRoutes.some((route) => effectivePath.startsWith(route))
 
   // Render skeleton for the target page during navigation
   const content = isNavigating && targetPath ? (

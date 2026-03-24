@@ -4,6 +4,7 @@ import type { AssessmentData } from "@/components/speaking/pronunciation-assessm
 interface CompletionViewProps {
   assessmentData: AssessmentData;
   sessionMode?: "scripted" | "unscripted";
+  language?: string;
   backUrl: string;
   onRetry: () => void;
   router: { push: (url: string) => void };
@@ -12,6 +13,7 @@ interface CompletionViewProps {
 export default function CompletionView({
   assessmentData,
   sessionMode,
+  language,
   backUrl,
   onRetry,
   router,
@@ -20,6 +22,7 @@ export default function CompletionView({
     <PronunciationAssessmentReview
       data={assessmentData}
       mode={sessionMode}
+      language={language}
       onBack={() => router.push(backUrl)}
       onRetry={onRetry}
     />

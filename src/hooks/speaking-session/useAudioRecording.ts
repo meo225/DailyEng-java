@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
+import { useAppStore } from "@/lib/store";
 import { PitchAnalyzer } from "@/lib/pitch-analyzer";
 import type { WordAssessment, PronunciationScores } from "./types";
 
@@ -41,6 +42,7 @@ export function useAudioRecording({
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const learningLanguage = useAppStore((state) => state.learningLanguage);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -75,7 +77,13 @@ export function useAudioRecording({
         formData.append("audio", audioBlob, "recording.ogg");
 
         if (sessionMode === "scripted" && hintText) {
-          formData.append("referenceText", hintText);
+          // Strip parenthetical translations and furigana markup so pronunciation scoring
+          // only compares against the clean target language text
+          const cleanHint = hintText
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // [駅](えき) → 駅
+            .replace(/\s*\([^)]*\)\s*$/g, "")         // trailing (English) → removed
+            .trim();
+          formData.append("referenceText", cleanHint);
         }
 
         const result = await apiClient.upload<{
@@ -86,7 +94,7 @@ export function useAudioRecording({
           overallScore: number;
           completenessScore: number;
           words?: WordAssessment[];
-        }>("/speaking/speech/transcribe-assess", formData);
+        }>(`/speaking/speech/transcribe-assess?targetLanguage=${learningLanguage}`, formData);
 
         if (result.text && result.text.trim()) {
           azurePronScoresRef.current = {
@@ -111,7 +119,7 @@ export function useAudioRecording({
           const result = await apiClient.upload<{
             text: string;
             confidence?: number;
-          }>("/speaking/speech/transcribe", formData);
+          }>(`/speaking/speech/transcribe?targetLanguage=${learningLanguage}`, formData);
           if (result.text && result.text.trim()) {
             azurePronScoresRef.current = null;
             onTranscriptionComplete({
@@ -129,7 +137,7 @@ export function useAudioRecording({
         setIsRecording(false);
       }
     },
-    [sessionMode, hintText, onTranscriptionComplete]
+    [sessionMode, hintText, onTranscriptionComplete, learningLanguage]
   );
 
   const stopMicrophone = useCallback(() => {
@@ -329,7 +337,9 @@ export function useAudioRecording({
       }
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+        mediaStreamRef.current = null;
       }
+      setMediaStream(null);
       if (pitchAnalyzerRef.current) {
         pitchAnalyzerRef.current.stop();
         pitchAnalyzerRef.current = null;

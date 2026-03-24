@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getVocabTopicGroups, getVocabTopicsWithProgress } from "@/actions/vocab";
+import { useAppStore } from "@/lib/store";
 import type { TopicGroup } from "@/components/hub/topic-groups-sidebar";
 import { TOPICS_PER_PAGE, type VocabTopic } from "./types";
 
@@ -14,6 +15,8 @@ interface UseTopicsFilterParams {
 // ─── Hook ──────────────────────────────────────────
 
 export function useTopicsFilter({ userId }: UseTopicsFilterParams) {
+  const learningLanguage = useAppStore((state) => state.learningLanguage);
+
   // Loading states
   const [topicGroupsLoading, setTopicGroupsLoading] = useState(true);
   const [topicsLoading, setTopicsLoading] = useState(true);
@@ -32,20 +35,21 @@ export function useTopicsFilter({ userId }: UseTopicsFilterParams) {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("All");
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
 
-  // Fetch topic groups on mount
+  // Fetch topic groups on mount AND when language changes
   useEffect(() => {
+    setTopicGroupsLoading(true);
+    setSelectedGroup("");
     getVocabTopicGroups()
       .then((groups) => {
         setTopicGroups(groups);
-        if (groups.length > 0 && !selectedGroup) {
+        if (groups.length > 0) {
           setSelectedGroup(groups[0].name);
         }
       })
       .finally(() => setTopicGroupsLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [learningLanguage]);
 
-  // Fetch topics when filters change
+  // Fetch topics when filters or language change
   useEffect(() => {
     if (!selectedGroup) return;
 
@@ -63,7 +67,7 @@ export function useTopicsFilter({ userId }: UseTopicsFilterParams) {
         setTotalTopics(result.total);
       })
       .finally(() => setTopicsLoading(false));
-  }, [userId, selectedGroup, selectedSubcategory, selectedLevels, currentPage]);
+  }, [userId, selectedGroup, selectedSubcategory, selectedLevels, currentPage, learningLanguage]);
 
   // ── Handlers ──
 

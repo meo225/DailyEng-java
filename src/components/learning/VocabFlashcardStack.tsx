@@ -70,7 +70,7 @@ export function VocabFlashcardStack({
     const currentWord = words[currentIndex]
     const isLastCard = currentIndex === words.length - 1
 
-    const handleNext = useCallback(async (rating?: string) => {
+    const handleNext = useCallback((rating?: string) => {
         if (rating && onRate && currentWord) {
             onRate(currentWord.id, rating)
 
@@ -80,23 +80,26 @@ export function VocabFlashcardStack({
             };
             const fsrsRating = ratingMap[rating];
             if (fsrsRating) {
-                try {
-                    const result = await reviewVocabItem(currentWord.id, fsrsRating);
-                    if (result.xpAwarded > 0 && xpToast) {
-                        xpToast.showXpToast({
-                            xpAwarded: result.xpAwarded,
-                            streakBonus: 0,
-                            totalXp: 0,
-                            streak: 0,
-                            isNewDay: false,
-                        });
-                    }
-                } catch {
-                    // API unavailable — continue offline
-                }
+                // Fire-and-forget: don't block card transition on API response
+                reviewVocabItem(currentWord.id, fsrsRating)
+                    .then((result) => {
+                        if (result.xpAwarded > 0 && xpToast) {
+                            xpToast.showXpToast({
+                                xpAwarded: result.xpAwarded,
+                                streakBonus: 0,
+                                totalXp: 0,
+                                streak: 0,
+                                isNewDay: false,
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        // API unavailable — continue offline
+                    });
             }
         }
 
+        // Optimistic: advance card immediately
         setIsFlipped(false)
         if (isLastCard) {
             onComplete()

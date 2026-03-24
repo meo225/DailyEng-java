@@ -27,9 +27,9 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "DailyEng - Learning English by Interaction!",
+  title: "DailyLang - Learn Languages by Interaction!",
   description:
-    "Master English with AI-powered vocabulary, speaking, and grammar lessons.",
+    "Master new languages with AI-powered vocabulary, speaking, and grammar lessons.",
   icons: {
     icon: "/dailyeng.ico",
   },

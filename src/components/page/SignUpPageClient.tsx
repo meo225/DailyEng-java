@@ -1,9 +1,10 @@
 "use client";
 
 import type React from "react";
-import { useState, useTransition, lazy, Suspense } from "react";
+import { useState, useTransition, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +15,7 @@ import {
   Check,
   Loader2,
   HelpCircle,
+  Globe,
 } from "lucide-react";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import {
@@ -22,7 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const AuthScene3D = lazy(() => import("@/components/auth/AuthScene3D"));
+const AuthScene3D = dynamic(() => import("@/components/auth/AuthScene3D"), { ssr: false });
 
 export interface SignUpPageClientProps {
   benefits: string[];
@@ -162,7 +164,7 @@ export default function SignUpPageClient({ benefits }: SignUpPageClientProps) {
               Create Account
             </h1>
             <p className="text-muted-foreground mt-2">
-              Start your English learning journey today
+              Start your language learning journey today
             </p>
           </div>
 
@@ -415,14 +417,24 @@ export default function SignUpPageClient({ benefits }: SignUpPageClientProps) {
         <div className="auth-glass-overlay">
           <div className="flex flex-col justify-center h-full px-12 text-white">
             <h1 className="text-5xl font-bold mb-6 leading-tight">
-              Learn English
+              Learn Languages
               <br />
               <span className="text-accent-300">The Smart Way</span>
             </h1>
-            <p className="text-xl text-white/80 mb-8 max-w-md">
+            <p className="text-xl text-white/80 mb-4 max-w-md">
               Join our community and unlock your full potential with personalized
               learning.
             </p>
+            <div className="flex items-center gap-3 mb-8">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white text-sm font-semibold border border-white/20">
+                <Globe className="w-3.5 h-3.5" />
+                English
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white text-sm font-semibold border border-white/20">
+                <Globe className="w-3.5 h-3.5" />
+                Japanese
+              </span>
+            </div>
 
             {/* Benefits */}
             <div className="space-y-4">
