@@ -1,9 +1,7 @@
-package com.dailyeng.service;
+package com.dailyeng.xp;
 
-import com.dailyeng.entity.ProfileStats;
-import com.dailyeng.entity.UserActivity;
-import com.dailyeng.repository.ProfileStatsRepository;
-import com.dailyeng.repository.UserActivityRepository;
+import com.dailyeng.user.ProfileStats;
+import com.dailyeng.user.ProfileStatsRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

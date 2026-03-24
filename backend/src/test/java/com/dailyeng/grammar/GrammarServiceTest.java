@@ -1,11 +1,19 @@
-package com.dailyeng.service;
+package com.dailyeng.grammar;
+import com.dailyeng.vocabulary.UserTopicProgressRepository;
+import com.dailyeng.vocabulary.QuizItemRepository;
+import com.dailyeng.vocabulary.LessonRepository;
+import com.dailyeng.vocabulary.Lesson;
+import com.dailyeng.vocabulary.TopicGroupRepository;
+import com.dailyeng.vocabulary.TopicRepository;
+import com.dailyeng.vocabulary.TopicGroup;
+import com.dailyeng.vocabulary.Topic;
+import com.dailyeng.vocabulary.UserTopicProgress;
+import com.dailyeng.vocabulary.QuizItem;
 
-import com.dailyeng.entity.*;
-import com.dailyeng.entity.enums.HubType;
-import com.dailyeng.entity.enums.Level;
-import com.dailyeng.entity.enums.LessonType;
-import com.dailyeng.entity.enums.QuizType;
-import com.dailyeng.repository.*;
+import com.dailyeng.common.enums.HubType;
+import com.dailyeng.common.enums.Level;
+import com.dailyeng.common.enums.LessonType;
+import com.dailyeng.common.enums.QuizType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -61,10 +69,10 @@ class GrammarServiceTest {
                     .build();
             group.setId("g1");
 
-            when(topicGroupRepo.findByHubTypeOrderByOrderAsc("grammar"))
+            when(topicGroupRepo.findByHubTypeAndLanguageOrderByOrderAsc("grammar", "en"))
                     .thenReturn(List.of(group));
 
-            var result = grammarService.getTopicGroups();
+            var result = grammarService.getTopicGroups("en");
 
             assertEquals(1, result.size());
             assertEquals("Verb Tenses", result.get(0).name());
@@ -94,7 +102,7 @@ class GrammarServiceTest {
             when(userTopicProgressRepo.findByUserIdAndTopicIdIn(eq(USER_ID), anyList()))
                     .thenReturn(List.of(progress));
 
-            var result = grammarService.getTopicsWithProgress(USER_ID, null, null, null, 1, 100);
+            var result = grammarService.getTopicsWithProgress(USER_ID, "en", null, null, null, 1, 100);
 
             assertEquals(1, result.topics().size());
             assertEquals(65, result.topics().get(0).progress());
@@ -112,18 +120,18 @@ class GrammarServiceTest {
         @Test
         @DisplayName("returns empty list for blank query")
         void emptyQuery() {
-            assertEquals(List.of(), grammarService.searchTopics(""));
-            assertEquals(List.of(), grammarService.searchTopics(null));
+            assertEquals(List.of(), grammarService.searchTopics("", "en"));
+            assertEquals(List.of(), grammarService.searchTopics(null, "en"));
         }
 
         @Test
         @DisplayName("returns mapped results for valid query")
         void validQuery() {
             var topic = buildTopic(TOPIC_ID, "Present Simple", Level.A2);
-            when(topicRepo.searchByTitleOrDescription(eq(HubType.grammar), eq("present"), any()))
+            when(topicRepo.searchByTitleOrDescription(eq(HubType.grammar), eq("en"), eq("present"), any()))
                     .thenReturn(List.of(topic));
 
-            var result = grammarService.searchTopics("present");
+            var result = grammarService.searchTopics("present", "en");
 
             assertEquals(1, result.size());
             assertEquals("Present Simple", result.get(0).title());

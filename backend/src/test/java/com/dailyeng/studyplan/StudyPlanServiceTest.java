@@ -1,16 +1,12 @@
-package com.dailyeng.service;
+package com.dailyeng.studyplan;
 
-import com.dailyeng.dto.study.StudyDtos.*;
-import com.dailyeng.entity.ProfileStats;
-import com.dailyeng.entity.StudyPlan;
-import com.dailyeng.entity.StudyTask;
-import com.dailyeng.entity.enums.Level;
-import com.dailyeng.entity.enums.StudyGoal;
-import com.dailyeng.entity.enums.TaskType;
-import com.dailyeng.exception.ResourceNotFoundException;
-import com.dailyeng.repository.ProfileStatsRepository;
-import com.dailyeng.repository.StudyPlanRepository;
-import com.dailyeng.repository.StudyTaskRepository;
+import com.dailyeng.studyplan.StudyDtos.*;
+import com.dailyeng.user.ProfileStats;
+import com.dailyeng.common.enums.Level;
+import com.dailyeng.common.enums.StudyGoal;
+import com.dailyeng.common.enums.TaskType;
+import com.dailyeng.common.exception.ResourceNotFoundException;
+import com.dailyeng.user.ProfileStatsRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -82,9 +78,9 @@ class StudyPlanServiceTest {
         @DisplayName("returns existing plan")
         void existingPlan() {
             var plan = createTestPlan();
-            when(studyPlanRepository.findByUserId(USER_ID)).thenReturn(Optional.of(plan));
+            when(studyPlanRepository.findByUserIdAndLanguage(USER_ID, "en")).thenReturn(Optional.of(plan));
 
-            var result = studyPlanService.getStudyPlan(USER_ID);
+            var result = studyPlanService.getStudyPlan(USER_ID, "en");
 
             assertEquals(PLAN_ID, result.id());
             assertEquals(USER_ID, result.userId());
@@ -99,12 +95,12 @@ class StudyPlanServiceTest {
             var defaultPlan = createTestPlan();
 
             // First call: no plan exists; second call: after save
-            when(studyPlanRepository.findByUserId(USER_ID))
+            when(studyPlanRepository.findByUserIdAndLanguage(USER_ID, "en"))
                     .thenReturn(Optional.empty())
                     .thenReturn(Optional.of(defaultPlan));
             when(studyPlanRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-            var result = studyPlanService.getStudyPlan(USER_ID);
+            var result = studyPlanService.getStudyPlan(USER_ID, "en");
 
             assertNotNull(result);
             verify(studyPlanRepository).save(any(StudyPlan.class));
@@ -123,7 +119,7 @@ class StudyPlanServiceTest {
         @Test
         @DisplayName("creates plan with 21 tasks for 7 days")
         void createsWeekOfTasks() {
-            when(studyPlanRepository.findByUserId(USER_ID))
+            when(studyPlanRepository.findByUserIdAndLanguage(USER_ID, "en"))
                     .thenReturn(Optional.empty())   // no existing plan to delete
                     .thenReturn(Optional.of(createTestPlan())); // refetch after creation
             when(studyPlanRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -131,7 +127,7 @@ class StudyPlanServiceTest {
             var request = new CreatePlanRequest(
                     StudyGoal.exam, Level.B2, 10, List.of("Travel", "Business")
             );
-            var result = studyPlanService.createNewPlan(USER_ID, request);
+            var result = studyPlanService.createNewPlan(USER_ID, "en", request);
 
             assertNotNull(result);
             verify(studyPlanRepository).save(any(StudyPlan.class));
@@ -144,7 +140,7 @@ class StudyPlanServiceTest {
         @DisplayName("deletes existing plan before creating new one")
         void deletesExistingPlan() {
             var existingPlan = createTestPlan();
-            when(studyPlanRepository.findByUserId(USER_ID))
+            when(studyPlanRepository.findByUserIdAndLanguage(USER_ID, "en"))
                     .thenReturn(Optional.of(existingPlan))  // existing plan found
                     .thenReturn(Optional.of(createTestPlan())); // refetch
             when(studyPlanRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -152,7 +148,7 @@ class StudyPlanServiceTest {
             var request = new CreatePlanRequest(
                     StudyGoal.fluent, Level.C1, 14, List.of("General")
             );
-            studyPlanService.createNewPlan(USER_ID, request);
+            studyPlanService.createNewPlan(USER_ID, "en", request);
 
             verify(studyPlanRepository).delete(existingPlan);
         }
@@ -160,7 +156,7 @@ class StudyPlanServiceTest {
         @Test
         @DisplayName("computes minutesPerDay from hoursPerWeek")
         void computesMinutesPerDay() {
-            when(studyPlanRepository.findByUserId(USER_ID))
+            when(studyPlanRepository.findByUserIdAndLanguage(USER_ID, "en"))
                     .thenReturn(Optional.empty())
                     .thenReturn(Optional.of(createTestPlan()));
             when(studyPlanRepository.save(any())).thenAnswer(i -> {
@@ -172,7 +168,7 @@ class StudyPlanServiceTest {
             var request = new CreatePlanRequest(
                     StudyGoal.exam, Level.B1, 10, List.of("General")
             );
-            studyPlanService.createNewPlan(USER_ID, request);
+            studyPlanService.createNewPlan(USER_ID, "en", request);
         }
     }
 
@@ -187,9 +183,9 @@ class StudyPlanServiceTest {
         @Test
         @DisplayName("returns empty list when no plan exists")
         void noPlan() {
-            when(studyPlanRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+            when(studyPlanRepository.findByUserIdAndLanguage(USER_ID, "en")).thenReturn(Optional.empty());
 
-            var result = studyPlanService.getTodayTasks(USER_ID);
+            var result = studyPlanService.getTodayTasks(USER_ID, "en");
 
             assertTrue(result.isEmpty());
         }
@@ -200,11 +196,11 @@ class StudyPlanServiceTest {
             var plan = createTestPlan();
             var task = createTestTask(TASK_ID, TaskType.vocab, "Learn Words", false);
 
-            when(studyPlanRepository.findByUserId(USER_ID)).thenReturn(Optional.of(plan));
+            when(studyPlanRepository.findByUserIdAndLanguage(USER_ID, "en")).thenReturn(Optional.of(plan));
             when(studyTaskRepository.findByPlanIdAndDateBetween(eq(PLAN_ID), any(), any()))
                     .thenReturn(List.of(task));
 
-            var result = studyPlanService.getTodayTasks(USER_ID);
+            var result = studyPlanService.getTodayTasks(USER_ID, "en");
 
             assertEquals(1, result.size());
             assertEquals("Learn Words", result.get(0).title());
@@ -254,11 +250,11 @@ class StudyPlanServiceTest {
         @DisplayName("updates goal, level, and minutesPerDay")
         void updatesGoal() {
             var plan = createTestPlan();
-            when(studyPlanRepository.findByUserId(USER_ID)).thenReturn(Optional.of(plan));
+            when(studyPlanRepository.findByUserIdAndLanguage(USER_ID, "en")).thenReturn(Optional.of(plan));
             when(studyPlanRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
             var request = new UpdateGoalRequest(StudyGoal.fluent, Level.C2, 21);
-            var result = studyPlanService.updateStudyGoal(USER_ID, request);
+            var result = studyPlanService.updateStudyGoal(USER_ID, "en", request);
 
             assertEquals(StudyGoal.fluent, result.goal());
             assertEquals(Level.C2, result.level());
@@ -277,9 +273,9 @@ class StudyPlanServiceTest {
         @Test
         @DisplayName("returns zeroes when no plan exists")
         void noPlan() {
-            when(studyPlanRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+            when(studyPlanRepository.findByUserIdAndLanguage(USER_ID, "en")).thenReturn(Optional.empty());
 
-            var result = studyPlanService.getStudyStats(USER_ID);
+            var result = studyPlanService.getStudyStats(USER_ID, "en");
 
             assertEquals("0.0", result.dailyHours());
             assertEquals("0.0", result.weeklyHours());
@@ -292,7 +288,7 @@ class StudyPlanServiceTest {
             var plan = createTestPlan();
             var task = createTestTask(TASK_ID, TaskType.vocab, "Learn Words", true);
 
-            when(studyPlanRepository.findByUserId(USER_ID)).thenReturn(Optional.of(plan));
+            when(studyPlanRepository.findByUserIdAndLanguage(USER_ID, "en")).thenReturn(Optional.of(plan));
             when(studyTaskRepository.findByPlanIdAndDateBetweenAndCompletedTrue(eq(PLAN_ID), any(), any()))
                     .thenReturn(List.of(task));
             when(profileStatsRepository.findByUserId(USER_ID))
@@ -301,7 +297,7 @@ class StudyPlanServiceTest {
                             .totalLearningMinutes(120)
                             .build()));
 
-            var result = studyPlanService.getStudyStats(USER_ID);
+            var result = studyPlanService.getStudyStats(USER_ID, "en");
 
             assertEquals("0.5", result.dailyHours());  // 30 mins = 0.5h
             assertEquals("0.5", result.weeklyHours());  // same task

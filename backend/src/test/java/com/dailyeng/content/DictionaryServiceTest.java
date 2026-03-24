@@ -1,10 +1,10 @@
-package com.dailyeng.service;
+package com.dailyeng.content;
 
-import com.dailyeng.entity.GrammarNote;
-import com.dailyeng.entity.VocabItem;
-import com.dailyeng.entity.enums.PartOfSpeech;
-import com.dailyeng.repository.GrammarNoteRepository;
-import com.dailyeng.repository.VocabItemRepository;
+import com.dailyeng.grammar.GrammarNote;
+import com.dailyeng.vocabulary.VocabItem;
+import com.dailyeng.common.enums.PartOfSpeech;
+import com.dailyeng.grammar.GrammarNoteRepository;
+import com.dailyeng.vocabulary.VocabItemRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -1,12 +1,8 @@
-package com.dailyeng.service;
+package com.dailyeng.notebook;
 
-import com.dailyeng.dto.notebook.NotebookDtos.*;
-import com.dailyeng.entity.Notebook;
-import com.dailyeng.entity.NotebookItem;
-import com.dailyeng.exception.BadRequestException;
-import com.dailyeng.exception.ResourceNotFoundException;
-import com.dailyeng.repository.NotebookItemRepository;
-import com.dailyeng.repository.NotebookRepository;
+import com.dailyeng.notebook.NotebookDtos.*;
+import com.dailyeng.common.exception.BadRequestException;
+import com.dailyeng.common.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -69,7 +65,7 @@ class NotebookServiceTest {
         @Test
         @DisplayName("creates notebook successfully")
         void success() {
-            when(notebookRepo.existsByUserIdAndName(USER_ID, "English")).thenReturn(false);
+            when(notebookRepo.existsByUserIdAndNameAndLanguage(USER_ID, "English", "en")).thenReturn(false);
             when(notebookRepo.save(any())).thenAnswer(inv -> {
                 Notebook nb = inv.getArgument(0);
                 nb.setId(NOTEBOOK_ID);
@@ -77,7 +73,7 @@ class NotebookServiceTest {
             });
 
             var req = new CreateNotebookRequest("English", "vocabulary", "blue");
-            var result = notebookService.createNotebook(USER_ID, req);
+            var result = notebookService.createNotebook(USER_ID, "en", req);
 
             assertEquals("English", result.name());
             assertEquals("vocabulary", result.type());
@@ -88,7 +84,7 @@ class NotebookServiceTest {
         @Test
         @DisplayName("uses default color when not provided")
         void defaultColor() {
-            when(notebookRepo.existsByUserIdAndName(USER_ID, "Test")).thenReturn(false);
+            when(notebookRepo.existsByUserIdAndNameAndLanguage(USER_ID, "Test", "en")).thenReturn(false);
             when(notebookRepo.save(any())).thenAnswer(inv -> {
                 Notebook nb = inv.getArgument(0);
                 nb.setId(NOTEBOOK_ID);
@@ -96,7 +92,7 @@ class NotebookServiceTest {
             });
 
             var req = new CreateNotebookRequest("Test", "type", null);
-            var result = notebookService.createNotebook(USER_ID, req);
+            var result = notebookService.createNotebook(USER_ID, "en", req);
 
             assertEquals("primary", result.color());
         }
@@ -104,11 +100,11 @@ class NotebookServiceTest {
         @Test
         @DisplayName("throws BadRequestException for duplicate name")
         void duplicateName() {
-            when(notebookRepo.existsByUserIdAndName(USER_ID, "English")).thenReturn(true);
+            when(notebookRepo.existsByUserIdAndNameAndLanguage(USER_ID, "English", "en")).thenReturn(true);
 
             var req = new CreateNotebookRequest("English", "vocabulary", "blue");
             assertThrows(BadRequestException.class,
-                    () -> notebookService.createNotebook(USER_ID, req));
+                    () -> notebookService.createNotebook(USER_ID, "en", req));
         }
     }
 
@@ -211,9 +207,9 @@ class NotebookServiceTest {
         var nb = createTestNotebook("English");
         nb.setItems(List.of(masteredItem));
 
-        when(notebookRepo.findAllByUserIdOrderByCreatedAtAsc(USER_ID)).thenReturn(List.of(nb));
+        when(notebookRepo.findAllByUserIdAndLanguageOrderByCreatedAtAsc(USER_ID, "en")).thenReturn(List.of(nb));
 
-        var result = notebookService.getNotebooks(USER_ID);
+        var result = notebookService.getNotebooks(USER_ID, "en");
 
         assertEquals(1, result.total());
         assertEquals(1, result.notebooks().get(0).itemCount());

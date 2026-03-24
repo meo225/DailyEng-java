@@ -1,14 +1,12 @@
-package com.dailyeng.service;
+package com.dailyeng.user;
 
-import com.dailyeng.dto.user.UserDtos.UpdateProfileRequest;
-import com.dailyeng.entity.Account;
-import com.dailyeng.entity.User;
-import com.dailyeng.entity.enums.Gender;
-import com.dailyeng.entity.enums.Level;
-import com.dailyeng.exception.BadRequestException;
-import com.dailyeng.exception.ResourceNotFoundException;
-import com.dailyeng.repository.AccountRepository;
-import com.dailyeng.repository.UserRepository;
+import com.dailyeng.user.UserDtos.UpdateProfileRequest;
+import com.dailyeng.auth.Account;
+import com.dailyeng.common.enums.Gender;
+import com.dailyeng.common.enums.Level;
+import com.dailyeng.common.exception.BadRequestException;
+import com.dailyeng.common.exception.ResourceNotFoundException;
+import com.dailyeng.auth.AccountRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -1,9 +1,7 @@
-package com.dailyeng.service;
+package com.dailyeng.content;
 
-import com.dailyeng.dto.placement.PlacementTestDtos.*;
-import com.dailyeng.entity.PlacementTestResult;
-import com.dailyeng.entity.enums.Level;
-import com.dailyeng.repository.PlacementTestResultRepository;
+import com.dailyeng.content.PlacementTestDtos.*;
+import com.dailyeng.common.enums.Level;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -40,7 +38,7 @@ class PlacementTestServiceTest {
 
         when(resultRepository.save(any(PlacementTestResult.class))).thenReturn(saved);
 
-        var response = service.submitResult("user-1", request);
+        var response = service.submitResult("user-1", "en", request);
         assertThat(response.id()).isEqualTo("result-1");
         assertThat(response.score()).isEqualTo(75);
         assertThat(response.level()).isEqualTo("B2");
@@ -58,10 +56,10 @@ class PlacementTestServiceTest {
         r2.setId("r2");
         r2.setCreatedAt(LocalDateTime.now());
 
-        when(resultRepository.findByUserIdOrderByCreatedAtDesc("user-1"))
+        when(resultRepository.findByUserIdAndLanguageOrderByCreatedAtDesc("user-1", "en"))
                 .thenReturn(List.of(r2, r1));
 
-        var response = service.getResults("user-1");
+        var response = service.getResults("user-1", "en");
         assertThat(response.total()).isEqualTo(2);
         assertThat(response.results().get(0).id()).isEqualTo("r2");
         assertThat(response.results().get(1).level()).isEqualTo("B1");

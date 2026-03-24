@@ -1,9 +1,7 @@
-package com.dailyeng.service;
+package com.dailyeng.xp;
 
-import com.dailyeng.entity.LeaderboardEntry;
-import com.dailyeng.entity.User;
-import com.dailyeng.repository.LeaderboardEntryRepository;
-import com.dailyeng.repository.UserRepository;
+import com.dailyeng.user.User;
+import com.dailyeng.user.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,5 @@
-package com.dailyeng.service;
+package com.dailyeng.dorara;
+import com.dailyeng.user.User;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,8 +1,6 @@
-package com.dailyeng.service;
+package com.dailyeng.notification;
 
-import com.dailyeng.entity.Notification;
-import com.dailyeng.entity.enums.NotificationType;
-import com.dailyeng.repository.NotificationRepository;
+import com.dailyeng.common.enums.NotificationType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

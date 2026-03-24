@@ -1,6 +1,6 @@
-package com.dailyeng.service.srs;
+package com.dailyeng.srs;
 
-import com.dailyeng.entity.UserVocabProgress.SrsState;
+import com.dailyeng.vocabulary.UserVocabProgress.SrsState;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

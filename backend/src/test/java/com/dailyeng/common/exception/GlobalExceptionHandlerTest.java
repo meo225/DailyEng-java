@@ -1,4 +1,4 @@
-package com.dailyeng.exception;
+package com.dailyeng.common.exception;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

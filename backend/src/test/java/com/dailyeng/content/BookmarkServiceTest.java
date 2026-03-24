@@ -1,13 +1,13 @@
-package com.dailyeng.service;
+package com.dailyeng.content;
 
-import com.dailyeng.entity.GrammarBookmark;
-import com.dailyeng.entity.Topic;
-import com.dailyeng.entity.VocabBookmark;
-import com.dailyeng.entity.enums.Level;
-import com.dailyeng.exception.ResourceNotFoundException;
-import com.dailyeng.repository.GrammarBookmarkRepository;
-import com.dailyeng.repository.TopicRepository;
-import com.dailyeng.repository.VocabBookmarkRepository;
+import com.dailyeng.grammar.GrammarBookmark;
+import com.dailyeng.vocabulary.Topic;
+import com.dailyeng.vocabulary.VocabBookmark;
+import com.dailyeng.common.enums.Level;
+import com.dailyeng.common.exception.ResourceNotFoundException;
+import com.dailyeng.grammar.GrammarBookmarkRepository;
+import com.dailyeng.vocabulary.TopicRepository;
+import com.dailyeng.vocabulary.VocabBookmarkRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

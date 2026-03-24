@@ -1,13 +1,13 @@
-package com.dailyeng.service;
+package com.dailyeng.srs;
+import com.dailyeng.xp.XpService;
 
-import com.dailyeng.entity.ProfileStats;
-import com.dailyeng.entity.UserVocabProgress;
-import com.dailyeng.entity.UserVocabProgress.SrsState;
-import com.dailyeng.entity.VocabItem;
-import com.dailyeng.repository.ProfileStatsRepository;
-import com.dailyeng.repository.ReviewLogRepository;
-import com.dailyeng.repository.UserVocabProgressRepository;
-import com.dailyeng.repository.VocabItemRepository;
+import com.dailyeng.user.ProfileStats;
+import com.dailyeng.vocabulary.UserVocabProgress;
+import com.dailyeng.vocabulary.UserVocabProgress.SrsState;
+import com.dailyeng.vocabulary.VocabItem;
+import com.dailyeng.user.ProfileStatsRepository;
+import com.dailyeng.vocabulary.UserVocabProgressRepository;
+import com.dailyeng.vocabulary.VocabItemRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -138,7 +138,7 @@ class SrsServiceTest {
             when(profileStatsRepo.findByUserId(USER_ID)).thenReturn(Optional.empty());
             when(reviewLogRepo.save(any())).thenAnswer(i -> i.getArgument(0));
             when(xpService.awardXp(eq(USER_ID), anyInt()))
-                    .thenReturn(new com.dailyeng.dto.xp.XpDtos.XpAwardResult(10, 310, 1, 0, false));
+                    .thenReturn(new com.dailyeng.xp.XpDtos.XpAwardResult(10, 310, 1, 0, false));
 
             var result = srsService.reviewVocabItem(USER_ID, VOCAB_ID, 3);
 

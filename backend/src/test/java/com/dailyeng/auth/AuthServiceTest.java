@@ -1,13 +1,13 @@
-package com.dailyeng.service;
+package com.dailyeng.auth;
 
 import com.dailyeng.config.AppProperties;
-import com.dailyeng.dto.auth.*;
-import com.dailyeng.entity.User;
-import com.dailyeng.exception.BadRequestException;
-import com.dailyeng.repository.AccountRepository;
-import com.dailyeng.repository.UserRepository;
-import com.dailyeng.repository.VerificationTokenRepository;
-import com.dailyeng.security.JwtTokenProvider;
+import com.dailyeng.auth.dto.*;
+import com.dailyeng.user.User;
+import com.dailyeng.common.exception.BadRequestException;
+
+import com.dailyeng.user.UserRepository;
+
+import com.dailyeng.auth.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,17 +31,27 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    @Mock private UserRepository userRepository;
-    @Mock private AccountRepository accountRepository;
-    @Mock private VerificationTokenRepository tokenRepository;
-    @Mock private PasswordEncoder passwordEncoder;
-    @Mock private AuthenticationManager authenticationManager;
-    @Mock private JwtTokenProvider jwtTokenProvider;
-    @Mock private EmailService emailService;
-    @Mock private AppProperties appProperties;
-    @Mock private ObjectMapper objectMapper;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private AccountRepository accountRepository;
+    @Mock
+    private VerificationTokenRepository tokenRepository;
+    @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
+    private AuthenticationManager authenticationManager;
+    @Mock
+    private JwtTokenProvider jwtTokenProvider;
+    @Mock
+    private EmailService emailService;
+    @Mock
+    private AppProperties appProperties;
+    @Mock
+    private ObjectMapper objectMapper;
 
-    @InjectMocks private AuthService authService;
+    @InjectMocks
+    private AuthService authService;
 
     private static final String USER_ID = "user-123";
     private static final String EMAIL = "test@example.com";

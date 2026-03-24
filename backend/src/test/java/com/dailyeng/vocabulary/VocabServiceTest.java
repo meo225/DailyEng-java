@@ -1,10 +1,8 @@
-package com.dailyeng.service;
+package com.dailyeng.vocabulary;
 
-import com.dailyeng.entity.*;
-import com.dailyeng.entity.enums.HubType;
-import com.dailyeng.entity.enums.Level;
-import com.dailyeng.entity.enums.PartOfSpeech;
-import com.dailyeng.repository.*;
+import com.dailyeng.common.enums.HubType;
+import com.dailyeng.common.enums.Level;
+import com.dailyeng.common.enums.PartOfSpeech;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -58,10 +56,10 @@ class VocabServiceTest {
                     .build();
             group.setId("g1");
 
-            when(topicGroupRepo.findByHubTypeOrderByOrderAsc("vocab"))
+            when(topicGroupRepo.findByHubTypeAndLanguageOrderByOrderAsc("vocab", "en"))
                     .thenReturn(List.of(group));
 
-            var result = vocabService.getTopicGroups();
+            var result = vocabService.getTopicGroups("en");
 
             assertEquals(1, result.size());
             assertEquals("Daily Life", result.get(0).name());
@@ -94,7 +92,7 @@ class VocabServiceTest {
             when(userVocabProgressRepo.findByUserIdAndVocabItemIdIn(eq(USER_ID), anyList()))
                     .thenReturn(List.of(progress));
 
-            var result = vocabService.getTopicsWithProgress(USER_ID, null, null, null, 1, 12);
+            var result = vocabService.getTopicsWithProgress(USER_ID, "en", null, null, null, 1, 12);
 
             assertEquals(1, result.topics().size());
             assertEquals(100, result.topics().get(0).progress());
@@ -108,7 +106,7 @@ class VocabServiceTest {
             var page = new PageImpl<>(List.of(topic));
             when(topicRepo.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
-            var result = vocabService.getTopicsWithProgress(null, null, null, null, 1, 12);
+            var result = vocabService.getTopicsWithProgress(null, "en", null, null, null, 1, 12);
 
             assertEquals(1, result.topics().size());
             assertEquals(0, result.topics().get(0).progress());
@@ -126,18 +124,18 @@ class VocabServiceTest {
         @Test
         @DisplayName("returns empty list for blank query")
         void emptyQueryReturnsEmpty() {
-            assertEquals(List.of(), vocabService.searchTopics(""));
-            assertEquals(List.of(), vocabService.searchTopics(null));
+            assertEquals(List.of(), vocabService.searchTopics("", "en"));
+            assertEquals(List.of(), vocabService.searchTopics(null, "en"));
         }
 
         @Test
         @DisplayName("returns mapped results for valid query")
         void validQueryReturnsResults() {
             var topic = buildTopic(TOPIC_ID, "Animals", Level.B1);
-            when(topicRepo.searchByTitleOrDescription(eq(HubType.vocab), eq("animal"), any()))
+            when(topicRepo.searchByTitleOrDescription(eq(HubType.vocab), eq("en"), eq("animal"), any()))
                     .thenReturn(List.of(topic));
 
-            var result = vocabService.searchTopics("animal");
+            var result = vocabService.searchTopics("animal", "en");
 
             assertEquals(1, result.size());
             assertEquals("Animals", result.get(0).title());

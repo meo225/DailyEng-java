@@ -1,4 +1,4 @@
-package com.dailyeng.security;
+package com.dailyeng.auth.security;
 
 import com.dailyeng.config.AppProperties;
 import org.junit.jupiter.api.BeforeEach;
