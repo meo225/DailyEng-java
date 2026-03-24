@@ -1,9 +1,10 @@
 package com.dailyeng.config.seed;
 
-import com.dailyeng.entity.Topic;
-import com.dailyeng.entity.enums.HubType;
-import com.dailyeng.repository.TopicRepository;
-import com.dailyeng.service.PexelsService;
+
+import com.dailyeng.vocabulary.Topic;
+import com.dailyeng.common.enums.HubType;
+import com.dailyeng.vocabulary.TopicRepository;
+import com.dailyeng.ai.PexelsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

@@ -145,13 +145,55 @@ app:
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
 
 # ========================
+# Resilience4j
+# ========================
+resilience4j:
+  circuitbreaker:
+    instances:
+      azureSpeech:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: COUNT_BASED
+        minimum-number-of-calls: 5
+      gemini:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: COUNT_BASED
+        minimum-number-of-calls: 5
+  retry:
+    instances:
+      azureSpeech:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.http.HttpTimeoutException
+          - java.util.concurrent.TimeoutException
+      gemini:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.http.HttpTimeoutException
+          - com.google.genai.errors.ServerException
+          - com.google.genai.errors.GenAiIOException
+
+# ========================
 # Actuator
 # ========================
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,circuitbreakers,retries
   endpoint:
     health:
       show-details: when_authorized
