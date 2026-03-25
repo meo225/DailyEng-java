@@ -263,6 +263,7 @@ export function VocabFlashcardStack({
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
+                                                                aria-label="Play example audio"
                                                                 className="h-5 w-5 bg-white/50 hover:bg-white text-slate-500 hover:text-primary-600"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -276,6 +277,7 @@ export function VocabFlashcardStack({
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
+                                                                aria-label="Practice shadowing"
                                                                 className="h-5 w-5 bg-white/50 hover:bg-white text-slate-500 hover:text-red-600"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();

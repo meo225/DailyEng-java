@@ -9,3 +9,6 @@
 ## 2025-03-23 - Add ARIA label to notification dropdown
 **Learning:** Found an icon-only button (Notification bell) in the header navigation that had a `title` attribute but no explicit `aria-label`. While `title` can act as a fallback, an explicit `aria-label` is more robust for screen readers. This is a common pattern for utility buttons in navbars.
 **Action:** Always verify that utility/icon-only buttons in global navigation elements (navbars, headers) have explicit `aria-label` attributes to ensure they are accessible.
+## 2024-03-20 - [A11y] Missing ARIA Labels on Interactive Flashcard Elements
+**Learning:** Found multiple instances where dynamic learning features (like shadowing `<Mic />` and pronunciation playback `<Volume2 />` inside Flashcard example sequences) use icon-only buttons without `aria-label`s. Because these features are central to the app's learning loops, this significantly degraded the experience for screen-reader users attempting to interact with context-sensitive audio or practice tools.
+**Action:** Always verify that interactive media controls embedded in mapping functions (such as example lists in Vocab and Grammar components) include descriptive `aria-label` attributes corresponding to the specific action.
