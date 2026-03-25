@@ -124,6 +124,10 @@ public class SpeechController extends BaseController {
         if (text == null || text.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
+        // 🛡️ Sentinel: Prevent Cost Exhaustion / DoS
+        if (text.length() > 5000) {
+            return ResponseEntity.badRequest().build();
+        }
         var audioBytes = azureSpeechService.synthesize(text, voice);
         if (audioBytes.length == 0) {
             return ResponseEntity.internalServerError().build();
