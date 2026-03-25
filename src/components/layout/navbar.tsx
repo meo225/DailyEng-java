@@ -11,6 +11,7 @@ import { LearningLanguageSwitcher } from "./learning-language-switcher"
 import { useTranslation } from "@/hooks/use-translation"
 import { XpBar } from "./xp-bar"
 import { useNavigation } from "@/contexts/NavigationContext"
+import { useAuth } from "@/contexts/AuthContext"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +38,7 @@ const NavbarAuthSection = dynamic(
   }
 )
 
-type NavItemKey = "home" | "speaking_room" | "vocabulary_hub" | "grammar_hub" | "study_plan" | "notebook";
+type NavItemKey = "home" | "speaking_room" | "vocabulary_hub" | "grammar_hub" | "study_plan" | "notebook" | "translate" | "smartlens";
 
 type NavItem = {
   href: string
@@ -52,6 +53,8 @@ const navItems: NavItem[] = [
   { href: "/grammar", labelKey: "grammar_hub" },
   { href: "/plan", labelKey: "study_plan" },
   { href: "/notebook", labelKey: "notebook" },
+  { href: "/translate", labelKey: "translate" },
+  { href: "/smartlens", labelKey: "smartlens" },
 ]
 
 export function Navbar() {
@@ -59,9 +62,13 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { t } = useTranslation()
   const { startNavigation, isNavigating, targetPath } = useNavigation()
+  const { user } = useAuth()
 
   // Use targetPath during navigation so the active highlight updates instantly
   const activePath = isNavigating && targetPath ? targetPath : pathname
+
+  // Hide "Home" tab when user is signed in
+  const visibleNavItems = user ? navItems.filter((item) => item.labelKey !== "home") : navItems
 
   const isImmersivePage =
     pathname?.startsWith("/speaking/session/") ||
@@ -76,8 +83,8 @@ export function Navbar() {
       aria-label="Main navigation"
     >
       {/* Floating pill container with glassmorphism */}
-      <div className="mx-auto max-w-7xl rounded-2xl border border-white/60 bg-white/80 shadow-lg shadow-primary-100/30 backdrop-blur-[20px] supports-[backdrop-filter]:bg-white/65" style={{ boxShadow: '0 4px 24px rgba(79, 70, 229, 0.08), 0 1px 3px rgba(0,0,0,0.04), 0 12px 40px -8px rgba(79, 70, 229, 0.06)' }}>
-        <div className="flex h-14 items-center justify-between px-4 sm:px-5">
+      <div className="mx-auto max-w-[2000px] rounded-2xl border border-white/60 bg-white/80 shadow-lg shadow-primary-100/30 backdrop-blur-[20px] supports-[backdrop-filter]:bg-white/65" style={{ boxShadow: '0 4px 24px rgba(79, 70, 229, 0.08), 0 1px 3px rgba(0,0,0,0.04), 0 12px 40px -8px rgba(79, 70, 229, 0.06)' }}>
+        <div className="flex h-16 items-center justify-between px-5 sm:px-6">
           {/* Logo */}
           <Link
             href="/"
@@ -99,8 +106,8 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-0.5">
-            {navItems.map((item) => {
+          <div className="hidden md:flex items-center gap-2">
+            {visibleNavItems.map((item) => {
               if ("dropdown" in item && item.dropdown) {
                 return (
                   <DropdownMenu key={item.labelKey}>
@@ -127,11 +134,10 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => startNavigation(item.href)}
-                  className={`text-[13.5px] px-3 py-1.5 rounded-xl font-semibold transition-all duration-300 ${
-                    isActive
+                  className={`text-[13.5px] px-4 py-2 rounded-xl font-semibold transition-all duration-300 ${isActive
                       ? "bg-primary-500 text-white shadow-sm shadow-primary-200 hover:-translate-y-0.5"
                       : "text-gray-500 hover:text-gray-900 hover:bg-white/60 hover:backdrop-blur-sm"
-                  }`}
+                    }`}
                 >
                   {t(`nav.${item.labelKey}`)}
                 </Link>
@@ -140,7 +146,7 @@ export function Navbar() {
           </div>
 
           {/* Right Section — dynamic import, never SSR'd */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="hidden md:block">
               <XpBar />
             </div>
@@ -179,7 +185,7 @@ export function Navbar() {
               <span className="text-sm font-semibold text-gray-500">{t("common.language")}</span>
               <LanguageSwitcher />
             </div>
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               if ("dropdown" in item && item.dropdown) {
                 return (
                   <div key={item.labelKey} className="space-y-1">
@@ -190,11 +196,10 @@ export function Navbar() {
                       <Link
                         key={subItem.href}
                         href={subItem.href}
-                        className={`block pl-5 py-2 rounded-xl text-sm font-medium transition-colors ${
-                          activePath.startsWith(subItem.href)
+                        className={`block pl-5 py-2 rounded-xl text-sm font-medium transition-colors ${activePath.startsWith(subItem.href)
                             ? "bg-primary-500 text-white"
                             : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                        }`}
+                          }`}
                         onClick={() => { startNavigation(subItem.href); setMobileOpen(false); }}
                       >
                         {t(`nav.${subItem.labelKey}`)}
@@ -209,11 +214,10 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`block px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                    isActive
+                  className={`block px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${isActive
                       ? "bg-primary-500 text-white"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  }`}
+                    }`}
                   onClick={() => { startNavigation(item.href); setMobileOpen(false); }}
                 >
                   {t(`nav.${item.labelKey}`)}

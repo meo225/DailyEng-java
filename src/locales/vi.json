@@ -5,7 +5,9 @@
     "vocabulary_hub": "Kho từ vựng",
     "grammar_hub": "Kho ngữ pháp",
     "study_plan": "Lộ trình học",
-    "notebook": "Sổ tay"
+    "notebook": "Sổ tay",
+    "translate": "Dịch",
+    "smartlens": "SmartLens"
   },
   "auth": {
     "sign_in": "Đăng nhập",

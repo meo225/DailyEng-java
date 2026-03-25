@@ -132,6 +132,14 @@ app:
     stt-language: en-US
     tts-voice: en-US-JennyNeural
 
+  azure-translator:
+    subscription-key: ${AZURE_TRANSLATOR_KEY:}
+    region: ${AZURE_TRANSLATOR_REGION:japaneast}
+
+  azure-vision:
+    subscription-key: ${AZURE_VISION_KEY:}
+    endpoint: ${AZURE_VISION_ENDPOINT:}
+
   pexels:
     api-key: ${PEXELS_API_KEY:}
 
@@ -164,6 +172,20 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 3
         sliding-window-type: COUNT_BASED
         minimum-number-of-calls: 5
+      azureTranslator:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: COUNT_BASED
+        minimum-number-of-calls: 5
+      azureVision:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: COUNT_BASED
+        minimum-number-of-calls: 5
   retry:
     instances:
       azureSpeech:
@@ -185,6 +207,22 @@ resilience4j:
           - java.net.http.HttpTimeoutException
           - com.google.genai.errors.ServerException
           - com.google.genai.errors.GenAiIOException
+      azureTranslator:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.http.HttpTimeoutException
+      azureVision:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.http.HttpTimeoutException
 
 # ========================
 # Actuator

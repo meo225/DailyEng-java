@@ -23,6 +23,8 @@ public class AppProperties {
     private Cors cors = new Cors();
     private Gemini gemini = new Gemini();
     private AzureSpeech azureSpeech = new AzureSpeech();
+    private AzureTranslator azureTranslator = new AzureTranslator();
+    private AzureVision azureVision = new AzureVision();
     private Pexels pexels = new Pexels();
     private Google google = new Google();
     private String frontendUrl = "http://localhost:3000";
@@ -83,6 +85,20 @@ public class AppProperties {
         private String region = "eastjp";
         private String sttLanguage = "en-US";
         private String ttsVoice = "en-US-JennyNeural";
+    }
+
+    @Getter
+    @Setter
+    public static class AzureTranslator {
+        private String subscriptionKey;
+        private String region = "japaneast";
+    }
+
+    @Getter
+    @Setter
+    public static class AzureVision {
+        private String subscriptionKey;
+        private String endpoint;
     }
 
     @Getter

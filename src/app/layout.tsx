@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   description:
     "Master new languages with AI-powered vocabulary, speaking, and grammar lessons.",
   icons: {
-    icon: "/dailyeng.ico",
+    icon: "/dailylang.ico",
   },
 };
 

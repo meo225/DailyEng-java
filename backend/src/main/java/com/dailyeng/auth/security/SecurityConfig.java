@@ -69,6 +69,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/site-content/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/placement-test/questions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/dictionary/**").permitAll()
+                        // Translation (public)
+                        .requestMatchers(HttpMethod.POST, "/translate").permitAll()
+                        // SmartLens (public)
+                        .requestMatchers(HttpMethod.POST, "/smartlens/**").permitAll()
                         // Actuator
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/actuator/info").permitAll()

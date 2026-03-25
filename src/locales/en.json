@@ -5,7 +5,9 @@
     "vocabulary_hub": "Vocabulary Hub",
     "grammar_hub": "Grammar Hub",
     "study_plan": "Study Plan",
-    "notebook": "Notebook"
+    "notebook": "Notebook",
+    "translate": "Translate",
+    "smartlens": "SmartLens"
   },
   "auth": {
     "sign_in": "Sign in",
