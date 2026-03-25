@@ -32,7 +32,7 @@ export function Footer() {
           {/* About DailyEng */}
           <div className="lg:col-span-1 flex flex-col items-center lg:items-start">
             <Image
-              src="/logo.webp"
+              src="/logo.png"
               alt="DailyEng Logo"
               width={96}
               height={82}

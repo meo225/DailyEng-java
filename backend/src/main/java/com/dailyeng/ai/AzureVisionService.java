@@ -103,40 +103,62 @@ public class AzureVisionService {
 
             var blocks = readResult.path("blocks");
             var lines = new ArrayList<TextLine>();
+            var textBlocks = new ArrayList<TextBlock>();
             var fullTextBuilder = new StringBuilder();
 
             if (blocks.isArray()) {
                 for (var block : blocks) {
                     var blockLines = block.path("lines");
                     if (blockLines.isArray()) {
+                        // Collect lines for this block → merge into a paragraph
+                        var blockLineTexts = new ArrayList<String>();
+                        double blockMinX = Double.MAX_VALUE, blockMinY = Double.MAX_VALUE;
+                        double blockMaxX = Double.MIN_VALUE, blockMaxY = Double.MIN_VALUE;
+
                         for (var line : blockLines) {
                             var text = line.path("text").asText("");
                             if (!text.isBlank()) {
-                                // Extract bounding polygon
+                                // Extract bounding polygon for individual line
                                 var boundingPolygon = new ArrayList<double[]>();
                                 var polygonNode = line.path("boundingPolygon");
                                 if (polygonNode.isArray()) {
                                     for (var point : polygonNode) {
-                                        boundingPolygon.add(new double[]{
-                                                point.path("x").asDouble(0),
-                                                point.path("y").asDouble(0)
-                                        });
+                                        double px = point.path("x").asDouble(0);
+                                        double py = point.path("y").asDouble(0);
+                                        boundingPolygon.add(new double[]{px, py});
+                                        blockMinX = Math.min(blockMinX, px);
+                                        blockMinY = Math.min(blockMinY, py);
+                                        blockMaxX = Math.max(blockMaxX, px);
+                                        blockMaxY = Math.max(blockMaxY, py);
                                     }
                                 }
 
                                 lines.add(new TextLine(text, boundingPolygon));
+                                blockLineTexts.add(text);
                                 if (!fullTextBuilder.isEmpty()) fullTextBuilder.append("\n");
                                 fullTextBuilder.append(text);
                             }
+                        }
+
+                        // Create merged paragraph block with combined bounding box
+                        if (!blockLineTexts.isEmpty()) {
+                            var mergedText = String.join(" ", blockLineTexts);
+                            var combinedPolygon = List.of(
+                                    new double[]{blockMinX, blockMinY},
+                                    new double[]{blockMaxX, blockMinY},
+                                    new double[]{blockMaxX, blockMaxY},
+                                    new double[]{blockMinX, blockMaxY}
+                            );
+                            textBlocks.add(new TextBlock(mergedText, combinedPolygon, blockLineTexts.size()));
                         }
                     }
                 }
             }
 
-            log.info("🔍 Azure Vision OCR: extracted {} lines from image ({} bytes)",
-                    lines.size(), imageData.length);
+            log.info("🔍 Azure Vision OCR: extracted {} lines ({} blocks) from image ({} bytes)",
+                    lines.size(), textBlocks.size(), imageData.length);
 
-            return new OcrResult(lines, fullTextBuilder.toString());
+            return new OcrResult(lines, textBlocks, fullTextBuilder.toString());
 
         } catch (Exception e) {
             log.error("Azure Vision error: {}", e.getMessage(), e);
@@ -155,9 +177,16 @@ public class AzureVisionService {
     public record TextLine(String text, List<double[]> boundingPolygon) {
     }
 
-    public record OcrResult(List<TextLine> lines, String fullText) {
+    /**
+     * A merged paragraph block — all OCR lines within a single Azure block joined into one text.
+     * The bounding polygon covers the entire block area.
+     */
+    public record TextBlock(String text, List<double[]> boundingPolygon, int lineCount) {
+    }
+
+    public record OcrResult(List<TextLine> lines, List<TextBlock> textBlocks, String fullText) {
         public static OcrResult empty() {
-            return new OcrResult(List.of(), "");
+            return new OcrResult(List.of(), List.of(), "");
         }
 
         public boolean isEmpty() {

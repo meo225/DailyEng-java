@@ -91,7 +91,7 @@ export function Navbar() {
             className="flex items-center gap-2 font-bold text-lg transition-opacity hover:opacity-80"
           >
             <Image
-              src="/logo.webp"
+              src="/logo.png"
               alt="DailyLang Logo"
               width={36}
               height={36}

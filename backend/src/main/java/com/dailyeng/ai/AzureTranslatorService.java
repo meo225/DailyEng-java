@@ -14,6 +14,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -144,6 +146,89 @@ public class AzureTranslatorService {
             log.error("Azure Translator error: {}", e.getMessage(), e);
             return TranslationResult.empty();
         }
+    }
+
+    /**
+     * Translate multiple texts in a single API call.
+     * Each text is translated independently (no cross-line context mixing).
+     *
+     * @param texts list of source texts to translate
+     * @param from  source language code — null for auto-detect
+     * @param to    target language code
+     * @return list of translated texts (same order as input)
+     */
+    @CircuitBreaker(name = "azureTranslator", fallbackMethod = "translateBatchFallback")
+    @Retry(name = "azureTranslator")
+    public List<String> translateBatch(List<String> texts, String from, String to) {
+        if (!enabled || texts == null || texts.isEmpty()) {
+            return texts != null ? texts.stream().map(t -> "").toList() : List.of();
+        }
+
+        var config = appProperties.getAzureTranslator();
+
+        var urlBuilder = new StringBuilder(
+                "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0");
+        urlBuilder.append("&to=").append(to);
+        if (from != null && !from.isBlank()) {
+            urlBuilder.append("&from=").append(from);
+        }
+
+        try {
+            // Build JSON body: [{"Text": "line1"}, {"Text": "line2"}, ...]
+            var bodyArray = texts.stream()
+                    .map(t -> new TextBody(t != null ? t : ""))
+                    .toArray();
+            var bodyJson = objectMapper.writeValueAsString(bodyArray);
+
+            var requestBuilder = HttpRequest.newBuilder()
+                    .uri(URI.create(urlBuilder.toString()))
+                    .timeout(Duration.ofSeconds(20))
+                    .header("Ocp-Apim-Subscription-Key", config.getSubscriptionKey())
+                    .header("Content-Type", "application/json; charset=UTF-8")
+                    .header("X-ClientTraceId", UUID.randomUUID().toString())
+                    .POST(HttpRequest.BodyPublishers.ofString(bodyJson));
+
+            if (config.getRegion() != null && !config.getRegion().isBlank()) {
+                requestBuilder.header("Ocp-Apim-Subscription-Region", config.getRegion());
+            }
+
+            var response = httpClient.send(requestBuilder.build(),
+                    HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                log.error("Azure Translator batch failed — status: {}, body: {}",
+                        response.statusCode(), response.body());
+                return texts.stream().map(t -> "").toList();
+            }
+
+            // Parse response: [{translations:[{text:"..."}]}, {translations:[{text:"..."}]}, ...]
+            var json = objectMapper.readTree(response.body());
+            var results = new ArrayList<String>();
+            for (int i = 0; i < json.size(); i++) {
+                var translations = json.get(i).path("translations");
+                if (translations.isArray() && !translations.isEmpty()) {
+                    results.add(translations.get(0).path("text").asText(""));
+                } else {
+                    results.add("");
+                }
+            }
+
+            log.info("🌐 Azure Translator batch: {} texts translated to '{}'", results.size(), to);
+            return results;
+
+        } catch (Exception e) {
+            log.error("Azure Translator batch error: {}", e.getMessage(), e);
+            return texts.stream().map(t -> "").toList();
+        }
+    }
+
+    /**
+     * Fallback for batch circuit breaker.
+     */
+    @SuppressWarnings("unused")
+    private List<String> translateBatchFallback(List<String> texts, String from, String to, Throwable t) {
+        log.warn("Azure Translator batch circuit breaker open — fallback: {}", t.getMessage());
+        return texts != null ? texts.stream().map(x -> "").toList() : List.of();
     }
 
     /**

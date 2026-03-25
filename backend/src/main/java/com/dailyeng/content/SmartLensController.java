@@ -4,7 +4,7 @@ import com.dailyeng.ai.AzureTranslatorService;
 import com.dailyeng.ai.AzureTranslatorService.TranslationResult;
 import com.dailyeng.ai.AzureVisionService;
 import com.dailyeng.ai.AzureVisionService.OcrResult;
-import com.dailyeng.ai.AzureVisionService.TextLine;
+import com.dailyeng.ai.AzureVisionService.TextBlock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +21,7 @@ import java.util.Map;
 /**
  * SmartLens controller — OCR + Translation pipeline for images.
  * Upload an image → extract text via Azure Vision → translate via Azure Translator.
+ * Text is grouped by paragraph (Azure block) so that split words are translated correctly.
  */
 @Slf4j
 @RestController
@@ -38,7 +39,7 @@ public class SmartLensController {
      *
      * @param image  the uploaded image file (JPEG, PNG, BMP, GIF, TIFF)
      * @param to     target language code (en, ja, vi)
-     * @return extracted + translated text lines
+     * @return extracted + translated text blocks (paragraph-level)
      */
     @PostMapping("/analyze")
     public ResponseEntity<?> analyze(
@@ -66,37 +67,43 @@ public class SmartLensController {
                         "message", "No text detected in the image"));
             }
 
-            // Step 2: Translate the full extracted text
+            // Step 2: Translate the full text (for copy-to-clipboard)
             String fullText = ocrResult.fullText();
-            TranslationResult translationResult = translatorService.translate(fullText, null, to);
+            TranslationResult fullTranslation = translatorService.translate(fullText, null, to);
 
-            // Step 3: Translate individual lines for line-by-line display
-            var translatedLines = new ArrayList<Map<String, Object>>();
-            String[] translatedParts = translationResult.translatedText().split("\n");
+            // Step 3: Batch-translate paragraph blocks (lines merged within each Azure block)
+            // This ensures words split across visual lines are translated as complete sentences
+            var blockTexts = ocrResult.textBlocks().stream()
+                    .map(TextBlock::text)
+                    .toList();
+            var translatedBlockTexts = translatorService.translateBatch(blockTexts, null, to);
 
-            for (int i = 0; i < ocrResult.lines().size(); i++) {
-                TextLine line = ocrResult.lines().get(i);
-                String translatedLine = i < translatedParts.length ? translatedParts[i] : "";
+            // Step 4: Build response with paragraph-level translations
+            var translatedBlocks = new ArrayList<Map<String, Object>>();
+            for (int i = 0; i < ocrResult.textBlocks().size(); i++) {
+                TextBlock block = ocrResult.textBlocks().get(i);
+                String translatedBlock = i < translatedBlockTexts.size() ? translatedBlockTexts.get(i) : "";
 
-                var lineMap = Map.<String, Object>of(
-                        "original", line.text(),
-                        "translated", translatedLine,
-                        "boundingPolygon", line.boundingPolygon().stream()
+                var blockMap = Map.<String, Object>of(
+                        "original", block.text(),
+                        "translated", translatedBlock,
+                        "lineCount", block.lineCount(),
+                        "boundingPolygon", block.boundingPolygon().stream()
                                 .map(p -> Map.of("x", p[0], "y", p[1]))
                                 .toList()
                 );
-                translatedLines.add(lineMap);
+                translatedBlocks.add(blockMap);
             }
 
-            log.info("🔍 SmartLens: {} lines extracted and translated to '{}'",
-                    translatedLines.size(), to);
+            log.info("🔍 SmartLens: {} blocks extracted and translated to '{}'",
+                    translatedBlocks.size(), to);
 
             return ResponseEntity.ok(Map.of(
-                    "lines", translatedLines,
+                    "lines", translatedBlocks,
                     "fullText", fullText,
-                    "translatedFullText", translationResult.translatedText(),
-                    "detectedLanguage", translationResult.detectedLanguage() != null
-                            ? translationResult.detectedLanguage() : "",
+                    "translatedFullText", fullTranslation.translatedText(),
+                    "detectedLanguage", fullTranslation.detectedLanguage() != null
+                            ? fullTranslation.detectedLanguage() : "",
                     "targetLanguage", to
             ));
 
