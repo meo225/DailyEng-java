@@ -35,8 +35,8 @@ _docs/
 data/
 
 .agent/
+.antigravity
 .gemini/
-.understand-anything/
 
 plan
 plan.md
