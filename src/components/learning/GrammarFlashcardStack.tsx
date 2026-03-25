@@ -156,6 +156,7 @@ export function GrammarFlashcardStack({
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
+                                                    aria-label="Play example audio"
                                                     className="absolute top-2 right-2 h-8 w-8 bg-white/50 hover:bg-white text-slate-500 hover:text-primary-600"
                                                     onClick={(e) => handlePlayAudio(e, ex.en)}
                                                 >
@@ -176,7 +177,7 @@ export function GrammarFlashcardStack({
             {/* Controls */}
             <div className="w-full max-w-3xl mx-auto mt-4 px-2">
                 <div className="flex items-stretch gap-2 h-12">
-                    <Button variant="outline" onClick={() => handlePrev()} disabled={currentIndex === 0} className="rounded-xl px-3 border-slate-300">
+                    <Button variant="outline" aria-label="Previous card" onClick={() => handlePrev()} disabled={currentIndex === 0} className="rounded-xl px-3 border-slate-300">
                         <ChevronLeft className="h-5 w-5" />
                     </Button>
 
@@ -199,7 +200,7 @@ export function GrammarFlashcardStack({
                         ))}
                     </div>
 
-                    <Button variant="outline" onClick={() => handleNext()} disabled={isLastCard} className="rounded-xl px-3 border-slate-300">
+                    <Button variant="outline" aria-label="Next card" onClick={() => handleNext()} disabled={isLastCard} className="rounded-xl px-3 border-slate-300">
                         <ChevronRight className="h-5 w-5" />
                     </Button>
                 </div>
