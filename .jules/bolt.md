@@ -13,3 +13,8 @@
 ## 2025-02-19 - React Context Value Memoization
 **Learning:** Context provider values created inline (e.g., `value={{ profile, isLoading, refreshProfile }}`) cause all consumers to re-render whenever the provider component re-renders, even if the actual data hasn't changed.
 **Action:** Always wrap context values in `useMemo` with appropriate dependencies to maintain stable references and prevent unnecessary re-renders of all consuming components.
+## 2026-03-26 - Memoized Filter in Client Components\n**Learning:** Next.js Server/Client component architectures with large data arrays fetched via Server Actions and stored in local state (like `liveTopics`) can cause significant rendering delays when the UI frequently re-renders (e.g. toggling tabs).  operations on these large arrays with string manipulations (, ) should always be wrapped in  to skip work when unrelated state changes.\n**Action:** Always scan for unmemoized  or  operations in React Client Components handling large data arrays, especially those driven by search bars or complex filters.
+
+## 2024-05-19 - Unmemoized Filters in Client Components
+**Learning:** React Client Components handling large arrays fetched via Server Actions (e.g. `liveTopics` in `GrammarPageClient.tsx`) can suffer rendering delays if heavy `filter()` operations with string manipulations (`toLowerCase()`, `includes()`) run on every render (e.g., when unrelated state like active tab changes).
+**Action:** Always scan for unmemoized `filter()` or `map()` operations on large data arrays in React Client Components, and wrap them in `useMemo()` with appropriate dependencies to skip unnecessary work.
