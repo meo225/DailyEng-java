@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useTransition, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppStore } from "@/lib/store";
 import { Input } from "@/components/ui/input";
@@ -200,26 +200,29 @@ export default function GrammarPageClient({
     liveGroups.find((g) => g.name === selectedGroup)?.subcategories || [];
 
   // Filter topics based on search or normal mode (similar to Speaking Room)
-  const filteredTopics = liveTopics.filter((topic) => {
-    // In search mode, search ALL topics
-    if (isSearchMode) {
-      const matchesSearch =
-        topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        topic.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSearch;
-    }
+  // ⚡ Bolt: Memoize filtered topics to prevent O(N) re-filtering on every render (e.g., when toggling UI tabs)
+  const filteredTopics = useMemo(() => {
+    return liveTopics.filter((topic) => {
+      // In search mode, search ALL topics
+      if (isSearchMode) {
+        const matchesSearch =
+          topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          topic.description.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSearch;
+      }
 
-    // Normal mode: respect filters
-    const matchesLevel =
-      selectedLevels.length === 0 || selectedLevels.includes(topic.level);
-    const matchesGroup = topic.category === selectedGroup;
-    const matchesSubcategory =
-      !selectedSubcategory ||
-      selectedSubcategory === "All" ||
-      topic.subcategory === selectedSubcategory;
+      // Normal mode: respect filters
+      const matchesLevel =
+        selectedLevels.length === 0 || selectedLevels.includes(topic.level);
+      const matchesGroup = topic.category === selectedGroup;
+      const matchesSubcategory =
+        !selectedSubcategory ||
+        selectedSubcategory === "All" ||
+        topic.subcategory === selectedSubcategory;
 
-    return matchesLevel && matchesGroup && matchesSubcategory;
-  });
+      return matchesLevel && matchesGroup && matchesSubcategory;
+    });
+  }, [liveTopics, isSearchMode, searchQuery, selectedLevels, selectedGroup, selectedSubcategory]);
 
   const tabs = [
     { id: "topics", label: "All Topics" },
