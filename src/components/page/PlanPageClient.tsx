@@ -565,6 +565,7 @@ export default function PlanPageClient({
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Edit your goals"
                   className="h-6 w-6 text-slate-400 hover:text-primary-600"
                 >
                   <Edit2 className="w-3 h-3" />
