@@ -18,3 +18,7 @@
 ## 2024-05-19 - Unmemoized Filters in Client Components
 **Learning:** React Client Components handling large arrays fetched via Server Actions (e.g. `liveTopics` in `GrammarPageClient.tsx`) can suffer rendering delays if heavy `filter()` operations with string manipulations (`toLowerCase()`, `includes()`) run on every render (e.g., when unrelated state like active tab changes).
 **Action:** Always scan for unmemoized `filter()` or `map()` operations on large data arrays in React Client Components, and wrap them in `useMemo()` with appropriate dependencies to skip unnecessary work.
+
+## 2025-03-27 - Unmemoized Filters in Client Components (PlanPageClient)
+**Learning:** In Next.js Server/Client component architectures, arrays fetched via Server Actions and stored in local state (like `todayLessons`) can cause significant rendering delays when the UI frequently re-renders (e.g. toggling task completion, editing times). Computations on these large arrays with operations like `.filter()` should be wrapped in `useMemo` to skip work when unrelated state changes.
+**Action:** Always scan for unmemoized `filter()` or `map()` operations on arrays in React Client Components, and wrap them in `useMemo()` with appropriate dependencies to skip unnecessary work.
