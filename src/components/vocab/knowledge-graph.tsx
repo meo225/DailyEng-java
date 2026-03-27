@@ -460,6 +460,7 @@ export function KnowledgeGraph({ data, isLoading }: KnowledgeGraphProps) {
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Zoom out"
           onClick={() => setScale((s) => Math.max(s - 0.15, 0.15))}
           className="h-8 w-8 rounded-full hover:bg-muted text-muted-foreground"
         >
@@ -471,6 +472,7 @@ export function KnowledgeGraph({ data, isLoading }: KnowledgeGraphProps) {
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Zoom in"
           onClick={() => setScale((s) => Math.min(s + 0.15, 4))}
           className="h-8 w-8 rounded-full hover:bg-muted text-muted-foreground"
         >
@@ -480,6 +482,7 @@ export function KnowledgeGraph({ data, isLoading }: KnowledgeGraphProps) {
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Reset view"
           onClick={handleReset}
           className="h-8 w-8 rounded-full hover:bg-muted text-muted-foreground"
         >
@@ -488,6 +491,7 @@ export function KnowledgeGraph({ data, isLoading }: KnowledgeGraphProps) {
         <Button
           variant="ghost"
           size="icon"
+          aria-label={showNotebookEdges ? "Hide notebook connections" : "Show notebook connections"}
           onClick={() => setShowNotebookEdges(!showNotebookEdges)}
           className={`h-8 w-8 rounded-full hover:bg-muted ${showNotebookEdges ? "text-primary-600" : "text-muted-foreground"}`}
           title={showNotebookEdges ? "Hide notebook connections" : "Show notebook connections"}
@@ -497,6 +501,7 @@ export function KnowledgeGraph({ data, isLoading }: KnowledgeGraphProps) {
         <Button
           variant="ghost"
           size="icon"
+          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           onClick={() => setIsFullscreen(!isFullscreen)}
           className="h-8 w-8 rounded-full hover:bg-muted text-muted-foreground"
         >

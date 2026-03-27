@@ -163,6 +163,7 @@ export function DictionaryTab({
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Edit word"
                       className="h-8 w-8 cursor-pointer"
                     >
                       <Edit className="h-4 w-4" />
