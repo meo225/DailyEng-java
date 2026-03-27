@@ -86,6 +86,7 @@ export function KnowledgeGraphDetail({
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Close details"
               className="h-7 w-7 -mr-1 -mt-1 rounded-full hover:bg-muted text-muted-foreground shrink-0"
               onClick={onClose}
             >
