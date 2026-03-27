@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -165,11 +165,12 @@ export default function PlanPageClient({
   const selectedPlan = todayLessons.find((p) => p.id === selectedPlanId) || todayLessons[0]
 
   // Group tasks for calendar
-  const groupedTasks = {
+  // ⚡ Bolt: Memoize grouped tasks to prevent O(N) re-filtering on every render (e.g., when toggling lesson completion)
+  const groupedTasks = useMemo(() => ({
     morning: todayLessons.filter(t => getTimePeriod(t.startTime) === "morning"),
     afternoon: todayLessons.filter(t => getTimePeriod(t.startTime) === "afternoon"),
     evening: todayLessons.filter(t => getTimePeriod(t.startTime) === "evening"),
-  }
+  }), [todayLessons]);
 
   return (
     <ProtectedRoute
