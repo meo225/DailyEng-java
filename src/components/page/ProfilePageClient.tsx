@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Clock, BookOpen, Flame, TrendingUp, Quote, Zap, Star, Trophy } from "lucide-react";
 import { UserProfileSidebar } from "@/components/layout/user-profile-sidebar";
@@ -294,7 +294,6 @@ function StatCard({
 }
 
 function ActivityHeatmap({ data }: { data: Record<string, number> }) {
-  const today = new Date();
   const [tooltip, setTooltip] = useState<{
     show: boolean;
     x: number;
@@ -303,72 +302,71 @@ function ActivityHeatmap({ data }: { data: Record<string, number> }) {
     count: number;
   } | null>(null);
 
-  // Calculate stats from data
-  const totalLessons = Object.values(data).reduce(
-    (sum, count) => sum + count,
-    0
-  );
-  const activeDays = Object.values(data).filter((count) => count > 0).length;
+  // ⚡ Bolt: Memoize expensive heatmap layout calculations to prevent recalculation on every tooltip hover
+  const { totalLessons, activeDays, maxStreak, weeks, monthPositions } = useMemo(() => {
+    const totalLessons = Object.values(data).reduce((sum, count) => sum + count, 0);
+    const activeDays = Object.values(data).filter((count) => count > 0).length;
 
-  // Calculate max streak
-  const sortedDates = Object.keys(data).sort();
-  let maxStreak = 0;
-  let currentStreak = 0;
+    // Calculate max streak
+    const sortedDates = Object.keys(data).sort();
+    let maxStreak = 0;
+    let currentStreak = 0;
 
-  sortedDates.forEach((date) => {
-    if (data[date] > 0) {
-      currentStreak++;
-      maxStreak = Math.max(maxStreak, currentStreak);
-    } else {
-      currentStreak = 0;
-    }
-  });
-
-  // Generate last 52 weeks of data (364 days)
-  const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() - 363);
-
-  // Align to start of week (Sunday)
-  const dayOfWeek = startDate.getDay();
-  startDate.setDate(startDate.getDate() - dayOfWeek);
-
-  // Generate weeks array
-  const weeks: Array<
-    Array<{ date: string; count: number; isToday?: boolean }>
-  > = [];
-  const monthPositions: Array<{ month: string; weekIndex: number }> = [];
-  let lastMonth = -1;
-
-  for (let week = 0; week < 53; week++) {
-    const weekDays: Array<{ date: string; count: number; isToday?: boolean }> =
-      [];
-
-    for (let day = 0; day < 7; day++) {
-      const currentDate = new Date(startDate);
-      currentDate.setDate(startDate.getDate() + week * 7 + day);
-      const dateStr = currentDate.toISOString().split("T")[0];
-      const isToday = dateStr === today.toISOString().split("T")[0];
-      const isFuture = currentDate > today;
-
-      if (day === 0) {
-        const month = currentDate.getMonth();
-        if (month !== lastMonth && !isFuture) {
-          monthPositions.push({
-            month: currentDate.toLocaleDateString("vi-VN", { month: "short" }),
-            weekIndex: week,
-          });
-          lastMonth = month;
-        }
+    sortedDates.forEach((date) => {
+      if (data[date] > 0) {
+        currentStreak++;
+        maxStreak = Math.max(maxStreak, currentStreak);
+      } else {
+        currentStreak = 0;
       }
+    });
 
-      weekDays.push({
-        date: isFuture ? "" : dateStr,
-        count: isFuture ? -1 : data[dateStr] || 0,
-        isToday,
-      });
+    // Generate last 52 weeks of data (364 days)
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 363);
+
+    // Align to start of week (Sunday)
+    const dayOfWeek = startDate.getDay();
+    startDate.setDate(startDate.getDate() - dayOfWeek);
+
+    // Generate weeks array
+    const weeks: Array<Array<{ date: string; count: number; isToday?: boolean }>> = [];
+    const monthPositions: Array<{ month: string; weekIndex: number }> = [];
+    let lastMonth = -1;
+
+    for (let week = 0; week < 53; week++) {
+      const weekDays: Array<{ date: string; count: number; isToday?: boolean }> = [];
+
+      for (let day = 0; day < 7; day++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + week * 7 + day);
+        const dateStr = currentDate.toISOString().split("T")[0];
+        const isToday = dateStr === today.toISOString().split("T")[0];
+        const isFuture = currentDate > today;
+
+        if (day === 0) {
+          const month = currentDate.getMonth();
+          if (month !== lastMonth && !isFuture) {
+            monthPositions.push({
+              month: currentDate.toLocaleDateString("vi-VN", { month: "short" }),
+              weekIndex: week,
+            });
+            lastMonth = month;
+          }
+        }
+
+        weekDays.push({
+          date: isFuture ? "" : dateStr,
+          count: isFuture ? -1 : data[dateStr] || 0,
+          isToday,
+        });
+      }
+      weeks.push(weekDays);
     }
-    weeks.push(weekDays);
-  }
+
+    return { totalLessons, activeDays, maxStreak, weeks, monthPositions };
+  }, [data]);
 
   const getColor = (count: number) => {
     if (count === -1) return "bg-transparent";

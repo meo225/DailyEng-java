@@ -22,3 +22,7 @@
 ## 2025-03-27 - Unmemoized Filters in Client Components (PlanPageClient)
 **Learning:** In Next.js Server/Client component architectures, arrays fetched via Server Actions and stored in local state (like `todayLessons`) can cause significant rendering delays when the UI frequently re-renders (e.g. toggling task completion, editing times). Computations on these large arrays with operations like `.filter()` should be wrapped in `useMemo` to skip work when unrelated state changes.
 **Action:** Always scan for unmemoized `filter()` or `map()` operations on arrays in React Client Components, and wrap them in `useMemo()` with appropriate dependencies to skip unnecessary work.
+
+## 2024-05-18 - Memoizing Complex Date Logic Without DST Regressions
+**Learning:** When attempting to memoize expensive component render logic (like a calendar or heatmap iterating over 365 days) using `useMemo`, anchoring `today` outside of the `useMemo` using `new Date().toISOString().split("T")[0]` to create a stable dependency string introduces critical timezone offset and Daylight Saving Time (DST) regressions. This ties the date exactly to UTC midnight, which translates to a local offset and causes loops utilizing `startDate.setDate()` to duplicate or skip days over DST boundaries.
+**Action:** Always instantiate `const today = new Date()` safely *inside* the `useMemo` block rather than trying to pass it as a stable string dependency, ensuring it operates safely in local time without triggering invalidations or breaking DST logic.
