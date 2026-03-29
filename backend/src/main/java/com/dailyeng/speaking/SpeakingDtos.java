@@ -1,6 +1,7 @@
 package com.dailyeng.speaking;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
@@ -14,10 +15,10 @@ public final class SpeakingDtos {
 
     // ============================== Requests ==============================
 
-    public record CreateCustomScenarioRequest(@NotBlank String topicPrompt) {}
+    public record CreateCustomScenarioRequest(@NotBlank @Size(max = 500) String topicPrompt) {}
     public record StartSessionRequest(@NotBlank String scenarioId) {}
     public record SubmitTurnRequest(
-            @NotBlank String userText,
+            @NotBlank @Size(max = 2000) String userText,
             String audioUrl,
             SpeechMetrics speechMetrics
     ) {}
