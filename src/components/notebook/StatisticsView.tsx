@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import {
   BookOpen, Zap, Award, Flame, Target, BarChart3, Lightbulb, Crosshair, TrendingUp,
 } from "lucide-react"
@@ -21,6 +22,29 @@ export function StatisticsView({
   vocabularyItems, grammarItems,
   stats, dueCount, onStartReview,
 }: StatisticsViewProps) {
+  // ⚡ Bolt: Memoize grouped item counts to prevent O(N * Levels) filtering operations on every render
+  const levelCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      "A1": 0, "A2": 0, "B1": 0, "B2": 0, "C1": 0, "C2": 0
+    };
+
+    if (currentCollectionType === "vocabulary") {
+      for (const item of vocabularyItems) {
+        if (item.collectionId === selectedCollection && item.level) {
+          counts[item.level] = (counts[item.level] || 0) + 1;
+        }
+      }
+    } else {
+      for (const item of grammarItems) {
+        if (item.collectionId === selectedCollection && item.level) {
+          counts[item.level] = (counts[item.level] || 0) + 1;
+        }
+      }
+    }
+
+    return counts;
+  }, [currentCollectionType, vocabularyItems, grammarItems, selectedCollection]);
+
   return (
     <div className="space-y-5 notebook-enter">
       {/* Due for review Banner */}
@@ -128,10 +152,7 @@ export function StatisticsView({
           </div>
           <div className="space-y-2.5 py-1">
             {["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => {
-              const items = currentCollectionType === "vocabulary"
-                ? vocabularyItems.filter(i => i.collectionId === selectedCollection && i.level === level)
-                : grammarItems.filter(i => i.collectionId === selectedCollection && i.level === level)
-              const count = items.length
+              const count = levelCounts[level] || 0;
               const percentage = stats.total > 0 ? (count / stats.total) * 100 : 0
               const barGradient = level.startsWith("A") ? "from-teal-400 to-teal-500"
                 : level.startsWith("B") ? "from-primary-400 to-primary-500"
