@@ -65,6 +65,10 @@ public class SpeechController extends BaseController {
             @RequestParam(value = "targetLanguage", required = false) String targetLanguage
     ) {
         requireUserId();
+        // 🛡️ Sentinel: Prevent Cost Exhaustion / DoS
+        if (referenceText != null && referenceText.length() > 5000) {
+            return ResponseEntity.badRequest().build();
+        }
         boolean isScripted = referenceText != null && !referenceText.isBlank();
         try {
             log.info("🎤 Transcribe+Assess [{}]: contentType={}, size={} bytes, targetLang={}",
@@ -146,6 +150,10 @@ public class SpeechController extends BaseController {
             @RequestParam(value = "targetLanguage", required = false) String targetLanguage
     ) {
         requireUserId();
+        // 🛡️ Sentinel: Prevent Cost Exhaustion / DoS
+        if (referenceText != null && referenceText.length() > 5000) {
+            return ResponseEntity.badRequest().build();
+        }
         try {
             var locale = resolveAzureLocale(targetLanguage);
             AzureSpeechService.PronunciationResult result;
