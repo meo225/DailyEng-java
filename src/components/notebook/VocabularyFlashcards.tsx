@@ -112,7 +112,7 @@ export function VocabularyFlashcards({
               <Badge className="text-xs font-bold px-3 py-1 rounded-lg bg-primary-50 text-primary-600 border border-primary-200">{currentItem.level}</Badge>
             </div>
 
-            <Button size="sm" variant="ghost" className="absolute top-6 right-6 h-10 w-10 rounded-full p-0 hover:bg-yellow-50 cursor-pointer" onClick={toggleStar}>
+            <Button aria-label={starredItems.has(currentItem.id) ? "Unstar flashcard" : "Star flashcard"} size="sm" variant="ghost" className="absolute top-6 right-6 h-10 w-10 rounded-full p-0 hover:bg-yellow-50 cursor-pointer" onClick={toggleStar}>
               <Star className={`h-5 w-5 transition-colors ${starredItems.has(currentItem.id) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
             </Button>
 
@@ -130,7 +130,7 @@ export function VocabularyFlashcards({
                   <h2 className="notebook-heading text-xl font-bold text-gray-900">{currentItem.word}</h2>
                   <p className="text-sm text-gray-400 font-mono">{currentItem.pronunciation}</p>
                 </div>
-                <Button size="sm" variant="ghost" className="h-8 w-8 rounded-full p-0 hover:bg-yellow-50 cursor-pointer" onClick={toggleStar}>
+                <Button aria-label={starredItems.has(currentItem.id) ? "Unstar flashcard" : "Star flashcard"} size="sm" variant="ghost" className="h-8 w-8 rounded-full p-0 hover:bg-yellow-50 cursor-pointer" onClick={toggleStar}>
                   <Star className={`h-4 w-4 transition-colors ${starredItems.has(currentItem.id) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
                 </Button>
               </div>
