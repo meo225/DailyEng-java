@@ -23,6 +23,7 @@ export function Pagination({
         <Button
           variant="outline"
           size="icon"
+          aria-label="Previous page"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
           className="cursor-pointer"
@@ -35,6 +36,7 @@ export function Pagination({
         <Button
           variant="outline"
           size="icon"
+          aria-label="Next page"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
           className="cursor-pointer"
@@ -50,6 +52,7 @@ export function Pagination({
       <Button
         variant="outline"
         size="sm"
+        aria-label="Previous page"
         className="h-9 w-9 p-0 cursor-pointer bg-transparent"
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
@@ -92,6 +95,7 @@ export function Pagination({
       <Button
         variant="outline"
         size="sm"
+        aria-label="Next page"
         className="h-9 w-9 p-0 cursor-pointer bg-transparent"
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}

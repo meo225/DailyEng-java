@@ -5,12 +5,12 @@ describe("getCardsDue", () => {
   const NOW = new Date("2024-03-15T12:00:00Z");
 
   beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(NOW);
+    vi.useFakeTimers?.();
+    vi.setSystemTime?.(NOW);
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    vi.useRealTimers?.();
   });
 
   const createCard = (id: string, nextReviewDate: Date): SRSCard => ({
