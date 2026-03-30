@@ -86,13 +86,31 @@ export function useNotebookData({
 
   // ── Update collection counts when items change ──
   useEffect(() => {
+    // ⚡ Bolt: Replace O(N*M) filter inside map with O(N) hash map grouping
+    // This prevents performance degradation when vocabularyItems grows to thousands of words.
+    const vocabCounts = new Map<string, { count: number, mastered: number }>()
+    vocabularyItems.forEach(i => {
+      const stats = vocabCounts.get(i.collectionId) || { count: 0, mastered: 0 }
+      stats.count += 1
+      if (i.masteryLevel >= 80) stats.mastered += 1
+      vocabCounts.set(i.collectionId, stats)
+    })
+
+    const grammarCounts = new Map<string, { count: number, mastered: number }>()
+    grammarItems.forEach(i => {
+      const stats = grammarCounts.get(i.collectionId) || { count: 0, mastered: 0 }
+      stats.count += 1
+      if (i.masteryLevel >= 80) stats.mastered += 1
+      grammarCounts.set(i.collectionId, stats)
+    })
+
     setCollections(prev => prev.map(c => {
-      if (c.type === "vocabulary") {
-        const items = vocabularyItems.filter(i => i.collectionId === c.id)
-        return { ...c, count: items.length, mastered: items.filter(i => i.masteryLevel >= 80).length }
+      const stats = c.type === "vocabulary" ? vocabCounts.get(c.id) : grammarCounts.get(c.id)
+      return {
+        ...c,
+        count: stats?.count || 0,
+        mastered: stats?.mastered || 0
       }
-      const items = grammarItems.filter(i => i.collectionId === c.id)
-      return { ...c, count: items.length, mastered: items.filter(i => i.masteryLevel >= 80).length }
     }))
   }, [vocabularyItems, grammarItems])
 
