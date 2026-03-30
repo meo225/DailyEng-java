@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 public final class DoraraDtos {
@@ -15,12 +16,12 @@ public final class DoraraDtos {
     public record DoraraChatMessage(
             String id,
             @Pattern(regexp = "user|tutor") String role,
-            @NotBlank String content
+            @NotBlank @Size(max = 2000) String content
     ) {}
 
     public record DoraraChatRequest(
             @NotNull @Valid List<DoraraChatMessage> messages,
-            @NotBlank String userMessage,
+            @NotBlank @Size(max = 2000) String userMessage,
             String currentPage
     ) {}
 
