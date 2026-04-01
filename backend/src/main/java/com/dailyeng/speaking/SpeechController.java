@@ -35,6 +35,10 @@ public class SpeechController extends BaseController {
             @RequestParam(value = "targetLanguage", required = false) String targetLanguage
     ) {
         requireUserId();
+        // 🛡️ Sentinel: Prevent Memory Exhaustion / DoS from massive language codes
+        if (targetLanguage != null && targetLanguage.length() > 50) {
+            return ResponseEntity.badRequest().build();
+        }
         try {
             log.info("🎤 STT Request: contentType={}, filename={}, size={} bytes, targetLang={}",
                     audioFile.getContentType(), audioFile.getOriginalFilename(), audioFile.getSize(), targetLanguage);
@@ -67,6 +71,10 @@ public class SpeechController extends BaseController {
         requireUserId();
         // 🛡️ Sentinel: Prevent Cost Exhaustion / DoS
         if (referenceText != null && referenceText.length() > 5000) {
+            return ResponseEntity.badRequest().build();
+        }
+        // 🛡️ Sentinel: Prevent Memory Exhaustion / DoS from massive language codes
+        if (targetLanguage != null && targetLanguage.length() > 50) {
             return ResponseEntity.badRequest().build();
         }
         boolean isScripted = referenceText != null && !referenceText.isBlank();
@@ -152,6 +160,10 @@ public class SpeechController extends BaseController {
         requireUserId();
         // 🛡️ Sentinel: Prevent Cost Exhaustion / DoS
         if (referenceText != null && referenceText.length() > 5000) {
+            return ResponseEntity.badRequest().build();
+        }
+        // 🛡️ Sentinel: Prevent Memory Exhaustion / DoS from massive language codes
+        if (targetLanguage != null && targetLanguage.length() > 50) {
             return ResponseEntity.badRequest().build();
         }
         try {
