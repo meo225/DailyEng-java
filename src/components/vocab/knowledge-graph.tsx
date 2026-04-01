@@ -263,24 +263,32 @@ export function KnowledgeGraph({ data, isLoading }: KnowledgeGraphProps) {
   const searchMatch = useMemo(() => {
     if (!searchQuery.trim()) return null;
     const q = searchQuery.toLowerCase();
-    return new Set(
-      simNodes
-        .filter(
-          (n) =>
-            n.word.toLowerCase().includes(q) ||
-            n.meaning.toLowerCase().includes(q) ||
-            n.vietnameseMeaning.toLowerCase().includes(q)
-        )
-        .map((n) => n.id)
-    );
+    const matchSet = new Set<string>();
+    // ⚡ Bolt: Use a single pass to directly populate the Set, avoiding intermediate array allocation from .filter().map()
+    for (let i = 0; i < simNodes.length; i++) {
+      const n = simNodes[i];
+      if (
+        n.word.toLowerCase().includes(q) ||
+        n.meaning.toLowerCase().includes(q) ||
+        n.vietnameseMeaning.toLowerCase().includes(q)
+      ) {
+        matchSet.add(n.id);
+      }
+    }
+    return matchSet;
   }, [searchQuery, simNodes]);
 
   // Notebook filter
   const activeNodes = useMemo(() => {
     if (!activeFilter) return null;
-    return new Set(
-      simNodes.filter((n) => n.notebookName === activeFilter).map((n) => n.id)
-    );
+    const matchSet = new Set<string>();
+    // ⚡ Bolt: Prevent O(N) intermediate array allocation and extra iteration by populating Set directly
+    for (let i = 0; i < simNodes.length; i++) {
+      if (simNodes[i].notebookName === activeFilter) {
+        matchSet.add(simNodes[i].id);
+      }
+    }
+    return matchSet;
   }, [activeFilter, simNodes]);
 
   // Node lookup

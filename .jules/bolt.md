@@ -29,3 +29,7 @@
 ## 2025-05-18 - [Optimized O(N*M) to O(N) in notebook collection counts]
 **Learning:** Using `Array.prototype.filter()` repeatedly inside an `Array.prototype.map()` (e.g., mapping over 50 collections and filtering 2000 vocabulary items for each) results in an O(N * M) time complexity. As lists grow, this becomes a major performance bottleneck during React state updates or `useEffect` syncs.
 **Action:** Replace `Array.prototype.filter()` inside loops with O(1) hash map lookups. Group the items in a single O(N) pass using a `Map`, then map over the parent array and retrieve the pre-computed grouped stats.
+
+## 2025-05-19 - [Optimized Set Generation from Filtered Mapped Array]
+**Learning:** Chaining `.filter().map()` to generate an array of IDs from a large data list and then wrapping it in `new Set()` allocates intermediate arrays that are immediately thrown away. In heavily re-rendered or intensely derived state components (like graph node simulation state), this creates unnecessary GC pressure and iterates over the original array twice.
+**Action:** Replace chained `.filter().map()` operations with a single classic `for` loop that populates a `Set` directly to cut iteration count in half and reduce memory allocation.
