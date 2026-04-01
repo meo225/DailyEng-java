@@ -386,6 +386,7 @@ export default function FlashcardReviewClient({ notebookItems }: FlashcardReview
                   <Button
                     size="icon"
                     variant="outline"
+                    aria-label="Previous sentence"
                     onClick={() => setCurrentSentence(Math.max(0, currentSentence - 1))}
                     disabled={currentSentence === 0}
                     className="rounded-full h-10 w-10"
@@ -398,6 +399,7 @@ export default function FlashcardReviewClient({ notebookItems }: FlashcardReview
                   <Button
                     size="icon"
                     variant="outline"
+                    aria-label="Next sentence"
                     onClick={() => setCurrentSentence(Math.min(currentItem.examples.length - 1, currentSentence + 1))}
                     disabled={currentSentence === currentItem.examples.length - 1}
                     className="rounded-full h-10 w-10"
