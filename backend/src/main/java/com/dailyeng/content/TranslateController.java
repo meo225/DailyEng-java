@@ -42,6 +42,13 @@ public class TranslateController {
         if (to == null || to.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Target language (to) is required"));
         }
+
+        // 🛡️ Sentinel: Prevent Memory Exhaustion / DoS from massive language codes
+        if ((from != null && from.length() > 50) || to.length() > 50) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Language code exceeds maximum length of 50 characters"));
+        }
+
         if (text.length() > 5000) {
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "Text exceeds maximum length of 5000 characters"));
