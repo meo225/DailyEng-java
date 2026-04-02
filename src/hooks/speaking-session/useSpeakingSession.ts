@@ -410,6 +410,12 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
     [turns, scores]
   );
 
+  // ⚡ Bolt: Memoize the filtered array length to avoid recalculating on unrelated renders
+  const currentTurnNumber = useMemo(
+    () => turns.filter((t) => t.role === "user").length,
+    [turns]
+  );
+
   return {
     // State
     turns,
@@ -443,7 +449,7 @@ export function useSpeakingSession(props: SpeakingSessionClientProps) {
     router,
 
     // Turn counter
-    currentTurnNumber: turns.filter((t) => t.role === "user").length,
+    currentTurnNumber,
     maxTurns: MAX_TURNS,
 
     // Actions
