@@ -208,6 +208,7 @@ export default function VocabHelperChatbot() {
           <Button
             onClick={handleSendMessage}
             size="icon"
+            aria-label="Send message"
             disabled={!inputValue.trim()}
             className="flex-shrink-0 bg-green-600 hover:bg-green-500 text-white"
           >
