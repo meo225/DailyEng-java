@@ -33,3 +33,6 @@
 ## 2025-05-19 - [Optimized Set Generation from Filtered Mapped Array]
 **Learning:** Chaining `.filter().map()` to generate an array of IDs from a large data list and then wrapping it in `new Set()` allocates intermediate arrays that are immediately thrown away. In heavily re-rendered or intensely derived state components (like graph node simulation state), this creates unnecessary GC pressure and iterates over the original array twice.
 **Action:** Replace chained `.filter().map()` operations with a single classic `for` loop that populates a `Set` directly to cut iteration count in half and reduce memory allocation.
+## 2025-05-19 - [Optimized O(N*M) to O(N+M) in useBookmarks.ts]
+**Learning:** In `src/hooks/vocab/useBookmarks.ts`, `bookmarkedTopicsList` was derived on every render by calling `topics.filter((topic) => bookmarkedTopics.includes(topic.id))`. `bookmarkedTopics.includes` is an O(M) operation inside an O(N) filter, making it O(N*M). In Next.js client components, this array can be large and cause significant rendering delays on every UI interaction.
+**Action:** Wrap such array derivations in `useMemo` and optimize the check by converting the lookup array to a `Set` first (`bookmarkSet.has(topic.id)`).
