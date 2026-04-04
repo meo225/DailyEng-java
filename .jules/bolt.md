@@ -33,3 +33,6 @@
 ## 2025-05-19 - [Optimized Set Generation from Filtered Mapped Array]
 **Learning:** Chaining `.filter().map()` to generate an array of IDs from a large data list and then wrapping it in `new Set()` allocates intermediate arrays that are immediately thrown away. In heavily re-rendered or intensely derived state components (like graph node simulation state), this creates unnecessary GC pressure and iterates over the original array twice.
 **Action:** Replace chained `.filter().map()` operations with a single classic `for` loop that populates a `Set` directly to cut iteration count in half and reduce memory allocation.
+## 2026-04-04 - [Optimized Multiple Filters into Single Loop]
+**Learning:** When computing multiple statistics from an array (like separating an array into 'mastered', 'learning', and 'new' items), performing multiple sequential `.filter()` operations traverses the array multiple times, which is O(k*N) and creates intermediate unneeded arrays.
+**Action:** Combine multiple filtering operations into a single O(N) loop to calculate all metrics simultaneously.
