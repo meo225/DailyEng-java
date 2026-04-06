@@ -33,3 +33,6 @@
 ## 2025-05-19 - [Optimized Set Generation from Filtered Mapped Array]
 **Learning:** Chaining `.filter().map()` to generate an array of IDs from a large data list and then wrapping it in `new Set()` allocates intermediate arrays that are immediately thrown away. In heavily re-rendered or intensely derived state components (like graph node simulation state), this creates unnecessary GC pressure and iterates over the original array twice.
 **Action:** Replace chained `.filter().map()` operations with a single classic `for` loop that populates a `Set` directly to cut iteration count in half and reduce memory allocation.
+## 2025-03-03 - O(N) Array Aggregation
+**Learning:** React re-renders or utility logic executing multiple O(N) Array passes using `.filter().length` in sequence on the same dataset creates an easily-fixable performance bottleneck.
+**Action:** Always refactor sequential `.filter().length` aggregations into a single loop (e.g. `for` or `.reduce`) to traverse the array exactly once.
