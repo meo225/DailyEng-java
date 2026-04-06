@@ -62,10 +62,25 @@ export function getCardsDue(cards: SRSCard[]): SRSCard[] {
 // Get review statistics
 export function getReviewStats(cards: SRSCard[]) {
   const now = new Date()
-  const due = cards.filter((c) => c.nextReviewDate <= now).length
-  const new_cards = cards.filter((c) => c.repetitions === 0).length
-  const learning = cards.filter((c) => c.repetitions > 0 && c.repetitions < 3).length
-  const review = cards.filter((c) => c.repetitions >= 3).length
+  let due = 0
+  let new_cards = 0
+  let learning = 0
+  let review = 0
+
+  // ⚡ Bolt: Use a single O(N) loop to compute all stats instead of 4 separate .filter().length traversals
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i]
+    if (c.nextReviewDate <= now) {
+      due++
+    }
+    if (c.repetitions === 0) {
+      new_cards++
+    } else if (c.repetitions > 0 && c.repetitions < 3) {
+      learning++
+    } else if (c.repetitions >= 3) {
+      review++
+    }
+  }
 
   return { due, new_cards, learning, review, total: cards.length }
 }
