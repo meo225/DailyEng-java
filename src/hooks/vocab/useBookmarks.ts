@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { VocabTopic } from "./types";
 
 // ─── Params ────────────────────────────────────────
@@ -34,9 +34,10 @@ export function useBookmarks({ topics }: UseBookmarksParams) {
     });
   };
 
-  const bookmarkedTopicsList = topics.filter((topic) =>
-    bookmarkedTopics.includes(topic.id)
-  );
+  const bookmarkedTopicsList = useMemo(() => {
+    const bookmarkSet = new Set(bookmarkedTopics);
+    return topics.filter((topic) => bookmarkSet.has(topic.id));
+  }, [topics, bookmarkedTopics]);
 
   return {
     bookmarkedTopics,
