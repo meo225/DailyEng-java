@@ -250,6 +250,8 @@ export function GrammarPracticeMode() {
                                     variant={userAnswer ? "outline" : "default"}
                                     className={cn("h-16 w-16 rounded-full", userAnswer ? "border-slate-200" : "shadow-lg shadow-primary-200")}
                                     onClick={() => setUserAnswer("I have lived here for 5 years")} // Mock recording result
+                                    aria-label="Tap to record"
+                                    title="Tap to record"
                                 >
                                     <Mic className="h-6 w-6" />
                                 </Button>

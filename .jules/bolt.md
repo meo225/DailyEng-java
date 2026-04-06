@@ -33,3 +33,12 @@
 ## 2025-05-19 - [Optimized Set Generation from Filtered Mapped Array]
 **Learning:** Chaining `.filter().map()` to generate an array of IDs from a large data list and then wrapping it in `new Set()` allocates intermediate arrays that are immediately thrown away. In heavily re-rendered or intensely derived state components (like graph node simulation state), this creates unnecessary GC pressure and iterates over the original array twice.
 **Action:** Replace chained `.filter().map()` operations with a single classic `for` loop that populates a `Set` directly to cut iteration count in half and reduce memory allocation.
+## 2025-05-19 - [Optimized O(N*M) to O(N+M) in useBookmarks.ts]
+**Learning:** In `src/hooks/vocab/useBookmarks.ts`, `bookmarkedTopicsList` was derived on every render by calling `topics.filter((topic) => bookmarkedTopics.includes(topic.id))`. `bookmarkedTopics.includes` is an O(M) operation inside an O(N) filter, making it O(N*M). In Next.js client components, this array can be large and cause significant rendering delays on every UI interaction.
+**Action:** Wrap such array derivations in `useMemo` and optimize the check by converting the lookup array to a `Set` first (`bookmarkSet.has(topic.id)`).
+## 2026-04-04 - [Optimized Multiple Filters into Single Loop]
+**Learning:** When computing multiple statistics from an array (like separating an array into 'mastered', 'learning', and 'new' items), performing multiple sequential `.filter()` operations traverses the array multiple times, which is O(k*N) and creates intermediate unneeded arrays.
+**Action:** Combine multiple filtering operations into a single O(N) loop to calculate all metrics simultaneously.
+## 2025-03-03 - O(N) Array Aggregation
+**Learning:** React re-renders or utility logic executing multiple O(N) Array passes using `.filter().length` in sequence on the same dataset creates an easily-fixable performance bottleneck.
+**Action:** Always refactor sequential `.filter().length` aggregations into a single loop (e.g. `for` or `.reduce`) to traverse the array exactly once.

@@ -121,17 +121,32 @@ export function useNotebookData({
   }, [vocabularyItems])
 
   // ── Stats ──
-  const getStats = (collectionType: CollectionType, selectedCollection: string) => {
+  // ⚡ Bolt: Wrap getStats in useCallback to prevent stats from being recalculated on every render in useNotebookPage
+  const getStats = useCallback((collectionType: CollectionType, selectedCollection: string) => {
     const items = collectionType === "vocabulary"
       ? vocabularyItems.filter(i => i.collectionId === selectedCollection)
       : grammarItems.filter(i => i.collectionId === selectedCollection)
+
+    // ⚡ Bolt: Replace multiple O(N) filters and reduce with a single O(N) pass
+    let mastered = 0
+    let learning = 0
+    let newItems = 0
+    let masterySum = 0
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      masterySum += item.masteryLevel
+
+      if (item.masteryLevel >= 80) mastered++
+      else if (item.masteryLevel >= 20) learning++
+      else newItems++
+    }
+
     const total = items.length
-    const mastered = items.filter(i => i.masteryLevel >= 80).length
-    const learning = items.filter(i => i.masteryLevel >= 20 && i.masteryLevel < 80).length
-    const newItems = items.filter(i => i.masteryLevel < 20).length
-    const avgMastery = total > 0 ? Math.round(items.reduce((sum, i) => sum + i.masteryLevel, 0) / total) : 0
+    const avgMastery = total > 0 ? Math.round(masterySum / total) : 0
+
     return { total, mastered, learning, newItems, avgMastery }
-  }
+  }, [vocabularyItems, grammarItems])
 
   // ── CRUD Handlers ──
 

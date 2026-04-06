@@ -211,6 +211,8 @@ export default function VocabHelperChatbot() {
             aria-label="Send message"
             disabled={!inputValue.trim()}
             className="flex-shrink-0 bg-green-600 hover:bg-green-500 text-white"
+            aria-label="Send message"
+            title="Send message"
           >
             <Send className="h-4 w-4" />
           </Button>
