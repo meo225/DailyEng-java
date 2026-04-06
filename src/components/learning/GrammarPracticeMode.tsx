@@ -246,6 +246,7 @@ export function GrammarPracticeMode() {
                                 )}
                                 <Button
                                     size="icon"
+                                    aria-label="Record answer"
                                     variant={userAnswer ? "outline" : "default"}
                                     className={cn("h-16 w-16 rounded-full", userAnswer ? "border-slate-200" : "shadow-lg shadow-primary-200")}
                                     onClick={() => setUserAnswer("I have lived here for 5 years")} // Mock recording result
