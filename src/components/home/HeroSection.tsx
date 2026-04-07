@@ -95,24 +95,26 @@ export function HeroSection() {
             </div>
 
             <div className="hero-anim-target opacity-0 flex flex-col sm:flex-row gap-4 pointer-events-auto w-full sm:w-auto">
-              <Link href="/auth/signup" className="pointer-events-auto w-full sm:w-auto cursor-pointer">
-                <Button
-                  size="lg"
-                  variant="default"
-                  className="w-full sm:w-auto bg-primary-400 hover:bg-primary-600 text-white px-8 py-6 rounded-full text-lg font-bold cursor-pointer antigravity-shadow hover:-translate-y-1 transition-transform"
-                >
+              <Button
+                asChild
+                size="lg"
+                variant="default"
+                className="pointer-events-auto w-full sm:w-auto bg-primary-400 hover:bg-primary-600 text-white px-8 py-6 rounded-full text-lg font-bold cursor-pointer antigravity-shadow hover:-translate-y-1 transition-transform"
+              >
+                <Link href="/auth/signup">
                   Start Learning Free
-                </Button>
-              </Link>
-              <Link href="/helps" className="pointer-events-auto w-full sm:w-auto cursor-pointer">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full sm:w-auto glass-card border-2 border-primary-200 text-primary-700 hover:border-primary-300 px-8 py-6 rounded-full text-lg cursor-pointer hover:-translate-y-1 transition-transform"
-                >
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="pointer-events-auto w-full sm:w-auto glass-card border-2 border-primary-200 text-primary-700 hover:border-primary-300 px-8 py-6 rounded-full text-lg cursor-pointer hover:-translate-y-1 transition-transform"
+              >
+                <Link href="/helps">
                   How it works
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
 
             <div className="hero-anim-target opacity-0 mt-8 flex items-center gap-4 text-sm text-gray-500">

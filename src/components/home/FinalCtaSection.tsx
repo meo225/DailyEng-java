@@ -29,24 +29,26 @@ export function FinalCtaSection() {
           Get started in under a minute.
         </p>
         <div className="flex flex-col sm:flex-row gap-5 justify-center">
-          <Link href="/auth/signup" className="cursor-pointer">
-            <Button
-              size="lg"
-              className="bg-white text-gray-900 hover:bg-gray-100 px-12 py-7 rounded-full text-lg font-bold cursor-pointer shadow-2xl hover:-translate-y-1 transition-all group"
-            >
+          <Button
+            asChild
+            size="lg"
+            className="bg-white text-gray-900 hover:bg-gray-100 px-12 py-7 rounded-full text-lg font-bold cursor-pointer shadow-2xl hover:-translate-y-1 transition-all group"
+          >
+            <Link href="/auth/signup">
               Create Free Account
               <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-          <Link href="/why-dailylang" className="cursor-pointer">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-white/30 text-black hover:bg-white/10 px-12 py-7 rounded-full text-lg cursor-pointer hover:-translate-y-1 transition-all"
-            >
+            </Link>
+          </Button>
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="border-2 border-white/30 text-black hover:bg-white/10 px-12 py-7 rounded-full text-lg cursor-pointer hover:-translate-y-1 transition-all"
+          >
+            <Link href="/why-dailylang">
               Learn More
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
         <p className="mt-8 text-sm text-gray-500">
           No credit card required • Cancel anytime

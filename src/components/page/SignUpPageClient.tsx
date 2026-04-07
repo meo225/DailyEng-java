@@ -141,7 +141,7 @@ export default function SignUpPageClient({ benefits }: SignUpPageClientProps) {
 
       if (result.success) {
         // Full page reload to hydrate auth state everywhere
-        window.location.href = "/";
+        window.location.href = "/vocab";
       } else {
         setError(result.error || "Đăng ký thất bại");
       }

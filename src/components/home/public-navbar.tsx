@@ -72,21 +72,23 @@ export function PublicNavbar() {
 
           {/* Right Section: Login / Sign Up */}
           <div className="flex items-center gap-2">
-            <Link href="/auth/signin" className="hidden sm:block">
-              <Button
-                variant="ghost"
-                className="text-sm font-semibold text-gray-600 hover:text-gray-900 rounded-xl cursor-pointer"
-              >
+            <Button
+              asChild
+              variant="ghost"
+              className="hidden sm:block text-sm font-semibold text-gray-600 hover:text-gray-900 rounded-xl cursor-pointer"
+            >
+              <Link href="/auth/signin">
                 Log In
-              </Button>
-            </Link>
-            <Link href="/auth/signup">
-              <Button
-                className="bg-primary-500 hover:bg-primary-600 text-white rounded-full px-5 py-2 text-sm font-bold cursor-pointer hover:-translate-y-0.5 transition-transform antigravity-shadow"
-              >
+              </Link>
+            </Button>
+            <Button
+              asChild
+              className="bg-primary-500 hover:bg-primary-600 text-white rounded-full px-5 py-2 text-sm font-bold cursor-pointer hover:-translate-y-0.5 transition-transform antigravity-shadow"
+            >
+              <Link href="/auth/signup">
                 Sign Up
-              </Button>
-            </Link>
+              </Link>
+            </Button>
 
             {/* Mobile toggle */}
             <button
@@ -121,21 +123,23 @@ export function PublicNavbar() {
               )
             })}
             <div className="border-t border-gray-100 pt-3 mt-2 space-y-2">
-              <Link href="/auth/signin" onClick={() => setMobileOpen(false)}>
-                <Button
-                  variant="outline"
-                  className="w-full rounded-xl cursor-pointer text-sm font-semibold"
-                >
+              <Button
+                asChild
+                variant="outline"
+                className="w-full rounded-xl cursor-pointer text-sm font-semibold"
+              >
+                <Link href="/auth/signin" onClick={() => setMobileOpen(false)}>
                   Log In
-                </Button>
-              </Link>
-              <Link href="/auth/signup" onClick={() => setMobileOpen(false)}>
-                <Button
-                  className="w-full bg-primary-500 hover:bg-primary-600 text-white rounded-xl cursor-pointer text-sm font-bold"
-                >
+                </Link>
+              </Button>
+              <Button
+                asChild
+                className="w-full bg-primary-500 hover:bg-primary-600 text-white rounded-xl cursor-pointer text-sm font-bold"
+              >
+                <Link href="/auth/signup" onClick={() => setMobileOpen(false)}>
                   Sign Up Free
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
         )}

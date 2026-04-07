@@ -95,7 +95,7 @@ export function ScrollFlashcardDeck({ heroContent }: ScrollFlashcardDeckProps) {
       style={{ height: `${(totalCards + 1) * 45}vh` }}
       className="relative"
     >
-      <div className="sticky top-0 h-screen flex items-center z-20 bg-background">
+      <div className="sticky top-0 h-screen flex items-center z-0 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             {/* Left: Hero content */}

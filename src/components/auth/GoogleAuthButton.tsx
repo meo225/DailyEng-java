@@ -36,7 +36,7 @@ export function GoogleAuthButton({
         // to fetch user info, or if your backend supports access_token auth
         const result = await loginWithGoogle(tokenResponse.access_token)
         if (result.success) {
-          window.location.href = "/"
+          window.location.href = "/vocab"
         } else {
           onError?.(result.error || "Google sign-in failed")
         }
