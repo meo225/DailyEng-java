@@ -1,71 +1,51 @@
 package com.dailyeng.dorara;
 
-import com.dailyeng.common.web.BaseController;
-
-import com.dailyeng.dorara.DoraraDtos.DoraraChatRequest;
-import com.dailyeng.dorara.DoraraDtos.DoraraChatResponse;
-import jakarta.validation.Valid;
+import com.dailyeng.dorara.DoraraDtos.ChatRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+/**
+ * Controller: Người gác cổng. Nhận câu hỏi từ Next.js và trả lời chữ tưng tửng (Stream)
+ */
+@CrossOrigin
 @RestController
 @RequestMapping("/dorara")
 @RequiredArgsConstructor
-public class DoraraController extends BaseController {
+public class DoraraController {
 
     private final DoraraService doraraService;
 
-    /**
-     * Standard chat endpoint — returns full structured JSON response.
-     */
-    @PostMapping("/chat")
-    public ResponseEntity<DoraraChatResponse> chat(
-            @RequestHeader(value = "X-Learning-Language", defaultValue = "en") String language,
-            @Valid @RequestBody DoraraChatRequest request) {
-        String userId = requireUserId();
-        return ResponseEntity.ok(doraraService.sendDoraraMessage(userId, language, request));
-    }
+    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter chatStream(@RequestBody ChatRequest request) {
+        
+        // 1. Mở một đường ống Stream chờ gửi chữ về cho Next.js (chờ max 2 phút)
+        SseEmitter emitter = new SseEmitter(120_000L);
 
-    /**
-     * SSE streaming chat endpoint — streams the response word-by-word.
-     * Returns an SseEmitter that sends text chunks as Server-Sent Events.
-     *
-     * <p>After all chunks are streamed, a final {@code [DONE]} event is sent
-     * to signal the client to close the connection.</p>
-     */
-    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter chatStream(
-            @RequestHeader(value = "X-Learning-Language", defaultValue = "en") String language,
-            @Valid @RequestBody DoraraChatRequest request) {
-        String userId = requireUserId();
-
-        // 120-second timeout for long AI responses
-        var emitter = new SseEmitter(120_000L);
-
-        // Run streaming in a separate thread to not block the servlet thread
+        // 2. Chạy ngầm luồng AI để không làm treo máy chủ
         Thread.startVirtualThread(() -> {
             try {
-                doraraService.streamDoraraMessage(userId, language, request, chunk -> {
+                // Đẩy tòan bộ dữ liệu nhận từ giao diện qua cho Quản lý (Service) đánh giá
+                doraraService.chatWithDoraraStream(request, chunk -> {
                     try {
-                        emitter.send(SseEmitter.event()
-                                .name("chunk")
-                                .data(chunk));
+                        // Mã hóa dấu xuống dòng thành chữ \n (String) để SseEmitter không bị ngáo gãy cấu trúc data: liên tục
+                        String safeChunk = chunk.replace("\n", "\\n");
+                        emitter.send(safeChunk);
                     } catch (Exception e) {
                         emitter.completeWithError(e);
                     }
                 });
 
-                // Signal completion
-                emitter.send(SseEmitter.event().name("done").data("[DONE]"));
+                // Google nói xong rồi thì báo cho Frontend biết là đóng ống lại
                 emitter.complete();
+
             } catch (Exception e) {
                 emitter.completeWithError(e);
             }
         });
 
+        // 3. Cuối cùng trả về cái ống ban đầu
         return emitter;
     }
 }

@@ -98,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (result.success && result.user) {
       setUser(result.user);
       setStatus("authenticated");
+      sessionStorage.setItem("auth_user", JSON.stringify(result.user));
     }
     return { success: result.success, error: result.error };
   }, []);
@@ -107,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (result.success && result.user) {
       setUser(result.user);
       setStatus("authenticated");
+      sessionStorage.setItem("auth_user", JSON.stringify(result.user));
     }
     return { success: result.success, error: result.error };
   }, []);
@@ -116,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (result.success && result.user) {
       setUser(result.user);
       setStatus("authenticated");
+      sessionStorage.setItem("auth_user", JSON.stringify(result.user));
     }
     return { success: result.success, error: result.error };
   }, []);

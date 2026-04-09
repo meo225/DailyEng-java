@@ -4,41 +4,17 @@ import { useRef, useState, useCallback } from "react";
 import { getStreamConfig, DoraraChatMessage } from "@/actions/dorara";
 
 interface StreamState {
-  /** Text accumulated so far — displayed progressively */
   streamedText: string;
-  /** Whether a stream is currently active */
   isStreaming: boolean;
 }
 
 interface ParsedStructuredResponse {
   response: string;
   suggestedActions?: string[];
-  vocabHighlights?: Array<{
-    word: string;
-    phonetic?: string;
-    meaning: string;
-    example?: string;
-  }>;
-  quizQuestion?: {
-    question: string;
-    options: string[];
-    correctIndex: number;
-    explanation: string;
-  } | null;
+  vocabHighlights?: Array<any>;
+  quizQuestion?: any | null;
 }
 
-/**
- * Hook for streaming Dorara AI responses via SSE.
- *
- * Uses the backend `/dorara/chat/stream` endpoint which sends:
- *  - `chunk` events: raw text fragments of the Gemini JSON response
- *  - `done` event: signals completion
- *
- * The Gemini response is a JSON object with `response`, `suggestedActions`,
- * `vocabHighlights`, and `quizQuestion` fields. During streaming we extract
- * the `response` text progressively for a typing effect. On completion we
- * parse the full JSON for structured widgets.
- */
 export function useDoraraStream() {
   const [state, setState] = useState<StreamState>({
     streamedText: "",
@@ -47,84 +23,6 @@ export function useDoraraStream() {
 
   const abortRef = useRef<AbortController | null>(null);
 
-  /**
-   * Extract the "response" field value from a partial JSON string.
-   * Handles the common case where the JSON is being streamed token-by-token.
-   */
-  const extractResponseText = useCallback((rawJson: string): string => {
-    // Try to extract text after "response": " and before the closing quote
-    const marker = '"response"';
-    const idx = rawJson.indexOf(marker);
-    if (idx === -1) return "";
-
-    const afterMarker = rawJson.substring(idx + marker.length);
-    // Skip whitespace and colon
-    const colonIdx = afterMarker.indexOf(":");
-    if (colonIdx === -1) return "";
-
-    const afterColon = afterMarker.substring(colonIdx + 1).trimStart();
-
-    // Find the opening quote
-    if (!afterColon.startsWith('"')) return "";
-
-    // Extract content between quotes, handling escaped quotes
-    let result = "";
-    let i = 1; // skip opening quote
-    while (i < afterColon.length) {
-      if (afterColon[i] === "\\" && i + 1 < afterColon.length) {
-        const next = afterColon[i + 1];
-        if (next === '"') { result += '"'; i += 2; continue; }
-        if (next === "n") { result += "\n"; i += 2; continue; }
-        if (next === "\\") { result += "\\"; i += 2; continue; }
-        if (next === "t") { result += "\t"; i += 2; continue; }
-        result += next; i += 2; continue;
-      }
-      if (afterColon[i] === '"') break; // closing quote
-      result += afterColon[i];
-      i++;
-    }
-
-    return result;
-  }, []);
-
-  /**
-   * Parse the complete streamed JSON into a structured response.
-   */
-  const parseCompleteResponse = useCallback(
-    (rawJson: string): ParsedStructuredResponse => {
-      try {
-        // Strip markdown code fences if present (Gemini sometimes wraps)
-        let cleaned = rawJson.trim();
-        if (cleaned.startsWith("```")) {
-          cleaned = cleaned
-            .replace(/^```(?:json)?\s*/, "")
-            .replace(/\s*```$/, "");
-        }
-        const parsed = JSON.parse(cleaned);
-        return {
-          response: parsed.response || "",
-          suggestedActions: parsed.suggestedActions || [],
-          vocabHighlights: parsed.vocabHighlights || [],
-          quizQuestion: parsed.quizQuestion || null,
-        };
-      } catch {
-        // Fallback: treat entire text as response
-        return {
-          response: rawJson,
-          suggestedActions: ["Tell me more", "Teach me a word"],
-          vocabHighlights: [],
-          quizQuestion: null,
-        };
-      }
-    },
-    []
-  );
-
-  /**
-   * Start streaming a Dorara message via SSE.
-   *
-   * @returns A promise that resolves with the fully parsed response.
-   */
   const streamMessage = useCallback(
     async (
       messages: DoraraChatMessage[],
@@ -140,8 +38,10 @@ export function useDoraraStream() {
       setState({ streamedText: "", isStreaming: true });
 
       const { apiBase, token } = await getStreamConfig();
-      const url = `${apiBase}/dorara/chat/stream`;
+      // BƯỚC 3: Đi thẳng cấu trúc API không qua Proxy JSON lằng nhằng
+      const url = `${apiBase}/dorara/chat`;
 
+      // API Java mới siêu dễ dãi, chỉ nhận đúng nội dung bạn gõ
       const body = JSON.stringify({
         messages: messages.map((m) => ({
           id: m.id,
@@ -150,7 +50,7 @@ export function useDoraraStream() {
         })),
         userMessage,
         currentPage,
-        targetLanguage: learningLanguage,
+        targetLanguage: learningLanguage
       });
 
       let rawAccumulator = "";
@@ -182,75 +82,51 @@ export function useDoraraStream() {
 
           buffer += decoder.decode(value, { stream: true });
 
-          // Parse SSE events from the buffer
           const lines = buffer.split("\n");
-          // Keep the last incomplete line in the buffer
           buffer = lines.pop() || "";
 
           for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
+            if (!line.trim()) continue;
 
-            // SSE format: "event: <name>\ndata: <data>"
-            if (trimmed.startsWith("event:")) {
-              const eventName = trimmed.slice(6).trim();
-              if (eventName === "done") {
-                // Stream is complete
+            if (line.startsWith("data:")) {
+              // Bỏ đúng chữ "data:" và TỐI ĐA 1 dấu cách đi theo sau nó (Chuẩn SSE). Đoạn đuôi không được Trim để giữ nguyên Dấu Cách của câu rớt lửng chữ!
+              let data = line.startsWith("data: ") ? line.slice(6) : line.slice(5);
+              
+              if (data.trim() === "[DONE]") {
                 setState((prev) => ({ ...prev, isStreaming: false }));
-                return parseCompleteResponse(rawAccumulator);
-              }
-              continue;
-            }
-
-            if (trimmed.startsWith("data:")) {
-              const data = trimmed.slice(5).trim();
-              if (data === "[DONE]") {
-                setState((prev) => ({ ...prev, isStreaming: false }));
-                return parseCompleteResponse(rawAccumulator);
+                return { response: rawAccumulator };
               }
 
-              rawAccumulator += data;
-
-              // Progressive text extraction for typing effect
-              const visibleText = extractResponseText(rawAccumulator);
-              if (visibleText) {
-                setState({ streamedText: visibleText, isStreaming: true });
-              }
-              continue;
+              // BƯỚC 4: Ráp trực tiếp dữ liệu thô (đã vứt bỏ JSON Parsing)
+              let chunkText = data;
+              // Xử lý các dấu xuống dòng nguyên thủy do Backend gởi sang
+              chunkText = chunkText.replace(/\\n/g, "\n");
+              
+              rawAccumulator += chunkText;
+              
+              setState({ streamedText: rawAccumulator, isStreaming: true });
             }
           }
         }
 
-        // Stream ended without explicit [DONE]
         setState((prev) => ({ ...prev, isStreaming: false }));
-        return parseCompleteResponse(rawAccumulator);
+        return { response: rawAccumulator };
       } catch (error: any) {
         if (error.name === "AbortError") {
           setState((prev) => ({ ...prev, isStreaming: false }));
-          return {
-            response: rawAccumulator
-              ? extractResponseText(rawAccumulator)
-              : "",
-            suggestedActions: [],
-            vocabHighlights: [],
-            quizQuestion: null,
-          };
+          return { response: rawAccumulator };
         }
         console.error("[useDoraraStream] Error:", error);
         setState({ streamedText: "", isStreaming: false });
+        // Trả về câu thông báo lỗi thân thiện thay vì sập app
         return {
-          response: "",
-          suggestedActions: [],
-          vocabHighlights: [],
-          quizQuestion: null,
-          error: "Something went wrong. Please try again.",
-        } as ParsedStructuredResponse & { error: string };
+          response: "Xin lỗi, đường ống kết nối mạng hiện đang gặp trục trặc... 😿",
+        };
       }
     },
-    [extractResponseText, parseCompleteResponse]
+    []
   );
 
-  /** Cancel the current stream */
   const cancelStream = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;

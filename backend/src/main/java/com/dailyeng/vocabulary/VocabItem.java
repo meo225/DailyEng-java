@@ -38,7 +38,7 @@ public class VocabItem extends BaseEntity {
     @Column(nullable = false)
     private String meaning;
 
-    @Column(name = "translation", nullable = false)
+    @Column(name = "\"vietnameseMeaning\"", nullable = false)
     private String vietnameseMeaning;
 
     @Enumerated(EnumType.STRING)

@@ -600,6 +600,51 @@ public class GeminiService {
         }
     }
 
+    /**
+     * [V2] Generate Dorara AI response with plain text streaming.
+     * Drops the JSON wrapper requirement to prevent chunk parsing errors later.
+     */
+    public void generateDoraraStreamV2(
+            String systemInstruction,
+            List<Map<String, String>> history,
+            String userMessage,
+            java.util.function.Consumer<String> chunkConsumer
+    ) {
+        if (client == null) {
+            chunkConsumer.accept("Xin lỗi, tôi gặp chút trục trặc. (No API Key config)");
+            return;
+        }
+
+        try {
+            var contents = buildContents(history, userMessage);
+            var model = appProperties.getGemini().getModel();
+
+            var configBuilder = GenerateContentConfig.builder()
+                    .candidateCount(1)
+                    .temperature(0.7f)
+                    .maxOutputTokens(4096);
+
+            if (systemInstruction != null && !systemInstruction.isBlank()) {
+                configBuilder.systemInstruction(
+                        Content.fromParts(Part.fromText(systemInstruction)));
+            }
+
+            log.info("[GeminiService V2] Start streaming plain-text for Dorara...");
+            var stream = client.models.generateContentStream(model, contents, configBuilder.build());
+            for (var chunk : stream) {
+                var text = chunk.text();
+                if (text != null && !text.isEmpty()) {
+                    chunkConsumer.accept(text); // RAW TEXT, NO JSON
+                }
+            }
+            log.info("[GeminiService V2] Stream finished successfully.");
+            
+        } catch (Exception e) {
+            log.error("[generateDoraraStreamV2] Streaming Error: {}", e.getMessage());
+            chunkConsumer.accept("\n\n*(Lỗi kết nối AI: " + e.getMessage() + ")*");
+        }
+    }
+
     // ========================================================================
     // Private helpers
     // ========================================================================
