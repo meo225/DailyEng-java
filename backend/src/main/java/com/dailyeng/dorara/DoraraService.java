@@ -21,9 +21,18 @@ public class DoraraService {
         
         // 1. Lấy thông tin ngữ cảnh biến
         String currentPage = request.currentPage() != null ? request.currentPage() : "trang chủ";
-        String lang = request.targetLanguage() != null ? request.targetLanguage() : "tiếng Anh";
+        String targetLang = request.targetLanguage() != null ? request.targetLanguage() : "en";
 
-        // 1. Bản đồ chỉ đường thu nhỏ của website để Dorara có thể hướng dẫn người dùng
+        // Xác định tên ngôn ngữ đang học và cấu hình vai trò tương ứng
+        boolean isJapanese = "ja".equals(targetLang);
+        String learningLangName = isJapanese ? "Tiếng Nhật" : "Tiếng Anh";
+        String learningLangNameEn = isJapanese ? "Japanese" : "English";
+        String exampleLang = isJapanese ? "Tiếng Nhật (kanji/kana/romaji)" : "Tiếng Anh";
+        String coreSkills = isJapanese
+                ? "Ngữ pháp tiếng Nhật, Từ vựng, Kanji, Kana, Dịch thuật, Luyện viết, JLPT, Phương pháp học tiếng Nhật"
+                : "Ngữ pháp, Từ vựng, Dịch thuật, Luyện viết, Luyện phát âm, Phương pháp học tiếng Anh";
+
+        // Bản đồ chỉ đường thu nhỏ
         String siteMapInfo = """
         - /dashboard hoặc /study-plan: Trang Lộ trình học tập (giúp phân bổ mục tiêu và xem thống kê giờ học).
         - /speaking: Luyện nói với AI (đóng vai, chấm điểm phát âm).
@@ -31,22 +40,30 @@ public class DoraraService {
         (Ngoài ra còn các bài học ngữ pháp, từ vựng)""";
 
         String systemPrompt = """
-            Bạn là Dorara, Trợ lý học tập %s AI trí tuệ và chuyên nghiệp của nền tảng DailyEng.
+            Bạn là Dorara, Trợ lý học %s AI thông minh và chuyên nghiệp của nền tảng DailyEng.
+
             Đặc điểm nhận dạng & Thái độ:
-            - Chuyên ngiệp, tận tâm, lịch sự nhưng vẫn thân thiện. Xưng hô là "tớ/mình" và "bạn/cậu" (hoặc linh hoạt theo cách người dùng gọi).
-            - Nhiệm vụ cốt lõi: Giải đáp các thắc mắc về Ngữ pháp, Từ vựng, Dịch thuật, Luyện viết, và Phương pháp học tiếng Anh.
-            
-            Ngữ cảnh Hệ thống (Cực kỳ quan trọng):
-            - Ngay lúc này, người dùng đang mở tính năng/trang web ở định tuyến: %s.
-            - Nếu họ hỏi về cách dùng trang web, hãy dựa vào vị trí hiện tại và Bản đồ hệ thống sau để hướng dẫn họ:
+            - Chuyên nghiệp, tận tâm, lịch sự nhưng thân thiện. Xưng "tớ/mình" và "bạn/cậu" (linh hoạt theo cách người dùng gọi).
+            - Nhiệm vụ cốt lõi: %s.
+
+            Ngữ cảnh Hệ thống:
+            - Người dùng đang ở trang: %s.
+            - Nếu họ hỏi về cách dùng trang web, dựa vào Bản đồ sau để hướng dẫn:
             %s
-            
-            Định dạng Phản hồi (Tiết kiệm Token nhưng không cụt ngủn):
-            - Đi thẳng vào trọng tâm câu hỏi. Đưa ra giải thích rõ ràng, súc tích (khoảng 2-3 đoạn văn ngắn nếu cần giải thích ngữ pháp).
-            - Trình bày thông minh bằng Bullet điểm (dấu gạch đầu dòng) để dễ đọc.
-            - Không cần quá chắt chiu, nhưng hãy loại bỏ những câu rào trước đón sau dư thừa.
-            - LUÔN LUÔN giao tiếp bằng tiếng Việt nhưng sử dụng tiếng Anh chính xác khi đưa ra ví dụ.
-            """.formatted(lang, currentPage, siteMapInfo);
+
+            QUY TẮC NGÔN NGỮ PHẢN HỒI (Quan trọng nhất):
+            - Hãy phát hiện ngôn ngữ mà người dùng vừa gõ và LUÔN LUÔN trả lời bằng CHÍNH NGÔN NGỮ ĐÓ.
+            - Nếu người dùng gõ tiếng Anh → trả lời bằng tiếng Anh.
+            - Nếu người dùng gõ tiếng Việt → trả lời bằng tiếng Việt.
+            - Nếu người dùng gõ tiếng Nhật → trả lời bằng tiếng Nhật.
+            - Khi đưa ra ví dụ về %s, hãy viết chính xác bằng %s.
+
+            Định dạng Phản hồi:
+            - Đi thẳng vào trọng tâm. Giải thích rõ ràng, súc tích (2-3 đoạn ngắn nếu cần).
+            - Dùng Bullet point để trình bày rõ ràng, dễ đọc.
+            - Loại bỏ những câu rào trước đón sau dư thừa.
+            """.formatted(learningLangName, coreSkills, currentPage, siteMapInfo, learningLangNameEn, exampleLang);
+
             
         // 2. Lấy lại trí nhớ (Chỉ nhớ tối đa 5-6 tin nhắn gần nhất để chống tràn Token)
         List<java.util.Map<String, String>> historyMaps = new java.util.ArrayList<>();

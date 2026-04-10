@@ -1,20 +1,20 @@
-# Nạp các biến môi trường từ file .env vào PowerShell session hiện tại
+# Load environment variables from .env file into the current PowerShell session
 If (Test-Path ".env") {
-    Get-Content .env | Where-Object { $_ -match "^[^#]*=" } | ForEach-Object {
+    Get-Content .env -Encoding UTF8 | Where-Object { $_ -match "^[^#]*=" } | ForEach-Object {
         $name, $value = $_.Split('=', 2)
         $name = $name.Trim()
         $value = $value.Trim()
-        # Loại bỏ dấu ngoặc kép thừa (nếu có)
+        # Remove surrounding quotes if they exist
         if ($value -match '^"(.*)"$') { $value = $matches[1] }
         elseif ($value -match "^'(.*)'$") { $value = $matches[1] }
         
         [Environment]::SetEnvironmentVariable($name, $value, "Process")
     }
-    Write-Host "✅ Đã nạp thành công bộ chìa khóa (API Key) từ file .env!" -ForegroundColor Green
+    Write-Host "✅ Environment variables successfully loaded from .env!" -ForegroundColor Green
 } Else {
-    Write-Host "⚠️ Cảnh báo chết người: Không tìm thấy file .env ở thư mục này!" -ForegroundColor Red
+    Write-Host "⚠️ Warning: .env file not found in this directory!" -ForegroundColor Red
 }
 
-# Chạy máy chủ Java
-Write-Host "🚀 Đang khởi động dàn máy bơm Spring Boot..." -ForegroundColor Cyan
+# Launch Spring Boot server
+Write-Host "🚀 Starting Spring Boot Backend (DailyEng)..." -ForegroundColor Cyan
 mvn spring-boot:run

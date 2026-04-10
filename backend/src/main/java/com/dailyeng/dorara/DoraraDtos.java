@@ -19,4 +19,35 @@ public final class DoraraDtos {
             String currentPage,
             String targetLanguage
     ) {}
+
+    // ── Rich UI Enrichment (Post-Streaming) ───────────────────────────────
+
+    // Request: Frontend gửi lên nội dung AI vừa trả lời để phân tích
+    public record EnrichRequest(
+            String aiResponse,      // Full text AI vừa stream xong
+            String userMessage,     // Câu hỏi ban đầu của user
+            String targetLanguage   // "en" | "ja" etc.
+    ) {}
+
+    // Vocab highlight từng từ
+    public record VocabHighlight(
+            String word,
+            String phonetic,
+            String meaning,
+            String example
+    ) {}
+
+    // Câu hỏi Quiz trắc nghiệm
+    public record QuizQuestion(
+            String question,
+            List<String> options,
+            int correctIndex,
+            String explanation
+    ) {}
+
+    // Response trả về cho Frontend
+    public record EnrichResponse(
+            List<VocabHighlight> vocabHighlights,
+            QuizQuestion quizQuestion
+    ) {}
 }

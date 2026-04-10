@@ -1,8 +1,12 @@
 package com.dailyeng.dorara;
 
+import com.dailyeng.ai.GeminiService;
 import com.dailyeng.dorara.DoraraDtos.ChatRequest;
+import com.dailyeng.dorara.DoraraDtos.EnrichRequest;
+import com.dailyeng.dorara.DoraraDtos.EnrichResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -15,6 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class DoraraController {
 
     private final DoraraService doraraService;
+    private final GeminiService geminiService;
 
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chatStream(@RequestBody ChatRequest request) {
@@ -41,4 +46,20 @@ public class DoraraController {
 
         return emitter;
     }
+
+    /**
+     * POST /dorara/enrich
+     * Called by the frontend AFTER the chat stream completes.
+     * Analyzes the AI response text and returns vocab highlights + a quiz question.
+     */
+    @PostMapping("/enrich")
+    public ResponseEntity<EnrichResponse> enrich(@RequestBody EnrichRequest request) {
+        var result = geminiService.generateDoraraEnrich(
+                request.aiResponse(),
+                request.userMessage(),
+                request.targetLanguage()
+        );
+        return ResponseEntity.ok(result);
+    }
 }
+

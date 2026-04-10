@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { getStreamConfig, DoraraChatMessage } from "@/actions/dorara";
+import { getStreamConfig, fetchEnrichment, DoraraChatMessage } from "@/actions/dorara";
 
 interface StreamState {
   streamedText: string;
@@ -110,7 +110,15 @@ export function useDoraraStream() {
         }
 
         setState((prev) => ({ ...prev, isStreaming: false }));
-        return { response: rawAccumulator };
+
+        // 'Chia để trị' — gọi API thứ 2 sau khi Stream hoàn tất để lấy Vocab Cards + Quiz
+        const enrichment = await fetchEnrichment(rawAccumulator, userMessage, learningLanguage);
+
+        return {
+          response: rawAccumulator,
+          vocabHighlights: enrichment.vocabHighlights,
+          quizQuestion: enrichment.quizQuestion,
+        };
       } catch (error: any) {
         if (error.name === "AbortError") {
           setState((prev) => ({ ...prev, isStreaming: false }));

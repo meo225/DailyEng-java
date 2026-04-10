@@ -107,3 +107,40 @@ export async function getStreamConfig(): Promise<{
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
   return { apiBase, token };
 }
+
+// ── Post-stream enrichment (Vocab Cards + Quiz) ──────────────────────────
+
+export async function fetchEnrichment(
+  aiResponse: string,
+  userMessage: string,
+  targetLanguage: string = "en"
+): Promise<{
+  vocabHighlights: VocabHighlight[];
+  quizQuestion: QuizQuestion | null;
+}> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+
+    const headers = new Headers();
+    headers.set("Content-Type", "application/json");
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+
+    const res = await fetch(`${apiBase}/dorara/enrich`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ aiResponse, userMessage, targetLanguage }),
+    });
+
+    if (!res.ok) return { vocabHighlights: [], quizQuestion: null };
+    const data = await res.json();
+    return {
+      vocabHighlights: data.vocabHighlights || [],
+      quizQuestion: data.quizQuestion || null,
+    };
+  } catch {
+    return { vocabHighlights: [], quizQuestion: null };
+  }
+}
