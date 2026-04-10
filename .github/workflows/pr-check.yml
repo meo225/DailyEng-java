@@ -28,9 +28,9 @@ jobs:
           cache: 'maven'
 
       - name: Compile
-        run: mvn compile -q -B
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        # -P!ci disables the Sentry source-upload profile (requires SENTRY_AUTH_TOKEN).
+        # Sentry SDK still works at runtime; only source maps are skipped here.
+        run: mvn compile -q -B "-P!ci"
 
   # ─── Frontend (Next.js) ───
   frontend:
