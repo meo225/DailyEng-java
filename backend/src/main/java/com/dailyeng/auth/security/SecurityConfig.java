@@ -59,7 +59,6 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                         // Public endpoints
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/dorara/chat").permitAll()
                         .requestMatchers(HttpMethod.GET, "/vocab/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/grammar/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/speaking/topic-groups").permitAll()
