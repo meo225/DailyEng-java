@@ -148,35 +148,35 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-    // ======================== Cookie Helpers ========================
-
     private void setCookies(HttpServletResponse response, String accessToken, String refreshToken) {
         var cookieConfig = appProperties.getCookie();
-        response.addCookie(buildCookie("access_token", accessToken, cookieConfig.getAccessMaxAge()));
-        response.addCookie(buildCookie("refresh_token", refreshToken, cookieConfig.getRefreshMaxAge()));
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, buildCookie("access_token", accessToken, cookieConfig.getAccessMaxAge()));
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, buildCookie("refresh_token", refreshToken, cookieConfig.getRefreshMaxAge()));
     }
 
     private void setAccessTokenCookie(HttpServletResponse response, String accessToken) {
-        response.addCookie(buildCookie("access_token", accessToken, appProperties.getCookie().getAccessMaxAge()));
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, buildCookie("access_token", accessToken, appProperties.getCookie().getAccessMaxAge()));
     }
 
     private void clearCookies(HttpServletResponse response) {
-        response.addCookie(buildCookie("access_token", "", 0));
-        response.addCookie(buildCookie("refresh_token", "", 0));
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, buildCookie("access_token", "", 0));
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, buildCookie("refresh_token", "", 0));
     }
 
-    private Cookie buildCookie(String name, String value, int maxAge) {
+    private String buildCookie(String name, String value, int maxAge) {
         var cookieConfig = appProperties.getCookie();
-        Cookie cookie = new Cookie(name, value);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieConfig.isSecure());
-        cookie.setPath("/");
-        cookie.setMaxAge(maxAge);
+        var builder = org.springframework.http.ResponseCookie.from(name, value)
+                .httpOnly(true)
+                .secure(cookieConfig.isSecure())
+                .path("/")
+                .maxAge(maxAge)
+                .sameSite(cookieConfig.getSameSite());
+
         if (cookieConfig.getDomain() != null && !cookieConfig.getDomain().isBlank()) {
-            cookie.setDomain(cookieConfig.getDomain());
+            builder.domain(cookieConfig.getDomain());
         }
-        cookie.setAttribute("SameSite", cookieConfig.getSameSite());
-        return cookie;
+
+        return builder.build().toString();
     }
 
     /**

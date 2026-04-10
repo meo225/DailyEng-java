@@ -157,7 +157,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ErrorResponse.of(
-                        "An unexpected error occurred. Please try again.",
+                        "Unexpected Server Error: " + (ex.getMessage() != null ? ex.getMessage() : ex.toString()),
                         HttpStatus.INTERNAL_SERVER_ERROR
                 ));
     }

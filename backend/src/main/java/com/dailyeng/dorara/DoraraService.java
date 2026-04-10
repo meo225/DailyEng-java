@@ -1,184 +1,91 @@
 package com.dailyeng.dorara;
 
 import com.dailyeng.ai.GeminiService;
-
-import com.dailyeng.dorara.DoraraDtos.*;
-import com.dailyeng.user.UserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
-import java.util.Map;
 
-@Slf4j
+/**
+ * Service xử lý logic của Chatbot.
+ */
 @Service
 @RequiredArgsConstructor
 public class DoraraService {
 
     private final GeminiService geminiService;
-    private final UserRepository userRepository;
-    private final DoraraLearnerDataService learnerDataService;
-    private final ObjectMapper objectMapper;
-
-    public DoraraChatResponse sendDoraraMessage(String userId, String language, DoraraChatRequest request) {
-        try {
-            var user = userRepository.findById(userId).orElse(null);
-            String name = (user != null) ? user.getName() : "User";
-            String level = (user != null && user.getLevel() != null) ? user.getLevel().name() : null;
-
-            String pageDesc = getPageDescription(request.currentPage());
-
-            // Build learner intelligence context from DB data
-            String learnerContext = buildLearnerContextSafely(userId, language);
-
-            String systemInstruction = DoraraContext.buildSystemInstruction(
-                    name, level, pageDesc, learnerContext);
-
-            List<Map<String, String>> history = request.messages() == null
-                    ? List.of()
-                    : request.messages().stream()
-                            .map(msg -> Map.of("role", msg.role(), "content", msg.content()))
-                            .toList();
-
-            String aiResponse = geminiService.generateDoraraResponse(
-                    systemInstruction, history, request.userMessage());
-
-            return parseStructuredResponse(aiResponse);
-
-        } catch (Exception e) {
-            log.error("[sendDoraraMessage] Error generating AI response", e);
-            return DoraraChatResponse.error("Something went wrong. Please try again.");
-        }
-    }
 
     /**
-     * Stream Dorara's response via a chunk consumer (for SSE).
-     * Builds the same enriched prompt but uses streaming API.
+     * Đem câu hỏi của người dùng đi hỏi Google AI.
      */
-    public void streamDoraraMessage(
-            String userId, String language, DoraraChatRequest request,
-            java.util.function.Consumer<String> chunkConsumer) {
-        try {
-            var user = userRepository.findById(userId).orElse(null);
-            String name = (user != null) ? user.getName() : "User";
-            String level = (user != null && user.getLevel() != null) ? user.getLevel().name() : null;
+    public void chatWithDoraraStream(com.dailyeng.dorara.DoraraDtos.ChatRequest request, java.util.function.Consumer<String> chunkConsumer) {
+        
+        // 1. Lấy thông tin ngữ cảnh biến
+        String currentPage = request.currentPage() != null ? request.currentPage() : "trang chủ";
+        String targetLang = request.targetLanguage() != null ? request.targetLanguage() : "en";
 
-            String pageDesc = getPageDescription(request.currentPage());
-            String learnerContext = buildLearnerContextSafely(userId, language);
-            String systemInstruction = DoraraContext.buildSystemInstruction(
-                    name, level, pageDesc, learnerContext);
+        // Xác định tên ngôn ngữ đang học và cấu hình vai trò tương ứng
+        boolean isJapanese = "ja".equals(targetLang);
+        String learningLangName = isJapanese ? "Tiếng Nhật" : "Tiếng Anh";
+        String learningLangNameEn = isJapanese ? "Japanese" : "English";
+        String exampleLang = isJapanese ? "Tiếng Nhật (kanji/kana/romaji)" : "Tiếng Anh";
+        String coreSkills = isJapanese
+                ? "Ngữ pháp tiếng Nhật, Từ vựng, Kanji, Kana, Dịch thuật, Luyện viết, JLPT, Phương pháp học tiếng Nhật"
+                : "Ngữ pháp, Từ vựng, Dịch thuật, Luyện viết, Luyện phát âm, Phương pháp học tiếng Anh";
 
-            List<Map<String, String>> history = request.messages() == null
-                    ? List.of()
-                    : request.messages().stream()
-                            .map(msg -> Map.of("role", msg.role(), "content", msg.content()))
-                            .toList();
+        // Bản đồ chỉ đường thu nhỏ
+        String siteMapInfo = """
+        - /dashboard hoặc /study-plan: Trang Lộ trình học tập (giúp phân bổ mục tiêu và xem thống kê giờ học).
+        - /speaking: Luyện nói với AI (đóng vai, chấm điểm phát âm).
+        - /notifications: Hộp thư thông báo.
+        (Ngoài ra còn các bài học ngữ pháp, từ vựng)""";
 
-            geminiService.generateDoraraResponseStream(
-                    systemInstruction, history, request.userMessage(), chunkConsumer);
+        String systemPrompt = """
+            Bạn là Dorara, Trợ lý học %s AI thông minh và chuyên nghiệp của nền tảng DailyEng.
 
-        } catch (Exception e) {
-            log.error("[streamDoraraMessage] Error", e);
-            chunkConsumer.accept(
-                    "{\"response\":\"Something went wrong. Please try again.\",\"suggestedActions\":[],\"vocabHighlights\":[],\"quizQuestion\":null}");
+            Đặc điểm nhận dạng & Thái độ:
+            - Chuyên nghiệp, tận tâm, lịch sự nhưng thân thiện. Xưng "tớ/mình" và "bạn/cậu" (linh hoạt theo cách người dùng gọi).
+            - Nhiệm vụ cốt lõi: %s.
+
+            Ngữ cảnh Hệ thống:
+            - Người dùng đang ở trang: %s.
+            - Nếu họ hỏi về cách dùng trang web, dựa vào Bản đồ sau để hướng dẫn:
+            %s
+
+            QUY TẮC NGÔN NGỮ PHẢN HỒI (Quan trọng nhất):
+            - Hãy phát hiện ngôn ngữ mà người dùng vừa gõ và LUÔN LUÔN trả lời bằng CHÍNH NGÔN NGỮ ĐÓ.
+            - Nếu người dùng gõ tiếng Anh → trả lời bằng tiếng Anh.
+            - Nếu người dùng gõ tiếng Việt → trả lời bằng tiếng Việt.
+            - Nếu người dùng gõ tiếng Nhật → trả lời bằng tiếng Nhật.
+            - Khi đưa ra ví dụ về %s, hãy viết chính xác bằng %s.
+
+            Định dạng Phản hồi:
+            - Đi thẳng vào trọng tâm. Giải thích rõ ràng, súc tích (2-3 đoạn ngắn nếu cần).
+            - Dùng Bullet point để trình bày rõ ràng, dễ đọc.
+            - Loại bỏ những câu rào trước đón sau dư thừa.
+            """.formatted(learningLangName, coreSkills, currentPage, siteMapInfo, learningLangNameEn, exampleLang);
+
+            
+        // 2. Lấy lại trí nhớ (Chỉ nhớ tối đa 5-6 tin nhắn gần nhất để chống tràn Token)
+        List<java.util.Map<String, String>> historyMaps = new java.util.ArrayList<>();
+        if (request.messages() != null) {
+            var msgs = request.messages();
+            // Lọc lấy 6 tin nhắn cuối cùng (3 cặp QA)
+            int startIndex = Math.max(0, msgs.size() - 6);
+            for (int i = startIndex; i < msgs.size(); i++) {
+                var msg = msgs.get(i);
+                historyMaps.add(java.util.Map.of(
+                        "role", msg.role() != null ? msg.role() : "user",
+                        "text", msg.content() != null ? msg.content() : ""
+                ));
+            }
         }
-    }
-
-    /**
-     * Parse the Gemini JSON response into a structured DoraraChatResponse.
-     * Falls back gracefully to plain text if JSON parsing fails.
-     */
-    private DoraraChatResponse parseStructuredResponse(String aiResponse) {
-        try {
-            var tree = objectMapper.readTree(aiResponse);
-
-            String response = tree.path("response").asText("");
-
-            // Parse suggestedActions
-            List<String> suggestedActions = List.of();
-            var actionsNode = tree.path("suggestedActions");
-            if (actionsNode.isArray()) {
-                suggestedActions = objectMapper.convertValue(actionsNode,
-                        objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
-            }
-
-            // Parse vocabHighlights
-            List<VocabHighlight> vocabHighlights = List.of();
-            var vocabNode = tree.path("vocabHighlights");
-            if (vocabNode.isArray() && !vocabNode.isEmpty()) {
-                vocabHighlights = objectMapper.convertValue(vocabNode,
-                        objectMapper.getTypeFactory().constructCollectionType(List.class, VocabHighlight.class));
-            }
-
-            // Parse quizQuestion
-            QuizQuestion quizQuestion = null;
-            var quizNode = tree.path("quizQuestion");
-            if (quizNode.isObject() && quizNode.has("question")) {
-                quizQuestion = objectMapper.convertValue(quizNode, QuizQuestion.class);
-            }
-
-            return new DoraraChatResponse(response, suggestedActions, vocabHighlights, quizQuestion, null);
-
-        } catch (Exception e) {
-            log.debug("[parseStructuredResponse] Failed to parse JSON, using raw text: {}", e.getMessage());
-            // Graceful fallback: treat the entire response as plain text
-            return new DoraraChatResponse(
-                    aiResponse,
-                    List.of("Tell me more", "Teach me a word"),
-                    List.of(),
-                    null,
-                    null);
-        }
-    }
-
-    /**
-     * Safely build learner context — never let DB errors break the chat.
-     */
-    private String buildLearnerContextSafely(String userId, String language) {
-        try {
-            return learnerDataService.buildLearnerContext(userId, language);
-        } catch (Exception e) {
-            log.warn("[buildLearnerContextSafely] Failed to build learner context: {}", e.getMessage());
-            return "";
-        }
-    }
-
-    /**
-     * Map website paths to contextual hints for the AI.
-     */
-    private String getPageDescription(String path) {
-        if (path == null)
-            return "Page: Unknown";
-
-        String cleanPath = path.split("\\?")[0].replaceAll("/$", "");
-        if (cleanPath.isEmpty())
-            cleanPath = "/";
-
-        return switch (cleanPath) {
-            case "/" -> "Home Page";
-            case "/speaking" -> "Speaking Practice Page — Practice English speaking with AI roleplay";
-            case "/vocab" -> "Vocabulary Hub Page — Learn vocabulary by topic and level";
-            case "/grammar" -> "Grammar Hub Page — Learn English grammar rules";
-            case "/notebook" -> "Notebook Page — Personal vocabulary with SRS review";
-            case "/user/profile" -> "Profile Page — View XP, streaks, skill scores";
-            case "/user/settings" -> "Settings Page — Account and preferences";
-            case "/user/notifications" -> "Notifications Page";
-            case "/placement-test" -> "Placement Test Page — Level assessment";
-            case "/study-plan" -> "Study Plan Page — Personalized learning schedule";
-            case "/helps" -> "Help Page";
-            case "/auth/signin" -> "Sign In Page";
-            case "/auth/signup" -> "Sign Up Page";
-            default -> {
-                if (cleanPath.startsWith("/speaking/session/"))
-                    yield "Active Speaking Session — User is practicing with AI";
-                if (cleanPath.startsWith("/vocab/"))
-                    yield "Viewing a vocabulary topic";
-                if (cleanPath.startsWith("/grammar/"))
-                    yield "Viewing a grammar lesson";
-                yield "Page: " + cleanPath;
-            }
-        };
+        
+        // 3. Gọi hàm lõi V2 (nhả chữ thuần)
+        geminiService.generateDoraraStreamV2(
+                systemPrompt,
+                historyMaps, // Truyền trí nhớ vào
+                request.userMessage(),
+                chunkConsumer
+        );
     }
 }

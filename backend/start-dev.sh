@@ -31,3 +31,7 @@ echo "✅ Loaded environment from $ENV_FILE"
 echo "🚀 Starting Spring Boot..."
 cd "$SCRIPT_DIR"
 mvn spring-boot:run "$@"
+
+
+
+

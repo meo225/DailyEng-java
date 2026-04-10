@@ -600,6 +600,157 @@ public class GeminiService {
         }
     }
 
+    /**
+     * [V2] Generate Dorara AI response with plain text streaming.
+     * Drops the JSON wrapper requirement to prevent chunk parsing errors later.
+     */
+    public void generateDoraraStreamV2(
+            String systemInstruction,
+            List<Map<String, String>> history,
+            String userMessage,
+            java.util.function.Consumer<String> chunkConsumer
+    ) {
+        if (client == null) {
+            chunkConsumer.accept("Xin lỗi, tôi gặp chút trục trặc. (No API Key config)");
+            return;
+        }
+
+        try {
+            var contents = buildContents(history, userMessage);
+            var model = appProperties.getGemini().getModel();
+
+            var configBuilder = GenerateContentConfig.builder()
+                    .candidateCount(1)
+                    .temperature(0.7f)
+                    .maxOutputTokens(4096);
+
+            if (systemInstruction != null && !systemInstruction.isBlank()) {
+                configBuilder.systemInstruction(
+                        Content.fromParts(Part.fromText(systemInstruction)));
+            }
+
+            log.info("[GeminiService V2] Start streaming plain-text for Dorara...");
+            var stream = client.models.generateContentStream(model, contents, configBuilder.build());
+            for (var chunk : stream) {
+                var text = chunk.text();
+                if (text != null && !text.isEmpty()) {
+                    chunkConsumer.accept(text); // RAW TEXT, NO JSON
+                }
+            }
+            log.info("[GeminiService V2] Stream finished successfully.");
+            
+        } catch (Exception e) {
+            log.error("[generateDoraraStreamV2] Streaming Error: {}", e.getMessage());
+            chunkConsumer.accept("\n\n*(Lỗi kết nối AI: " + e.getMessage() + ")*");
+        }
+    }
+
+    // ========================================================================
+    // 5. generateDoraraEnrich — Post-Stream Vocab + Quiz extraction
+    // ========================================================================
+
+    /**
+     * Analyze the completed AI response text and extract vocabulary highlights + quiz question.
+     * Called AFTER streaming completes (separate API call to avoid breaking SSE stream).
+     */
+    public com.dailyeng.dorara.DoraraDtos.EnrichResponse generateDoraraEnrich(
+            String aiResponse,
+            String userMessage,
+            String targetLanguage
+    ) {
+        var emptyResponse = new com.dailyeng.dorara.DoraraDtos.EnrichResponse(List.of(), null);
+
+        if (client == null || aiResponse == null || aiResponse.isBlank()) {
+            return emptyResponse;
+        }
+
+        var langName = getLanguageName(targetLanguage);
+
+        var prompt = """
+                You are a language learning assistant. Analyze this %s learning Q&A exchange and extract educational content.
+
+                USER QUESTION: %s
+
+                AI TUTOR RESPONSE:
+                %s
+
+                YOUR TASK: Extract 1-3 key vocabulary words from the AI response AND create 1 quiz question.
+
+                STRICT RULES:
+                - Only extract words that are EXPLICITLY explained or demonstrated in the AI response.
+                - If there are no clear vocabulary teaching moments, return empty vocabHighlights [].
+                - The quiz question must be directly based on content in the response.
+                - phonetic should be IPA format (e.g. /ˈwɜːrd/) — use null if unsure.
+                - Return ONLY valid JSON, nothing else.
+
+                JSON FORMAT:
+                {
+                  "vocabHighlights": [
+                    {
+                      "word": "<the English word>",
+                      "phonetic": "<IPA or null>",
+                      "meaning": "<concise Vietnamese meaning>",
+                      "example": "<example sentence from the response or related>"
+                    }
+                  ],
+                  "quizQuestion": {
+                    "question": "<multiple choice question in Vietnamese>",
+                    "options": ["<option A>", "<option B>", "<option C>", "<option D>"],
+                    "correctIndex": <0-3>,
+                    "explanation": "<brief explanation in Vietnamese>"
+                  }
+                }
+                """.formatted(langName, userMessage, aiResponse);
+
+        try {
+            var contents = List.of(
+                    Content.builder()
+                            .role("user")
+                            .parts(List.of(Part.builder().text(prompt).build()))
+                            .build());
+            var responseText = callGemini(null, contents, 0.3, 2048);
+
+            // Parse JSON response
+            var parsed = objectMapper.readTree(responseText);
+
+            // Parse vocabHighlights
+            var vocabList = new ArrayList<com.dailyeng.dorara.DoraraDtos.VocabHighlight>();
+            var vocabNode = parsed.path("vocabHighlights");
+            if (vocabNode.isArray()) {
+                for (var item : vocabNode) {
+                    vocabList.add(new com.dailyeng.dorara.DoraraDtos.VocabHighlight(
+                            item.path("word").asText(null),
+                            item.path("phonetic").asText(null),
+                            item.path("meaning").asText(null),
+                            item.path("example").asText(null)
+                    ));
+                }
+            }
+
+            // Parse quizQuestion
+            com.dailyeng.dorara.DoraraDtos.QuizQuestion quiz = null;
+            var quizNode = parsed.path("quizQuestion");
+            if (!quizNode.isMissingNode() && !quizNode.isNull()) {
+                var options = new ArrayList<String>();
+                quizNode.path("options").forEach(o -> options.add(o.asText()));
+                quiz = new com.dailyeng.dorara.DoraraDtos.QuizQuestion(
+                        quizNode.path("question").asText(null),
+                        options,
+                        quizNode.path("correctIndex").asInt(0),
+                        quizNode.path("explanation").asText(null)
+                );
+            }
+
+            log.info("[generateDoraraEnrich] Extracted {} vocab items, quiz: {}", vocabList.size(), quiz != null);
+            return new com.dailyeng.dorara.DoraraDtos.EnrichResponse(vocabList, quiz);
+
+        } catch (Exception e) {
+            log.warn("[generateDoraraEnrich] Failed to parse enrichment response: {}", e.getMessage());
+            return emptyResponse;
+        }
+    }
+
+
     // ========================================================================
     // Private helpers
     // ========================================================================

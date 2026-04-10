@@ -1,33 +1,35 @@
 package com.dailyeng.dorara;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import java.util.List;
 
+/**
+ * Nơi chứa các cấu trúc dữ liệu giao tiếp với Frontend.
+ */
 public final class DoraraDtos {
 
-    private DoraraDtos() {}
-
-    // ── Request DTOs ────────────────────────────────────────────────────
-
-    public record DoraraChatMessage(
-            String id,
-            @Pattern(regexp = "user|tutor") String role,
-            @NotBlank @Size(max = 2000) String content
+    public record ChatMessage(
+            String role,
+            String content
     ) {}
 
-    public record DoraraChatRequest(
-            @NotNull @Valid List<DoraraChatMessage> messages,
-            @NotBlank @Size(max = 2000) String userMessage,
-            String currentPage
+    // Dữ liệu nhận từ Frontend chứa Lịch sử Chat và Lời nhắn mới
+    public record ChatRequest(
+            List<ChatMessage> messages,
+            String userMessage,
+            String currentPage,
+            String targetLanguage
     ) {}
 
-    // ── Structured AI sub-types ─────────────────────────────────────────
+    // ── Rich UI Enrichment (Post-Streaming) ───────────────────────────────
 
-    /** Vocabulary highlight embedded in a response — rendered as an inline card. */
+    // Request: Frontend gửi lên nội dung AI vừa trả lời để phân tích
+    public record EnrichRequest(
+            String aiResponse,      // Full text AI vừa stream xong
+            String userMessage,     // Câu hỏi ban đầu của user
+            String targetLanguage   // "en" | "ja" etc.
+    ) {}
+
+    // Vocab highlight từng từ
     public record VocabHighlight(
             String word,
             String phonetic,
@@ -35,7 +37,7 @@ public final class DoraraDtos {
             String example
     ) {}
 
-    /** Interactive mini-quiz question embedded in a response. */
+    // Câu hỏi Quiz trắc nghiệm
     public record QuizQuestion(
             String question,
             List<String> options,
@@ -43,18 +45,9 @@ public final class DoraraDtos {
             String explanation
     ) {}
 
-    // ── Response DTO ────────────────────────────────────────────────────
-
-    public record DoraraChatResponse(
-            String response,
-            List<String> suggestedActions,
+    // Response trả về cho Frontend
+    public record EnrichResponse(
             List<VocabHighlight> vocabHighlights,
-            QuizQuestion quizQuestion,
-            String error
-    ) {
-        /** Convenience: error-only response. */
-        public static DoraraChatResponse error(String error) {
-            return new DoraraChatResponse("", List.of(), List.of(), null, error);
-        }
-    }
+            QuizQuestion quizQuestion
+    ) {}
 }
