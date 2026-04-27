@@ -10,7 +10,8 @@ async function fetchStats(): Promise<SignInStat[]> {
       next: { revalidate: 3600 },
     });
     if (!res.ok) throw new Error(`API ${res.status}`);
-    return res.json();
+    const data = await res.json();
+    return typeof data === 'string' ? JSON.parse(data) : data;
   } catch {
     return [
       { value: "50K+", label: "Active Learners" },
