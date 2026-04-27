@@ -68,6 +68,7 @@ public class DatabaseConfig {
         if (password != null) config.setPassword(password);
         
         config.setDriverClassName("org.postgresql.Driver");
+        config.addDataSourceProperty("prepareThreshold", "0");
         config.setMaximumPoolSize(maxPoolSize);
         config.setMinimumIdle(minIdle);
         config.setIdleTimeout(idleTimeout);
