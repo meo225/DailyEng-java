@@ -6,9 +6,10 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Stage 2: Run
-FROM eclipse-temurin:21-jre-jammy
-RUN apt-get update && apt-get install -y ffmpeg libasound2 libasound2-plugins libstdc++6 libssl3 libatomic1 ca-certificates wget && rm -rf /var/lib/apt/lists/*
+FROM eclipse-temurin:21-jre-focal
+RUN apt-get update && apt-get install -y ffmpeg build-essential libssl-dev ca-certificates libasound2 wget && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
+RUN mkdir -p /app/tmp
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Djava.io.tmpdir=/app/tmp", "-jar", "app.jar"]
