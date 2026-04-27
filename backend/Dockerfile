@@ -6,7 +6,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Stage 2: Run
-FROM eclipse-temurin:21-jre-focal
+FROM eclipse-temurin:21-jre-jammy
 RUN apt-get update && apt-get install -y ffmpeg build-essential libssl-dev ca-certificates libasound2 wget && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 RUN mkdir -p /app/tmp

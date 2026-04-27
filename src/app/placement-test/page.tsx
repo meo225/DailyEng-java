@@ -22,9 +22,9 @@ async function fetchQuestionSet(): Promise<{
     if (!res.ok) throw new Error(`API ${res.status}`);
     const data = await res.json();
     return {
-      testSteps: data.testSteps,
-      mockQuestions: data.questions,
-      readingPassage: data.readingPassage,
+      testSteps: typeof data.testSteps === 'string' ? JSON.parse(data.testSteps) : data.testSteps,
+      mockQuestions: typeof data.questions === 'string' ? JSON.parse(data.questions) : data.questions,
+      readingPassage: typeof data.readingPassage === 'string' ? JSON.parse(data.readingPassage) : data.readingPassage,
     };
   } catch {
     // Fallback to hardcoded data if API is unavailable
