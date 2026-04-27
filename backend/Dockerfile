@@ -7,7 +7,7 @@ RUN mvn clean package -DskipTests
 
 # Stage 2: Run
 FROM eclipse-temurin:21-jre-jammy
-RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg libasound2 libssl-dev ca-certificates wget && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
