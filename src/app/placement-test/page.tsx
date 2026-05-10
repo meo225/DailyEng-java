@@ -1,5 +1,8 @@
 // Server Component - No "use client" directive
 // Data fetching happens here on the server
+// Force dynamic rendering — this page calls the backend at request time,
+// not at build time, to avoid Vercel build timeouts on cold-start backends.
+export const dynamic = 'force-dynamic';
 
 import PlacementTestClient from "@/components/page/PlacementTestClient";
 import type {
@@ -17,7 +20,7 @@ async function fetchQuestionSet(): Promise<{
 }> {
   try {
     const res = await fetch(`${API_BASE}/placement-test/questions`, {
-      next: { revalidate: 3600 }, // revalidate every hour
+      cache: 'no-store', // Never cache — always fetch fresh at request time
     });
     if (!res.ok) throw new Error(`API ${res.status}`);
     const data = await res.json();
