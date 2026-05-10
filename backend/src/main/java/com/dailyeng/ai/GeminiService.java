@@ -689,6 +689,16 @@ public class GeminiService {
                 - The quiz question must be directly based on content in the response.
                 - phonetic should be IPA format (e.g. /ˈwɜːrd/) — use null if unsure.
                 - Return ONLY valid JSON, nothing else.
+                - VOCAB TOPIC CONSTRAINT (CRITICAL): Only extract vocabulary if the response is genuinely
+                  teaching language (word meanings, grammar, pronunciation, examples). If the response
+                  is explaining website features, navigation, or app usage (e.g. "Go to Speaking Room"),
+                  return empty vocabHighlights []. Do NOT extract UI terms like "Speaking Room",
+                  "Vocabulary Hub", "Smart Lens", etc. as vocabulary words.
+                - QUIZ TOPIC CONSTRAINT (CRITICAL): The quiz question MUST test LANGUAGE KNOWLEDGE ONLY —
+                  such as vocabulary meaning, grammar usage, word choice, pronunciation, or translation.
+                  NEVER generate a quiz about website features, app navigation, or how to use DailyEng
+                  (e.g. "Which section do you go to for speaking?"). If the AI response does not contain
+                  language learning content suitable for a quiz, return null for quizQuestion.
 
                 JSON FORMAT:
                 {
