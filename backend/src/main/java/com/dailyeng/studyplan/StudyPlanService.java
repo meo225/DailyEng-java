@@ -197,7 +197,10 @@ public class StudyPlanService {
 
     private StudyPlan findPlanByUserId(String userId, String language) {
         return studyPlanRepository.findByUserIdAndLanguage(userId, language)
-                .orElseThrow(() -> new ResourceNotFoundException("Study plan not found for user: " + userId));
+                .orElseGet(() -> {
+                    log.info("No study plan found for user {}, creating default plan", userId);
+                    return createDefaultPlan(userId, language);
+                });
     }
 
     private StudyTask findTaskById(String taskId) {
