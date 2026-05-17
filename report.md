@@ -60,40 +60,154 @@
 *   **2.1.3. Cấu hình ORM với Spring Data JPA & Hibernate:** 
     > [!NOTE]
     > *Nguồn: report new.md | Trọng tâm: Kỹ thuật ORM, ID Strategy và tối ưu hiệu năng DB.*
-    *   2.1.3.1. Tầng thao tác dữ liệu (Abstract Persistence Layer)
-    *   2.1.3.2. Hibernate và Tối ưu hóa hiệu năng
-    *   2.1.3.3. Cấu trúc thực thể và định danh (ID Strategy)
+    *   **2.1.3.1. Tầng thao tác dữ liệu (Abstract Persistence Layer):** Hệ thống DailyEng sử dụng PostgreSQL làm hệ quản trị cơ sở dữ liệu quan hệ, kết hợp cùng Spring Data JPA để trừu tượng hóa quá trình tương tác dữ liệu. Spring Data JPA cho phép định nghĩa các giao diện (Interfaces) kế thừa từ `JpaRepository`, giúp hệ thống thực thi các thao tác CRUD mà không cần viết các câu lệnh SQL thuần túy, nâng cao tính bảo mật và giảm rủi ro SQL Injection:
+        ```java
+        public interface UserRepository extends JpaRepository<User, String> {
+            Optional<User> findByEmail(String email);
+        }
+        ```
+    *   **2.1.3.2. Hibernate và Tối ưu hóa hiệu năng:** Để đảm bảo tốc độ phản hồi và khả năng chịu tải của hệ thống, DailyEng áp dụng một số cơ chế tối ưu hóa cốt lõi của Hibernate và Spring Boot:
+        *   **Dirty Checking:** Hệ thống tự động phát hiện các thay đổi trạng thái trên thực thể (Entity) và đồng bộ hóa với cơ sở dữ liệu PostgreSQL một cách tối ưu.
+        *   **HikariCP:** Sử dụng Connection Pool mặc định của Spring Boot, được tinh chỉnh trong `application.yml` nhằm duy trì hiệu năng ổn định khi xử lý lượng kết nối đồng thời cao.
+    *   **2.1.3.3. Cấu trúc thực thể và định danh (ID Strategy):** Một điểm đặc biệt trong thiết kế cơ sở dữ liệu của DailyEng là việc sử dụng định danh CUID (Collision-resistant Unique Identifier) thay vì các số nguyên tự tăng (Auto-increment) hay UUID truyền thống. CUID được thiết kế để tối ưu cho các hệ thống phân tán, đảm bảo tính duy nhất toàn cầu nhưng vẫn giữ được thứ tự sắp xếp theo thời gian (k-sortable), giúp tăng hiệu suất chỉ mục (index) trong B-tree. Tất cả các thực thể trong hệ thống đều kế thừa từ lớp `BaseEntity`, lớp này chịu trách nhiệm khởi tạo ID bằng thư viện CUID:
+        ```java
+        @MappedSuperclass
+        @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+        public abstract class BaseEntity {
+            @Id
+            @Column(length = 30)
+            private String id;
+        
+            @PrePersist
+            public void prePersist() {
+                if (this.id == null) {
+                    this.id = io.github.thibaultmeyer.cuid.CUID.randomCUID2(25).toString();
+                }
+            }
+        }
+        ```
 
 **2.2. Kiến trúc bảo mật và xác thực:** 
 > [!NOTE]
-> *Nguồn: report new.md | Trọng tâm: Cơ chế bảo mật Stateless, cấu hình Cookie và quản lý quyền truy cập.*
-*   **2.2.1. Cơ chế xác thực không trạng thái (Stateless Authentication)** 
-*   **2.2.2. Bảo mật bộ nhớ đệm (HttpOnly Cookies)** 
-*   **2.2.3. Phân quyền (Role-based Access Control - RBAC)** 
+> *Trọng tâm: Dự án triển khai mô hình bảo mật tập trung sử dụng Spring Security. Hệ thống áp dụng cơ chế Stateless Authentication thông qua JWT (JSON Web Token), kết hợp với HttpOnly Cookies để ngăn chặn các cuộc tấn công XSS. Ngoài ra, việc phân quyền được quản lý chặt chẽ dựa trên vai trò người dùng (RBAC - Role-based Access Control).*
+*   **2.2.1. Cơ chế xác thực không trạng thái (Stateless Authentication):** Thay vì sử dụng phiên làm việc (Session) truyền thống vốn tiêu tốn tài nguyên bộ nhớ máy chủ, hệ thống ứng dụng Spring Security kết hợp với JSON Web Token (JWT). Mỗi yêu cầu từ phía máy khách đều đính kèm một chuỗi mã hóa có chữ ký số (Digital Signature).
+    *   **Access Token:** Có thời hạn hiệu lực ngắn (24 giờ), được sử dụng trực tiếp để chứng thực và cấp quyền truy cập tài nguyên.
+    *   **Refresh Token:** Có thời hạn hiệu lực dài (7 ngày), đóng vai trò cấp phát lại Access Token mới khi thẻ cũ hết hạn, giúp duy trì trải nghiệm người dùng liền mạch mà không cần tái đăng nhập.
+*   **2.2.2. Bảo mật bộ nhớ đệm (HttpOnly Cookies):** Nhằm chủ động phòng chống các cuộc tấn công đánh cắp phiên làm việc (Cross-Site Scripting - XSS), toàn bộ JWT được lưu trữ an toàn bên trong các HttpOnly Cookies. Cơ chế này hoàn toàn vô hiệu hóa khả năng đọc token từ các đoạn mã thông dịch JavaScript ở phía Client.
+    
+    *Thiết lập cấu hình bảo mật điển hình trong `application.yml`:*
+    ```yaml
+    app:
+      cookie:
+        secure: true # Chỉ gửi qua HTTPS trong Production
+        same-site: Lax
+        access-max-age: 86400
+    ```
+*   **2.2.3. Phân quyền (Role-based Access Control - RBAC):** Việc kiểm soát và phân quyền truy cập trong DailyEng được thiết kế theo mô hình RBAC. Quyền hạn của người dùng (như `ROLE_USER` hoặc `ROLE_ADMIN`) được hệ thống nhúng trực tiếp vào tải trọng (payload) của JWT tại thời điểm đăng nhập. Khi có yêu cầu gửi đến Server, bộ lọc của Spring Security Context sẽ tự động giải mã token và tái tạo lại tập hợp các quyền (Granted Authorities) cho phiên làm việc đó.
+    
+    Quá trình cấp phép được khai báo trực quan và bảo mật ngay trên tầng Trình diễn (Controller) thông qua các chú thích (Annotations) như `@PreAuthorize`. Kỹ thuật bảo mật ở cấp độ phương thức (Method Security) này giúp phân tách rành mạch logic nghiệp vụ và logic bảo mật, ngăn chặn tối đa nguy cơ leo thang đặc quyền.
+    
+    *Ví dụ về cấu hình Method Security được áp dụng trong hệ thống:*
+    ```java
+    @RestController
+    @RequestMapping("/api/topics")
+    public class TopicController {
+
+        // Khóa API: Chỉ quản trị viên (ADMIN) mới có quyền tạo chủ đề học tập mới
+        @PreAuthorize("hasRole('ADMIN')")
+        @PostMapping
+        public ResponseEntity<?> createTopic(@RequestBody TopicRequest request) {
+            // ... (Chi tiết logic xử lý nghiệp vụ được trình bày ở Chương 4) ...
+            return ResponseEntity.ok().build();
+        }
+    }
+    ```
 
 **2.3. Cơ sở dữ liệu và quản lý phiên bản (Database Migration):** 
 > [!NOTE]
 > *Nguồn: report new.md | Trọng tâm: Quản lý cấu trúc dữ liệu bền vững qua các môi trường.*
-*   **2.3.1. ....** 
-    *   2.3.1.1. ....
-    *   2.3.1.2. ....
-*   **2.3.2. ....** 
-    *   2.3.2.1. .........
-    *   2.3.2.2. ...........
+*   **2.3.1. Hệ quản trị Cơ sở dữ liệu PostgreSQL 16:** Để đáp ứng yêu cầu lưu trữ linh hoạt và truy xuất dữ liệu tốc độ cao, hệ thống đã quyết định sử dụng PostgreSQL 16 làm cơ sở dữ liệu chính:
+    *   **Đặc điểm và lý do l*   **2.4.1. Azure Speech SDK:** Dịch vụ Azure AI Speech từ Microsoft đóng vai trò cốt lõi trong tính năng luyện nói của hệ thống. DailyEng sử dụng dịch vụ này thông qua SDK chính thức để đạt được độ chính xác và tốc độ phản hồi cao nhất. Cụ thể, các tính năng chính được triển khai bao gồm:
+    *   **Đánh giá phát âm:** Chức năng nâng cao này cho phép chấm điểm phát âm theo từng từ, đối chiếu chi tiết các tiêu chí cốt lõi như độ chính xác, độ lưu loát và ngữ điệu tự nhiên.
+    *   **Chuyển đổi giọng nói thành văn bản:** Lời nói của người dùng được phân tích thành văn bản để làm dữ liệu đầu vào cho mô hình ngôn ngữ lớn.
+    *   **Chuyển đổi văn bản thành giọng nói:** Phản hồi từ hệ thống được tổng hợp thành âm thanh tự nhiên, tạo môi trường thuận lợi để người dùng luyện kỹ năng nghe.
+    
+    *Cú pháp minh họa cấu hình đánh giá phát âm trong Azure SDK:*
+    ```java
+    public PronunciationAssessmentResult assessPronunciation(byte[] audioBytes, String referenceText) {
+        // Cấu hình đánh giá chi tiết mức độ từ và âm vị
+        var pronConfig = new PronunciationAssessmentConfig(
+            referenceText, 
+            PronunciationAssessmentGradingSystem.HundredMark,
+            PronunciationAssessmentGranularity.Phoneme, 
+            true
+        );
+        // ... thực hiện đánh giá qua Azure SDK
+    }
+    ```
+*   **2.4.2. Azure AI Translator:** Để hỗ trợ người dùng trong việc hiểu nghĩa của các câu hay đoạn văn phức tạp, DailyEng tích hợp dịch vụ Azure AI Translator phiên bản REST API v3.0. Dịch vụ này được sử dụng chủ yếu trong tính năng dịch văn bản tức thời và hỗ trợ giải nghĩa từ vựng.
+    *   **Tự động nhận diện ngôn ngữ:** Hệ thống có khả năng tự động nhận diện ngôn ngữ nguồn nếu người dùng không chỉ định.
+    *   **Dịch thuật hàng loạt:** Cho phép dịch nhiều đoạn văn bản trong một yêu cầu duy nhất nhằm tối ưu hóa số lượng cuộc gọi API và giảm độ trễ.
+    *   **Hỗ trợ đa ngôn ngữ:** Hỗ trợ dịch thuật linh hoạt giữa tiếng Anh, tiếng Việt và tiếng Nhật.
+*   **2.4.3. Azure AI Vision (OCR):** DailyEng cung cấp tính năng SmartLens, cho phép người dùng trích xuất văn bản từ hình ảnh để tra cứu hoặc dịch thuật. Tính năng này được hiện thực hóa bằng dịch vụ Azure AI Vision phiên bản Image Analysis v4.0.
+    *Cơ chế hoạt động trong AzureVisionService.java:*
+    *   **Trích xuất văn bản:** Sử dụng thuật toán học sâu để nhận diện và trích xuất các dòng văn bản từ dữ liệu ảnh định dạng JPEG hay PNG.
+    *   **Tọa độ vùng văn bản:** Hệ thống không chỉ trích xuất chữ mà còn lấy được tọa độ vị trí của từng dòng hay khối văn bản trên ảnh, giúp hiển thị kết quả dịch đè lên ảnh một cách chính xác.
+    
+    *Đoạn mã trích xuất văn bản:*
+    ```java
+    var url = endpoint + "/computervision/imageanalysis:analyze?api-version=2024-02-01&features=read";
+    var request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .header("Content-Type", "application/octet-stream")
+            .POST(HttpRequest.BodyPublishers.ofByteArray(imageData))
+            .build();
+    ```
+*   **2.4.4. Google Gemini API:** Google Gemini phiên bản gemini-3.1-flash-lite được sử dụng làm "bộ não" AI cho hệ thống. Thông qua Google Generative AI SDK cho Java, hệ thống thực hiện các tác vụ xử lý ngôn ngữ tự nhiên phức tạp:
+    *   **Dorara AI Companion:** Robot trợ lý ảo hỗ trợ giải đáp thắc mắc về tiếng Anh, giải thích ngữ pháp và từ vựng. Đồng thời giúp củng cố kiến thức bài học bằng các câu trắc nghiệm ngắn.
+    *   **Speaking AI Partner:** Đóng vai trò là đối tác giao tiếp trong các kịch bản luyện nói, có khả năng phản hồi linh hoạt dựa trên ngữ cảnh và trình độ theo khung tham chiếu châu Âu của người dùng.
+    *   **Phân tích và sửa lỗi:** Sau mỗi buổi luyện tập, Gemini sẽ phân tích toàn bộ lịch sử hội thoại để chỉ ra các lỗi ngữ pháp, dùng từ và đề xuất cách diễn đạt tự nhiên hơn.
+    
+    Hệ thống sử dụng cơ chế System Instruction để định hình phong cách phản hồi của AI, đảm bảo AI luôn đóng vai một giáo viên tiếng Anh kiên nhẫn và chuyên nghiệp.
+*   **2.4.5. Sentry:** DailyEng tích hợp Sentry để theo dõi lỗi và giám sát hiệu năng theo thời gian thực trên cả Frontend và Backend.
+    *   **Frontend:** Bắt các lỗi chạy mã lệnh JavaScript, lỗi mạng và ghi lại hành trình người dùng trước khi lỗi xảy ra.
+    *   **Backend:** Tự động bắt các ngoại lệ chưa được xử lý, ghi lại các truy vấn cơ sở dữ liệu chậm và theo dõi các giao dịch giữa các dịch vụ.
+    Việc này giúp đội ngũ phát triển phát hiện và khắc phục sự cố ngay lập tức trước khi người dùng báo cáo, đồng thời cung cấp các báo cáo về độ ổn định của hệ thống.
+*   **2.4.6. Resilience4j & Caffeine Cache:** Để đảm bảo hệ thống hoạt động ổn định và có khả năng chịu lỗi, DailyEng áp dụng các thư viện bổ trợ mạnh mẽ:
+    *   **Resilience4j:** Được áp dụng tại lớp Service gọi đến các API bên thứ ba như Azure và Gemini. Khi một dịch vụ bên ngoài gặp sự cố hoặc phản hồi chậm, cơ chế ngắt mạch Circuit Breaker sẽ tạm thời ngắt kết nối để bảo vệ tài nguyên hệ thống, tránh tình trạng lỗi lan truyền. Đồng thời, cơ chế Retry giúp tự động thử lại các yêu cầu thất bại do sự cố mạng tạm thời.
+        ```java
+        @CircuitBreaker(name = "gemini", fallbackMethod = "generateSpeakingResponseFallback")
+        @Retry(name = "gemini")
+        public SpeakingResponseResult generateSpeakingResponse(ScenarioConfig scenario, ...) {
+            // Logic gọi đến Google Gemini API
+        }
+        ```
+    *   **Caffeine Cache:** DailyEng sử dụng Caffeine làm thư viện lưu trữ bộ nhớ đệm hiệu năng cao cho Java để lưu trữ các dữ liệu ít thay đổi nhưng thường xuyên được truy vấn như danh sách chủ đề, chi tiết bài học ngữ pháp và các kịch bản luyện nói mẫu.
+        
+        *Cấu hình trong `application.yml`:*
+        ```yaml
+        spring:
+          cache:
+            type: caffeine
+            caffeine:
+              spec: maximumSize=1000,expireAfterWrite=86400s # Cache trong 24 giờ
+        ```
+        Việc áp dụng Caffeine giúp giảm đáng kể số lượng truy vấn vào cơ sở dữ liệu PostgreSQL và giảm độ trễ cho các yêu cầu từ phía người dùng, từ đó cải thiện trải nghiệm tổng thể.
 
-**2.4. Dịch vụ bên thứ ba:** 
+**2.5. Công nghệ phát triển Frontend:** 
 > [!NOTE]
-> *Nguồn: report new.md | Trọng tâm: Liệt kê và giới thiệu công dụng của các SDK/API ngoại vi đóng vai trò AI và Monitor.*
-*   **2.4.1. Azure Speech SDK** 
-*   **2.4.2. Azure AI Translator** 
-*   **2.4.3. Azure AI Vision (OCR)** 
-*   **2.4.4. Google Gemini API** 
-*   **2.4.5. Sentry** 
-*   **2.4.6. Resilience4j & Caffeine Cache** 
-
-**2.5. Frontend:** 
-> [!NOTE]
-> *Nguồn: report.md gốc | Trọng tâm: Giới thiệu công nghệ hiển thị và trải nghiệm người dùng Next.js, Framer Motion.*
+> *Trọng tâm: Phân tích các công nghệ nền tảng, công cụ xây dựng giao diện và hiệu ứng hiển thị được áp dụng ở phía máy khách.*
+*   **2.5.1. Framework lõi và Quản lý trạng thái (State Management):**
+    *   **Nền tảng Next.js và thư viện React:** Ứng dụng được xây dựng trên bộ khung Next.js kết hợp cùng React. Việc áp dụng kiến trúc định tuyến mới cho phép kết hợp linh hoạt giữa cơ chế kết xuất mã HTML tại máy chủ và kết xuất tại trình duyệt. Cơ chế này giúp tối ưu hóa khả năng được tìm kiếm của trang web và giảm thiểu thời gian tải trang ban đầu, mang lại trải nghiệm mượt mà ngay từ những giây đầu tiên.
+    *   **Quản lý trạng thái (State Management) với Zustand:** Thay vì sử dụng các công cụ phức tạp, hệ thống lựa chọn thư viện Zustand để quản lý trạng thái toàn cục. Với kiến trúc luồng dữ liệu một chiều được thiết kế tối giản, giải pháp này giúp loại bỏ các đoạn mã dư thừa, đồng thời kiểm soát trạng thái ứng dụng một cách hiệu quả mà không gây ra hiện tượng tải lại giao diện không cần thiết.
+*   **2.5.2. Công nghệ CSS và Hệ thống thiết kế (Design System):**
+    *   **Bộ thư viện Tailwind CSS:** Giao diện được định kiểu bằng phương pháp sử dụng các lớp CSS tiện ích. Cách tiếp cận này giúp đóng gói phong cách giao diện một cách nhanh chóng, đồng thời kết hợp linh hoạt với các công cụ tiện ích nội suy để quản lý trạng thái hiển thị động dựa trên logic của ứng dụng.
+    *   **Thành phần giao diện (UI Components) với Radix UI:** Hệ thống giao diện tận dụng bộ thư viện các thành phần không định dạng sẵn. Lựa chọn này giúp đảm bảo ứng dụng tuân thủ nghiêm ngặt các tiêu chuẩn hỗ trợ trợ năng cho người khuyết tật, đồng thời vẫn giữ được khả năng tùy biến thiết kế hiển thị tự do theo đúng bộ nhận diện thương hiệu của dự án.
+    *   **Kiểm chứng dữ liệu (Data Validation) với React Hook Form và Zod:** Quá trình xử lý các biểu mẫu đầu vào được kiểm soát an toàn thông qua cơ chế xác thực dữ liệu chặt chẽ ngay tại trình duyệt. Điều này giúp ngăn chặn các luồng dữ liệu sai lệch trước khi gửi đến hệ thống máy chủ.
+*   **2.5.3. Đồ họa 3D và Hiệu ứng hoạt ảnh (3D Graphics & Animations):**
+    *   **Kết xuất đồ họa (Rendering) WebGL:** Hệ thống ứng dụng công nghệ WebGL thông qua các thư viện trung gian như Three.js và React Three Fiber để kết xuất các mô hình không gian ba chiều trực tiếp trên trình duyệt. Đột phá này được dùng để hiển thị nhân vật trợ lý ảo thông minh, mang lại một trải nghiệm học tập sinh động và vượt trội so với các thiết kế phẳng truyền thống.
+    *   **Xử lý chuyển động (Animations) với Framer Motion:** Các vi chuyển động và hiệu ứng chuyển cảnh mượt mà được quản lý chặt chẽ thông qua thư viện Framer Motion. Việc gắn kết hiệu ứng vật lý vào vòng đời hoạt động của các thành phần giao diện giúp tăng tính tương tác và tạo cảm giác gắn kết cho người học.
+*   **2.5.4. Trực quan hóa dữ liệu (Data Visualization):** Quá trình phân tích tiến độ học tập được thể hiện trực quan thông qua công cụ Recharts. Thư viện này hỗ trợ vẽ các biểu đồ véc-tơ tương tác theo thời gian thực dựa trên luồng dữ liệu hệ thống, giúp người dùng dễ dàng theo dõi thống kê học tập cá nhân.
 
 ---
 
@@ -124,6 +238,87 @@
 > [!NOTE]
 > *Nguồn: report new.md | Trọng tâm: Trình bày biểu đồ Use Case tổng quát và các kịch bản tương tác.*
 *   **3.2.1. Biểu đồ Use Case tổng quát**
+
+    Sơ đồ dưới đây mô tả tổng quát sự tương tác giữa các nhóm người dùng với các phân hệ chức năng cốt lõi của hệ thống DailyEng:
+
+    ```mermaid
+    flowchart LR
+        %% Định nghĩa Actor
+        G((Khách))
+        U((Người học))
+
+        %% Quản lý hệ thống và người dùng
+        subgraph HT_TaiKhoan [Phân hệ tài khoản]
+            direction TB
+            UC1([" Đăng ký và đăng nhập "])
+            UC2([" Quản lý hồ sơ cá nhân "])
+            UC3([" Kiểm tra đầu vào "])
+        end
+
+        %% Nền tảng học tập cốt lõi
+        subgraph HT_HocTap [Phân hệ học tập và đánh giá]
+            direction TB
+            UC4([" Học từ vựng "])
+            UC5([" Luyện nói với AI "])
+            UC6([" Học ngữ pháp "])
+            
+            %% Extends và Includes
+            UC4_1([" Luyện flashcard SRS "])
+            UC4_2([" Tra cứu mindmap "])
+            UC5_1([" Đánh giá phát âm "])
+        end
+
+        %% Hỗ trợ và cá nhân hóa
+        subgraph HT_HoTro [Phân hệ trợ lý và tiện ích]
+            direction TB
+            UC7([" Quản lý sổ tay cá nhân "])
+            UC8([" Kế hoạch và thống kê "])
+            UC9([" Trợ lý ảo Dorara "])
+            UC10([" Tra cứu và dịch thuật "])
+            UC11([" Nhiệm vụ và huy hiệu "])
+            
+            %% Extends
+            UC10_1([" Dịch hình ảnh SmartLens "])
+        end
+
+        %% Phân quyền Khách
+        G --> UC1
+        G --> UC3
+
+        %% Phân quyền Người học
+        U --> UC1
+        U --> UC2
+        U --> UC4
+        U --> UC5
+        U --> UC6
+        U --> UC7
+        U --> UC8
+        U --> UC9
+        U --> UC10
+        U --> UC11
+
+        %% Mối quan hệ Include / Extend chuyên sâu
+        UC4 -.->|«extend»| UC4_1
+        UC4 -.->|«extend»| UC4_2
+        UC5 -.->|«include»| UC5_1
+        UC10 -.->|«extend»| UC10_1
+
+        %% Tính thẩm mỹ: Màu Pastel phân loại theo từng hệ thống
+        classDef actor fill:#ffe0b2,stroke:#ffb300,stroke-width:2px,color:#e65100;
+        classDef ucAccount fill:#e3f2fd,stroke:#64b5f6,stroke-width:2px,color:#0d47a1;
+        classDef ucLearning fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#1b5e20;
+        classDef ucSupport fill:#f3e5f5,stroke:#ba68c8,stroke-width:2px,color:#4a148c;
+
+        class G,U actor;
+        class UC1,UC2,UC3 ucAccount;
+        class UC4,UC5,UC6,UC4_1,UC4_2,UC5_1 ucLearning;
+        class UC7,UC8,UC9,UC10,UC11,UC10_1 ucSupport;
+
+        %% Tùy chỉnh Subgraph: Nền cực nhạt, viền đứt nét cùng tone màu
+        style HT_TaiKhoan fill:#f8fbff,stroke:#64b5f6,stroke-width:2px,stroke-dasharray: 5 5,color:#0d47a1
+        style HT_HocTap fill:#f9fdf9,stroke:#81c784,stroke-width:2px,stroke-dasharray: 5 5,color:#1b5e20
+        style HT_HoTro fill:#fcf8fd,stroke:#ba68c8,stroke-width:2px,stroke-dasharray: 5 5,color:#4a148c
+    ```
 *   **3.2.2. Đặc tả chi tiết các Use Case**
     *   Use Case 1: Đăng ký tài khoản
     *   Use Case 2: Luyện nói với AI (Speaking Practice)
