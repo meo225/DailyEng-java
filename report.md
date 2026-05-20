@@ -264,8 +264,12 @@
             
             %% Extends và Includes
             UC4_1([" Luyện flashcard SRS "])
-            UC4_2([" Tra cứu mindmap "])
+            UC4_2([" Làm bài luyện tập "])
             UC5_1([" Đánh giá phát âm "])
+            UC5_2([" Tạo chủ đề theo mô tả "])
+            UC5_3([" Tạo chủ đề ngẫu nhiên "])
+            UC5_4([" Phân tích & sửa lỗi "])
+            UC6_1([" Làm bài tập thực hành "])
         end
 
         %% Hỗ trợ và cá nhân hóa
@@ -274,11 +278,13 @@
             UC7([" Quản lý sổ tay cá nhân "])
             UC8([" Kế hoạch và thống kê "])
             UC9([" Trợ lý ảo Dorara "])
-            UC10([" Tra cứu và dịch thuật "])
-            UC11([" Nhiệm vụ và huy hiệu "])
+            UC10([" Dịch thuật "])
+            UC11([" Nhiệm vụ & Bảng xếp hạng "])
+            UC12([" Quản lý thông báo "])
             
             %% Extends
-            UC10_1([" Dịch hình ảnh SmartLens "])
+            UC10_1([" Dịch hình ảnh (SmartLens) "])
+            UC10_2([" Dịch văn bản "])
         end
 
         %% Phân quyền Khách
@@ -296,12 +302,18 @@
         U --> UC9
         U --> UC10
         U --> UC11
+        U --> UC12
 
         %% Mối quan hệ Include / Extend chuyên sâu
         UC4 -.->|«extend»| UC4_1
         UC4 -.->|«extend»| UC4_2
         UC5 -.->|«include»| UC5_1
+        UC5 -.->|«extend»| UC5_2
+        UC5 -.->|«extend»| UC5_3
+        UC5 -.->|«extend»| UC5_4
+        UC6 -.->|«extend»| UC6_1
         UC10 -.->|«extend»| UC10_1
+        UC10 -.->|«extend»| UC10_2
 
         %% Tính thẩm mỹ: Màu Pastel phân loại theo từng hệ thống
         classDef actor fill:#ffe0b2,stroke:#ffb300,stroke-width:2px,color:#e65100;
@@ -311,8 +323,8 @@
 
         class G,U actor;
         class UC1,UC2,UC3 ucAccount;
-        class UC4,UC5,UC6,UC4_1,UC4_2,UC5_1 ucLearning;
-        class UC7,UC8,UC9,UC10,UC11,UC10_1 ucSupport;
+        class UC4,UC5,UC6,UC4_1,UC4_2,UC5_1,UC5_2,UC5_3,UC5_4,UC6_1 ucLearning;
+        class UC7,UC8,UC9,UC10,UC11,UC12,UC10_1,UC10_2 ucSupport;
 
         %% Tùy chỉnh Subgraph: Nền cực nhạt, viền đứt nét cùng tone màu
         style HT_TaiKhoan fill:#f8fbff,stroke:#64b5f6,stroke-width:2px,stroke-dasharray: 5 5,color:#0d47a1
