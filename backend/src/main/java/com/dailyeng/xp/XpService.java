@@ -162,6 +162,25 @@ public class XpService {
         userActivityRepo.save(activity);
     }
 
+    @Transactional
+    public void updateSkillScores(String userId, int vocabDelta, int grammarDelta, int speakingDelta, int listeningDelta, int readingDelta, int writingDelta) {
+        var stats = findOrCreateProfileStats(userId);
+        boolean changed = false;
+        if (vocabDelta != 0) { stats.setVocabScore(Math.max(0, stats.getVocabScore() + vocabDelta)); changed = true; }
+        if (grammarDelta != 0) { stats.setGrammarScore(Math.max(0, stats.getGrammarScore() + grammarDelta)); changed = true; }
+        if (speakingDelta != 0) { stats.setSpeakingScore(Math.max(0, stats.getSpeakingScore() + speakingDelta)); changed = true; }
+        if (listeningDelta != 0) { stats.setListeningScore(Math.max(0, stats.getListeningScore() + listeningDelta)); changed = true; }
+        if (readingDelta != 0) { stats.setReadingScore(Math.max(0, stats.getReadingScore() + readingDelta)); changed = true; }
+        if (writingDelta != 0) { stats.setWritingScore(Math.max(0, stats.getWritingScore() + writingDelta)); changed = true; }
+        
+        if (changed) {
+            profileStatsRepo.save(stats);
+            log.info("🎯 Skill scores updated for userId={}: vocab={}, grammar={}, speaking={}, listening={}, reading={}, writing={}",
+                    userId, stats.getVocabScore(), stats.getGrammarScore(), stats.getSpeakingScore(),
+                    stats.getListeningScore(), stats.getReadingScore(), stats.getWritingScore());
+        }
+    }
+
     /**
      * Level formula: level = floor(sqrt(xp / 100)).
      * Level 0: 0 XP, Level 1: 100 XP, Level 2: 400 XP, Level 5: 2500 XP, Level 10: 10000 XP.

@@ -33,7 +33,9 @@ public final class UserDtos {
             @Size(max = 500, message = "Address must not exceed 500 characters")
             String address,
 
-            Level level
+            Level level,
+
+            String image
     ) {}
 
     // ============================== Responses ==============================
