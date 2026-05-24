@@ -1,9 +1,24 @@
 # KỊCH BẢN THUYẾT TRÌNH ĐỒ ÁN: DAILYENG
 **Thời lượng thuyết trình dự kiến:** 15 - 20 phút | **Trọng tâm công nghệ:** Tích hợp AI trên nền Backend Java Spring Boot 3.4 và Java 21 kết hợp Frontend Next.js 15
 
-## SLIDE 1: GIỚI THIỆU ĐỀ TÀI & BỐI CẢNH
-* **Phần:** 1. Tổng quan đề tài & Công nghệ sử dụng
-* **Nội dung:** Giới thiệu đề tài & Bối cảnh thực tiễn
+## Mở đầu (~1 slide)
+
+### Mục lục nội dung báo cáo
+### 📌 Nội dung Slide (Bullet points):
+* **Phần 1: Tổng quan đề tài & Công nghệ sử dụng**
+* **Phần 2: Phân tích yêu cầu & Thiết kế hệ thống**
+* **Phần 3: Triển khai và kiểm thử hệ thống**
+* **Phần 4: CI/CD & Demo sản phẩm**
+* **Phần 5: Kết luận & Định hướng phát triển**
+
+### 🎙️ Script thuyết trình (0.5 phút):
+> *"Em xin chào thầy/cô và các bạn. Hôm nay, em xin phép đại diện nhóm báo cáo về đồ án cuối kỳ môn học của chúng em. Trước khi đi vào chi tiết, em xin tóm tắt bố cục bài thuyết trình hôm nay gồm 5 phần chính: Phần đầu tiên giới thiệu về bối cảnh đề tài, thực trạng và giới thiệu sơ lược về hệ sinh thái công nghệ sử dụng; phần 2 đi sâu vào phân tích yêu cầu từ use case, sitemap giao diện Figma đến thiết kế cơ sở dữ liệu ERD và cấu trúc OOP trong Spring Boot; phần 3 tập trung vào việc triển khai mã nguồn backend, tích hợp các thuật toán và kiểm thử hệ thống; phần 4 trình bày quy trình đóng gói, thiết lập CI/CD và live demo trực tiếp các tính năng; và cuối cùng phần 5 tổng kết ưu/nhược điểm và định hướng phát triển trong tương lai."*
+
+---
+
+## Phần 1: Tổng quan đề tài & Công nghệ sử dụng (~4 slides)
+
+### Giới thiệu đề tài & Bối cảnh thực tiễn
 ### 📌 Nội dung Slide (Bullet points):
 * **Tên đề tài đồ án:** Nghiên cứu và xây dựng DailyEng - Ứng dụng học tiếng Anh tích hợp Trí tuệ nhân tạo AI và Thuật toán lặp lại ngắt quãng FSRS.
 * **Bối cảnh thực tiễn:** 
@@ -19,32 +34,15 @@
 > **Sơ đồ chu trình học ngoại ngữ khép kín:** Vòng tròn mô tả quá trình học tập khép kín kết hợp chặt chẽ giữa học lý thuyết, thực hành phản xạ nói với AI và tự động lập lịch ôn tập dài hạn qua FSRS để tạo ấn tượng tổng quan đầu tiên cho thầy/cô.
 
 ### 🎙️ Script thuyết trình (1.5 phút):
-> *"Em xin chào thầy/cô và các bạn. Em xin phép đại diện nhóm trình bày báo cáo về đề tài: **Nghiên cứu và xây dựng DailyEng - Ứng dụng học tiếng Anh tích hợp Trí tuệ nhân tạo AI và Thuật toán lặp lại ngắt quãng FSRS**.
+> *"Đầu tiên, em xin phép đi vào Phần 1: Giới thiệu đề tài và bối cảnh thực tiễn. Đề tài đồ án của nhóm em mang tên: **Nghiên cứu và xây dựng DailyEng - Ứng dụng học tiếng Anh tích hợp Trí tuệ nhân tạo AI và Thuật toán lặp lại ngắt quãng FSRS**.
 > 
-> Trong quá trình tìm hiểu thực tiễn học ngoại ngữ, nhóm em nhận thấy người học tại Việt Nam thường gặp khó khăn ở hai khía cạnh: thiếu môi trường thực hành phản xạ nói tự nhiên và chưa có phương pháp để ghi nhớ từ vựng dài hạn. 
+> Trong quá trình tìm hiểu thực tiễn học ngoại ngữ, nhóm em nhận thấy người học tại Việt Nam thường gặp khó khăn ở hai khía cạnh lớn: thiếu môi trường thực hành phản xạ nói tự nhiên và chưa có phương pháp để ghi nhớ từ vựng dài hạn. 
 > 
 > Nhằm giải quyết các vấn đề trên, đồ án này hướng tới xây dựng một ứng dụng học tập hỗ trợ chu trình học khép kín, lấy kỹ nghệ phần mềm và tối ưu hệ thống làm trọng tâm. Backend bằng Java Spring Boot sẽ đóng vai trò điều phối, tích hợp tối ưu các dịch vụ AI đám mây của Azure và Google để đảm bảo chất lượng phản hồi tốt nhất, đồng thời tự lập trình thuật toán ôn tập ngắt quãng FSRS trực tiếp bằng Java để cá nhân hóa lịch học từ vựng nội bộ."*
 
 ---
 
-## SLIDE 1B: MỤC LỤC NỘI DUNG BÁO CÁO
-* **Phần:** Mục lục nội dung báo cáo
-* **Nội dung:** Mục lục báo cáo
-### 📌 Nội dung Slide (Bullet points):
-* **Phần 1: Tổng quan đề tài & Công nghệ sử dụng** (Slide 1 - 4)
-* **Phần 2: Phân tích yêu cầu & Thiết kế hệ thống** (Slide 5 - 10)
-* **Phần 3: Triển khai và kiểm thử hệ thống** (Slide 11 - 15)
-* **Phần 4: CI/CD & Demo sản phẩm** (Slide 16 - 17)
-* **Phần 5: Kết luận & Định hướng phát triển** (Slide 18)
-
-### 🎙️ Script thuyết trình (0.5 phút):
-> *"Sau đây, em xin phép tóm tắt bố cục nội dung báo cáo ngày hôm nay gồm 5 phần chính: Phần đầu tiên giới thiệu về bối cảnh đề tài, thực trạng và giới thiệu sơ lược về hệ sinh thái công nghệ sử dụng; phần 2 đi sâu vào phân tích yêu cầu từ use case, sitemap giao diện Figma đến thiết kế cơ sở dữ liệu ERD và cấu trúc OOP trong Spring Boot; phần 3 tập trung vào việc triển khai mã nguồn backend, tích hợp các thuật toán và kiểm thử hệ thống; phần 4 trình bày quy trình đóng gói, thiết lập CI/CD và live demo trực tiếp các tính năng; và cuối cùng phần 5 tổng kết ưu/nhược điểm và định hướng phát triển trong tương lai."*
-
----
-
-## SLIDE 2: ĐẶT VẤN ĐỀ & KHẢO SÁT THỰC TIỄN
-* **Phần:** 1. Tổng quan đề tài & Công nghệ sử dụng
-* **Nội dung:** Đặt vấn đề, Khảo sát thực tế & Mục tiêu đề tài
+### Đặt vấn đề, Khảo sát thực tế & Mục tiêu đề tài
 ### 📌 Nội dung Slide (Bullet points):
 * **Thực trạng người học:** Thiếu môi trường giao tiếp phản xạ tự nhiên, chi phí học 1-1 cao và khả năng ghi nhớ từ vựng suy giảm nhanh (đường cong quên lãng).
 * **Khảo sát thị trường (Mục 1.3.2):** Các giải pháp hiện tại (PrepTalk, YouPass, Luyennoi) bị phân mảnh — chỉ tập trung vào bài học tĩnh, trắc nghiệm chuẩn hóa hoặc chấm điểm phát âm đơn thuần, thiếu tính năng tương tác đàm thoại phản xạ 2 chiều thông minh kết hợp ôn tập ngắt quãng động cho từ vựng.
@@ -64,9 +62,7 @@
 
 ---
 
-## SLIDE 3: GIẢI PHÁP & CÁC PHÂN HỆ CỐT LÕI CỦA DAILYENG
-* **Phần:** 1. Tổng quan đề tài & Công nghệ sử dụng
-* **Nội dung:** Giải pháp & Phân hệ cốt lõi
+### Giải pháp & Phân hệ cốt lõi
 ### 📌 Nội dung Slide (Bullet points):
 * **Giải pháp tổng thể:** Xây dựng nền tảng học tiếng Anh tích hợp AI hỗ trợ học viên từ lý thuyết, lưu trữ đến thực hành phản xạ.
 * **Sáu phân hệ cốt lõi:**
@@ -91,9 +87,7 @@
 
 ---
 
-## SLIDE 4: CÔNG NGHỆ SỬ DỤNG (TECH STACK)
-* **Phần:** 1. Tổng quan đề tài & Công nghệ sử dụng
-* **Nội dung:** Giới thiệu công nghệ sử dụng
+### Giới thiệu công nghệ sử dụng (Tech Stack)
 ### 📌 Nội dung Slide (Bullet points):
 * **Kiến trúc phân tách Client - Server:**
   * **Frontend (Next.js 15 & React 19):** Sử dụng React Server Components (RSC) tối ưu hóa kết xuất trang, Zustand quản lý trạng thái, Next.js Server Actions đóng vai trò BFF (Backend-For-Frontend) che giấu API endpoint, kết hợp WebGL (Three.js) cho nhân vật 3D và Recharts để vẽ biểu đồ học tập.
@@ -120,9 +114,9 @@
 
 ---
 
-## SLIDE 5: SƠ ĐỒ USE CASE TỔNG QUÁT HỆ THỐNG
-* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
-* **Nội dung:** Sơ đồ Use Case tổng quát & Đặc tả Use Case cốt lõi
+## Phần 2: Phân tích yêu cầu & Thiết kế hệ thống (~6 slides)
+
+### Sơ đồ Use Case tổng quát & Đặc tả Use Case cốt lõi
 ### 📌 Nội dung Slide (Bullet points):
 * **Phân quyền người dùng rõ ràng:**
   * **Khách:** Đăng ký, đăng nhập tài khoản, làm bài kiểm tra trình độ đầu vào (Placement Test).
@@ -148,9 +142,7 @@
 
 ---
 
-## SLIDE 6: SƠ ĐỒ KIẾN TRÚC PHẦN TẦNG LOGIC (FULL-STACK)
-* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
-* **Nội dung:** Kiến trúc hệ thống tổng quan & Vai trò của Java Backend
+### Kiến trúc hệ thống tổng quan & Vai trò của Java Backend
 ### 📌 Nội dung Slide (Bullet points):
 * **Kiến trúc phân tầng chuẩn hóa:**
   * **Client Layer:** Next.js 15 kết hợp React 19, sử dụng Zustand quản lý trạng thái toàn cục tinh gọn. Tích hợp thư viện WebGL Three.js cho nhân vật 3D và Recharts để hiển thị biểu đồ học tập trực quan.
@@ -174,9 +166,7 @@
 
 ---
 
-## SLIDE 7: THIẾT KẾ CƠ SỞ DỮ LIỆU & QUẢN LÝ PHIÊN BẢN FLYWAY
-* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
-* **Nội dung:** Thiết kế cơ sở dữ liệu, Định danh CUID2 & Flyway Migration
+### Thiết kế cơ sở dữ liệu, Định danh CUID2 & Flyway Migration
 ### 📌 Nội dung Slide (Bullet points):
 * **Thiết kế thực thể JPA và Cấu trúc cơ sở dữ liệu:**
   * Cơ sở dữ liệu PostgreSQL gồm 35 bảng, được ánh xạ chặt chẽ thông qua Spring Data JPA.
@@ -209,9 +199,7 @@
 
 ---
 
-## SLIDE 8: THIẾT KẾ HƯỚNG ĐỐI TƯỢNG & DESIGN PATTERNS TRONG CODE JAVA
-* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
-* **Nội dung:** Thiết kế hướng đối tượng & Design Patterns (Backend & Frontend)
+### Thiết kế hướng đối tượng & Design Patterns (Backend & Frontend)
 ### 📌 Nội dung Slide (Bullet points):
 * **Tính chất OOP trong cấu trúc mã nguồn Java:**
   * **Đóng gói:** Các thuộc tính Entity và DTO được bảo vệ bằng phạm vi truy cập `private`, chỉ truy xuất qua các phương thức Getter/Setter hoặc sử dụng **Java Records** của Java 21 để định nghĩa các DTO bất biến.
@@ -239,9 +227,7 @@
 
 ---
 
-## SLIDE 9: THIẾT KẾ RESTFUL API, BẢO MẬT & GIAO THỨC TRUYỀN DỮ LIỆU
-* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
-* **Nội dung:** Thiết kế RESTful API chuẩn hóa, Xác thực bảo mật JWT & Giao thức SSE
+### Thiết kế RESTful API chuẩn hóa, Xác thực bảo mật JWT & Giao thức SSE
 ### 📌 Nội dung Slide (Bullet points):
 * **Xác thực không trạng thái (Stateless Authentication) & RBAC:**
   * Spring Security kiểm soát các yêu cầu qua bộ lọc `JwtAuthenticationFilter` để giải mã và kiểm tra chữ ký số của JWT Token.
@@ -273,9 +259,7 @@
 
 ---
 
-## SLIDE 10: THIẾT KẾ GIAO DIỆN FIGMA & SƠ ĐỒ TRANG WEB (SITEMAP)
-* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
-* **Nội dung:** Thiết kế Wireframe, Sitemap Figma & Luồng vận hành các Hub
+### Thiết kế Wireframe, Sitemap Figma & Luồng vận hành các Hub
 ### 📌 Nội dung Slide (Bullet points):
 * **Sơ đồ trang web (Sitemap) & Wireframe Figma:**
   * Tổ chức cấu trúc và điều hướng hệ thống xoay quanh Dashboard trung tâm dẫn đến 7 phân hệ chính: Vocabulary Hub, Grammar Hub, Speaking Room, Notebook, Translate/SmartLens, Study Plan, và Profile cá nhân.
@@ -297,9 +281,9 @@
 
 ---
 
-## SLIDE 11: JAVA 21 VIRTUAL THREADS - TỐI ƯU CHO CÁC LUỒNG XỬ LÝ AI
-* **Phần:** 3. Triển khai và kiểm thử hệ thống
-* **Nội dung:** Java 21 Virtual Threads tối ưu xử lý I/O mạng
+## Phần 3: Triển khai và kiểm thử hệ thống (~5 slides)
+
+### Java 21 Virtual Threads tối ưu xử lý I/O mạng
 ### 📌 Nội dung Slide (Bullet points):
 * **Đặc thù của các tác vụ gọi dịch vụ AI:**
   * Quá trình Backend Java gọi các API trí tuệ nhân tạo như Azure Speech và Google Gemini thường mất từ 1.5 đến 4 giây để nhận phản hồi do phải chờ xử lý âm thanh hoặc sinh văn bản từ đám mây.
@@ -325,9 +309,7 @@
 
 ---
 
-## SLIDE 12: CƠ CHẾ JAVA TÍCH HỢP SPEECH ENGINE & DỊCH VỤ BÊN THỨ BA
-* **Phần:** 3. Triển khai và kiểm thử hệ thống
-* **Nội dung:** Tích hợp các SDK AI & Dịch vụ bên thứ ba ở Backend Java
+### Tích hợp các SDK AI & Dịch vụ bên thứ ba ở Backend Java
 ### 📌 Nội dung Slide (Bullet points):
 * **Tích hợp Azure Speech, Translator & Vision (OCR):**
   * **Azure Speech SDK:** Chấm điểm phát âm chi tiết cấp độ âm vị và ngữ điệu (Pitch).
@@ -353,9 +335,7 @@
 
 ---
 
-## SLIDE 13: THUẬT TOÁN ÔN TẬP NGẮT QUÃNG FSRS CÀI ĐẶT BẰNG JAVA
-* **Phần:** 3. Triển khai và kiểm thử hệ thống
-* **Nội dung:** Hiện thực hóa thuật toán ôn tập ngắt quãng FSRS
+### Hiện thực hóa thuật toán ôn tập ngắt quãng FSRS
 ### 📌 Nội dung Slide (Bullet points):
 * **Lý thuyết Thuật toán FSRS-4.5:**
   * Mô hình toán học giúp lên lịch ôn tập dựa trên mức độ suy giảm trí nhớ của người học.
@@ -382,9 +362,7 @@
 
 ---
 
-## SLIDE 14: HIỆN THỰC HÓA MODULE HỌC TẬP & HỆ THỐNG GAMIFICATION
-* **Phần:** 3. Triển khai và kiểm thử hệ thống
-* **Nội dung:** Hiện thực hóa Gamification & Quản lý hiệu năng cơ sở dữ liệu
+### Hiện thực hóa Gamification & Quản lý hiệu năng cơ sở dữ liệu
 ### 📌 Nội dung Slide (Bullet points):
 * **Thiết kế Backend cho Gamification (Mục 4.2.5):**
   * **Nhiệm vụ hàng ngày (`DailyMission`):** Spring Boot tự động đồng bộ tiến độ qua bảng trung gian `UserDailyMission` mỗi khi người học hoàn thành bài học từ vựng, ngữ pháp hoặc luyện nói.
@@ -408,9 +386,7 @@
 
 ---
 
-## SLIDE 15: KIỂM THỬ TỰ ĐỘNG & ĐẢM BẢO CHẤT LƯỢNG HỆ THỐNG
-* **Phần:** 3. Triển khai và kiểm thử hệ thống
-* **Nội dung:** Kiểm thử tự động & Đảm bảo chất lượng hệ thống
+### Kiểm thử tự động & Đảm bảo chất lượng hệ thống
 ### 📌 Nội dung Slide (Bullet points):
 * **Chiến lược kiểm thử tự động (Unit Testing):**
   * **Backend Java:** Lập trình bộ **55 kiểm thử tự động** sử dụng **JUnit 5** và **Mockito** để kiểm chứng các logic nghiệp vụ lõi như xác thực (`AuthServiceTest`), từ vựng (`VocabServiceTest`), và thuật toán ngắt quãng (`FsrsAlgorithmTest`).
@@ -434,9 +410,9 @@
 
 ---
 
-## SLIDE 16: ĐÓNG GÓI CONTAINER DOCKER & QUY TRÌNH CI/CD ĐÁM MÂY
-* **Phần:** 4. CI/CD & Demo sản phẩm
-* **Nội dung:** Đóng gói Container Docker Multi-stage & Quy trình CI/CD
+## Phần 4: CI/CD & Demo sản phẩm (~2 slides)
+
+### Đóng gói Container Docker Multi-stage & Quy trình CI/CD
 ### 📌 Nội dung Slide (Bullet points):
 * **Chiến lược đóng gói Dockerfile Multi-stage Build:**
   * **Stage 1 (Build):** Dùng Maven image chạy lệnh `mvn clean package` để biên dịch và tạo file JAR.
@@ -468,9 +444,7 @@
 
 ---
 
-## SLIDE 17: KẾT QUẢ THỰC NGHIỆM - LIVE DEMO CÁC PHÂN HỆ CỐT LÕI
-* **Phần:** 4. CI/CD & Demo sản phẩm
-* **Nội dung:** Live Demo các chức năng chính của hệ thống
+### Live Demo các chức năng chính của hệ thống
 ### 📌 Nội dung Slide (Bullet points):
 * **Môi trường Live Demo các chức năng chính:**
   * **Speaking Room (Luyện nói với AI):** Chọn kịch bản -> Mở mic thu âm -> Nhận chấm điểm phát âm chi tiết (tính điểm trôi chảy, ngữ điệu, hiển thị biểu đồ cao độ Pitch Intonation) từ Azure Speech SDK -> Gemini AI phản hồi đàm thoại và sửa lỗi ngữ pháp.
@@ -498,9 +472,9 @@
 
 ---
 
-## SLIDE 18: TỔNG KẾT & HƯỚNG PHÁT TRIỂN
-* **Phần:** 5. Kết luận & Định hướng phát triển
-* **Nội dung:** Tổng kết & Hướng phát triển
+## Phần 5: Kết luận & Định hướng phát triển (~1 slide)
+
+### Tổng kết & Hướng phát triển
 ### 📌 Nội dung Slide (Bullet points):
 * **Mức độ hoàn thiện đề tài (Mục 5.2):**
   * Đồ án đã hoàn thành toàn bộ các mục tiêu đề ra: Xây dựng thành công các phân hệ chức năng cốt lõi và các phân hệ hỗ trợ trên nền tảng Backend Java Spring Boot vững chắc kết hợp Frontend Next.js bảo mật.
