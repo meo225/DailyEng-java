@@ -3,7 +3,7 @@
 
 ## Mở đầu (~1 slide)
 
-### Mục lục nội dung báo cáo
+### Mục lục nội dung báo cáo (1.5)
 #### 📌 Nội dung Slide:
 * **Phần 1: Tổng quan đề tài & Công nghệ sử dụng**
 * **Phần 2: Phân tích yêu cầu & Thiết kế hệ thống**
@@ -18,7 +18,7 @@
 
 ## Phần 1: Tổng quan đề tài & Công nghệ sử dụng (~3 slides)
 
-### Bối cảnh, Thực trạng & Mục tiêu đề tài
+### Bối cảnh, Thực trạng & Mục tiêu đề tài (1.1, 1.2, 1.3, 1.4)
 #### 📌 Nội dung Slide:
 * **Bối cảnh thực tiễn:** 
   * Nhu cầu học tiếng Anh giao tiếp và tích lũy từ vựng ngày càng tăng.
@@ -39,7 +39,7 @@
 
 ---
 
-### Giải pháp & Phân hệ cốt lõi
+### Giải pháp & Phân hệ cốt lõi (3.1.1)
 #### 📌 Nội dung Slide:
 * **Giải pháp tổng thể:** Xây dựng nền tảng học tiếng Anh tích hợp AI hỗ trợ học viên từ lý thuyết, lưu trữ đến thực hành phản xạ.
 * **Sáu phân hệ cốt lõi:**
@@ -64,7 +64,7 @@
 
 ---
 
-### Giới thiệu công nghệ sử dụng (Tech Stack)
+### Giới thiệu công nghệ sử dụng (Tech Stack) (Chương 2)
 #### 📌 Nội dung Slide:
 * **Kiến trúc phân tách Client - Server:**
   * **Frontend (Next.js 15 & React 19):** Sử dụng React Server Components (RSC) tối ưu hóa kết xuất trang, Zustand quản lý trạng thái, Next.js Server Actions đóng vai trò BFF (Backend-For-Frontend) che giấu API endpoint, kết hợp WebGL (Three.js) cho nhân vật 3D và Recharts để vẽ biểu đồ học tập.
@@ -91,7 +91,7 @@
 
 ## Phần 2: Phân tích yêu cầu & Thiết kế hệ thống (~4 slides)
 
-### Yêu cầu hệ thống: Sơ đồ Use Case & Sitemap Figma
+### Yêu cầu hệ thống: Sơ đồ Use Case & Sitemap Figma (3.2.1, 3.2.2, 3.8.1)
 #### 📌 Nội dung Slide:
 * **Sơ đồ trang web (Sitemap) & Wireframe Figma:**
   * Tổ chức cấu trúc và điều hướng hệ thống xoay quanh Dashboard trung tâm dẫn đến các phân hệ chính giúp định hình trải nghiệm người dùng (UX) tối ưu trước khi lập trình.
@@ -117,7 +117,7 @@
 
 ---
 
-### Kiến trúc hệ thống tổng quan & Vai trò của Java Backend
+### Kiến trúc hệ thống tổng quan & Vai trò của Java Backend (3.4)
 #### 📌 Nội dung Slide:
 * **Kiến trúc phân tầng chuẩn hóa:**
   * **Client Layer:** Next.js 15 kết hợp React 19, sử dụng Zustand quản lý trạng thái toàn cục tinh gọn. Tích hợp thư viện WebGL Three.js cho nhân vật 3D và Recharts để hiển thị biểu đồ học tập trực quan.
@@ -141,7 +141,7 @@
 
 ---
 
-### Thiết kế cơ sở dữ liệu, Định danh CUID2 & Flyway Migration
+### Thiết kế cơ sở dữ liệu, Định danh CUID2 & Flyway Migration (2.1.3.3, 2.3.2, 3.3)
 #### 📌 Nội dung Slide:
 * **Thiết kế thực thể JPA và Cấu trúc cơ sở dữ liệu:**
   * Cơ sở dữ liệu PostgreSQL gồm 35 bảng, được ánh xạ chặt chẽ thông qua Spring Data JPA.
@@ -171,7 +171,7 @@
 
 ---
 
-### Cấu trúc OOP, Design Patterns & Thiết kế RESTful API/SSE
+### Cấu trúc OOP, Design Patterns & Thiết kế RESTful API/SSE (2.2, 3.5, 3.6)
 #### 📌 Nội dung Slide:
 * **Tính chất OOP trong cấu trúc mã nguồn Java:**
   * **Đóng gói & Kế thừa:** Các thuộc tính thực thể được bảo vệ bằng phạm vi truy cập `private`, sử dụng **Java Records** của Java 21 để định nghĩa các DTO bất biến, kế thừa qua thực thể cha `BaseEntity`.
@@ -199,7 +199,7 @@
 
 ## Phần 3: Triển khai và kiểm thử hệ thống (~3 slides)
 
-### Tích hợp AI SDKs & Tối ưu hiệu năng bằng Java 21 Virtual Threads
+### Tích hợp AI SDKs & Tối ưu hiệu năng bằng Java 21 Virtual Threads (2.1.1.1, 2.4, 3.7.2)
 #### 📌 Nội dung Slide:
 * **Đặc thù I/O mạng của các cuộc gọi API AI:**
   * Quá trình Backend Java gọi Azure Speech (chấm điểm phát âm) và Google Gemini (giáo viên AI phản xạ đàm thoại) mất từ 1.5 đến 4 giây do phải chờ xử lý âm thanh hoặc sinh văn bản từ đám mây.
@@ -224,7 +224,7 @@
 
 ---
 
-### Hiện thực hóa thuật toán ôn tập ngắt quãng FSRS
+### Hiện thực hóa thuật toán ôn tập ngắt quãng FSRS (4.2.3)
 #### 📌 Nội dung Slide:
 * **Lý thuyết Thuật toán FSRS-4.5:**
   * Mô hình toán học giúp lên lịch ôn tập dựa trên mức độ suy giảm trí nhớ của người học.
@@ -249,7 +249,7 @@
 
 ---
 
-### Phân hệ Gamification, Caffeine Caching & Kiểm thử QA
+### Phân hệ Gamification, Caffeine Caching & Kiểm thử QA (2.4.6, 4.2.5, 4.3.3, 4.4)
 #### 📌 Nội dung Slide:
 * **Thiết kế Backend cho Gamification (Mục 4.2.5):**
   * **Nhiệm vụ hàng ngày (`DailyMission`):** Spring Boot tự động đồng bộ tiến độ qua bảng trung gian `UserDailyMission` khi người học hoàn thành bài học từ vựng, ngữ pháp hoặc luyện nói.
@@ -274,7 +274,7 @@
 
 ## Phần 4: CI/CD & Demo sản phẩm (~2 slides)
 
-### Đóng gói Container Docker Multi-stage & Quy trình CI/CD
+### Đóng gói Container Docker Multi-stage & Quy trình CI/CD (4.3.1, 4.3.2, 4.3.4)
 #### 📌 Nội dung Slide:
 * **Chiến lược đóng gói Dockerfile Multi-stage Build:**
   * **Stage 1 (Build):** Dùng Maven image chạy lệnh `mvn clean package` để biên dịch và tạo file JAR.
@@ -301,7 +301,7 @@
 
 ---
 
-### Live Demo các chức năng chính của hệ thống
+### Live Demo các chức năng chính của hệ thống (3.8.3, 4.5)
 #### 📌 Nội dung Slide:
 * **Môi trường Live Demo các chức năng chính:**
   * **Speaking Room (Luyện nói với AI):** Chọn kịch bản -> Mở mic thu âm -> Nhận chấm điểm phát âm chi tiết (tính điểm trôi chảy, ngữ điệu, hiển thị biểu đồ cao độ Pitch Intonation) từ Azure Speech SDK -> Gemini AI phản hồi đàm thoại và sửa lỗi ngữ pháp.
@@ -327,7 +327,7 @@
 
 ## Phần 5: Kết luận & Định hướng phát triển (~1 slide)
 
-### Tổng kết & Hướng phát triển
+### Tổng kết & Hướng phát triển (Chương 5)
 #### 📌 Nội dung Slide:
 * **Mức độ hoàn thiện đề tài (Mục 5.2):** Đồ án đã hoàn thành toàn bộ các mục tiêu đề ra: Xây dựng thành công các phân hệ chức năng cốt lõi và hỗ trợ trên nền tảng Backend Java Spring Boot vững chắc kết hợp Frontend Next.js bảo mật.
 * **Ưu điểm thực tế (Mục 5.3.1):** 
