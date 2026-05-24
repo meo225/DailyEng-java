@@ -16,7 +16,7 @@
 
 ---
 
-## Phần 1: Tổng quan đề tài & Công nghệ sử dụng (~3 slides)
+## Phần 1: Tổng quan đề tài & Công nghệ sử dụng (~2 slides)
 
 ### Bối cảnh, Thực trạng & Mục tiêu đề tài (1.1, 1.2, 1.3, 1.4)
 #### 📌 Nội dung Slide:
