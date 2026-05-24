@@ -23,9 +23,9 @@
 * **Bối cảnh thực tiễn:** 
   * Nhu cầu học tiếng Anh giao tiếp và tích lũy từ vựng ngày càng tăng.
   * Người học thường thiếu môi trường thực hành phản xạ đàm thoại trực tiếp và dễ quên từ vựng nhanh chóng (đường cong quên lãng).
-* **Khảo sát & Thực trạng:** Các giải pháp hiện tại bị phân mảnh (PrepTalk, YouPass) — chỉ tập trung vào bài học tĩnh hoặc trắc nghiệm chuẩn hóa, thiếu tính năng tương tác nói phản xạ 2 chiều thông minh kết hợp ôn tập ngắt quãng động.
-* **Định hướng giải pháp & Phân rã mục tiêu:**
-  * **Mục tiêu sản phẩm:** Xây dựng ứng dụng DailyEng đồng bộ 6 phân hệ cốt lõi tạo chu trình học tập khép kín dạng Ứng dụng tích hợp AI (AI-Integrated Web App).
+* **Khảo sát & Thực trạng:** Các giải pháp hiện tại hoạt động độc lập và chưa đồng bộ (PrepTalk, YouPass) — tập trung chủ yếu vào bài học tĩnh hoặc trắc nghiệm tiêu chuẩn, thiếu tính năng tương tác nói phản xạ hai chiều kết hợp ôn tập ngắt quãng động.
+* **Định hướng giải pháp & Chi tiết hóa mục tiêu:**
+  * **Mục tiêu sản phẩm:** Xây dựng ứng dụng DailyEng tích hợp đồng bộ 6 phân hệ cốt lõi tạo chu trình học tập khép kín dạng Ứng dụng tích hợp AI (AI-Integrated Web App).
   * **Mục tiêu kiến thức:** Làm chủ Java 21 (Virtual Threads), Spring Boot 3.4, các AI SDK (Azure Speech, Gemini) và thuật toán FSRS chạy local.
 
 #### 🖼️ Gợi ý hình ảnh trình bày trên Slide:
@@ -33,9 +33,9 @@
 > **Đồ thị Đường cong quên lãng (Forgetting Curve) & Sơ đồ chu trình học khép kín:** Biểu diễn trực quan tỷ lệ suy giảm trí nhớ tự nhiên để dẫn dắt lý do cần thuật toán FSRS, kết hợp vòng tròn mô tả quá trình học tập khép kín kết hợp giữa học lý thuyết, thực hành phản xạ nói với AI để tạo ấn tượng tổng quan đầu tiên cho thầy/cô.
 
 #### 🎙️ Script thuyết trình:
-> *"Đầu tiên, em xin phép đi vào Phần 1: Tổng quan đề tài. Trong quá trình tìm hiểu thực tiễn học ngoại ngữ, nhóm em nhận thấy người học tại Việt Nam thường gặp khó khăn ở hai khía cạnh lớn: thiếu môi trường thực hành phản xạ nói tự nhiên và chưa có phương pháp để ghi nhớ từ vựng dài hạn. Qua khảo sát các website học tiếng Anh phổ biến hiện nay, nhóm em nhận thấy các giải pháp hiện tại đều khá phân mảnh: hoặc chỉ mạnh về đàm thoại nhưng chi phí cao, hoặc chỉ học từ vựng tĩnh mà thiếu đi tính tương tác đàm thoại phản xạ 2 chiều và chưa tối ưu lịch ôn tập tự động.
+> *"Đầu tiên, em xin phép đi vào Phần 1: Tổng quan đề tài. Trong quá trình tìm hiểu thực tiễn học ngoại ngữ, nhóm em nhận thấy người học tại Việt Nam thường gặp khó khăn ở hai khía cạnh lớn: thiếu môi trường thực hành phản xạ nói tự nhiên và chưa có phương pháp để ghi nhớ từ vựng dài hạn. Qua khảo sát các website học tiếng Anh phổ biến hiện nay, nhóm em nhận thấy các giải pháp hiện tại đều khá rời rạc: hoặc chỉ mạnh về đàm thoại nhưng chi phí cao, hoặc chỉ học từ vựng tĩnh mà thiếu đi tính tương tác đàm thoại phản xạ hai chiều và chưa tự động hóa lịch ôn tập một cách hiệu quả.
 > 
-> Nhằm giải quyết các vấn đề trên, đồ án DailyEng hướng tới xây dựng một ứng dụng học tập hỗ trợ chu trình học khép kín, lấy kỹ nghệ phần mềm và tối ưu hệ thống làm trọng tâm. Backend bằng Java Spring Boot sẽ đóng vai trò điều phối, tích hợp tối ưu các dịch vụ AI đám mây của Azure và Google để đảm bảo chất lượng phản hồi tốt nhất, đồng thời tự lập trình thuật toán ôn tập ngắt quãng FSRS trực tiếp bằng Java để cá nhân hóa lịch học từ vựng nội bộ."*
+> Nhằm giải quyết các vấn đề trên, đồ án DailyEng hướng tới xây dựng một ứng dụng học tập hỗ trợ chu trình học khép kín, lấy kỹ nghệ phần mềm và hiệu năng hệ thống làm trọng tâm. Backend bằng Java Spring Boot sẽ đóng vai trò điều phối, tích hợp các dịch vụ AI đám mây của Azure và Google để đảm bảo chất lượng phản hồi phù hợp, đồng thời tự lập trình thuật toán ôn tập ngắt quãng FSRS trực tiếp bằng Java để cá nhân hóa lịch học từ vựng nội bộ."*
 
 ---
 
@@ -66,12 +66,12 @@
 
 ### Giới thiệu công nghệ sử dụng (Tech Stack) (Chương 2)
 #### 📌 Nội dung Slide:
-* **Kiến trúc phân tách Client - Server:**
-  * **Frontend (Next.js 15 & React 19):** Sử dụng React Server Components (RSC) tối ưu hóa kết xuất trang, Zustand quản lý trạng thái, Next.js Server Actions đóng vai trò BFF (Backend-For-Frontend) che giấu API endpoint, kết hợp WebGL (Three.js) cho nhân vật 3D và Recharts để vẽ biểu đồ học tập.
-  * **Backend (Spring Boot 3.4 & Java 21):** Trung tâm điều phối, xử lý logic nghiệp vụ và bảo mật. Sử dụng Java 21 Virtual Threads (Project Loom) tối ưu I/O nghẽn, Spring Data JPA & Hibernate ORM, Caffeine Cache, và Flyway quản lý phiên bản database.
-* **Tích hợp dịch vụ AI tối ưu (SaaS Integration):**
+* **Kiến trúc tách biệt Client - Server:**
+  * **Frontend (Next.js 15 & React 19):** Sử dụng React Server Components (RSC) cải thiện hiệu năng kết xuất trang, Zustand quản lý trạng thái, Next.js Server Actions đóng vai trò BFF (Backend-For-Frontend) che giấu API endpoint, kết hợp WebGL (Three.js) cho nhân vật 3D và Recharts để vẽ biểu đồ học tập.
+  * **Backend (Spring Boot 3.4 & Java 21):** Trung tâm điều phối, xử lý logic nghiệp vụ và bảo mật. Sử dụng Java 21 Virtual Threads (Project Loom) giải quyết nghẽn I/O, Spring Data JPA & Hibernate ORM, Caffeine Cache, và Flyway quản lý phiên bản database.
+* **Tích hợp dịch vụ AI (SaaS Integration):**
   * Sử dụng API/SDK chính thức từ các nhà cung cấp đám mây lớn (Microsoft, Google) để đạt độ chính xác cao nhất mà không cần tốn tài nguyên huấn luyện mô hình (Speech Service, Translator, Vision OCR, Gemini 2.5).
-  * Backend Java đóng vai trò tiền xử lý dữ liệu, bóc tách kết quả AI và đồng bộ hóa nghiệp vụ.
+  * Backend Java đóng vai trò tiền xử lý dữ liệu, trích xuất thông tin từ kết quả AI và đồng bộ hóa nghiệp vụ.
   * **Thuật toán ôn tập khoa học FSRS-4.5:** Thuật toán ôn tập ngắt quãng (Free Spaced Repetition Scheduler) được tự cài đặt bằng ngôn ngữ Java chạy local.
 
 #### 🖼️ Gợi ý hình ảnh trình bày trên Slide:
@@ -79,13 +79,13 @@
 > **Sơ đồ khối Tech Stack (Next.js - Spring Boot):** Mindmap các biểu tượng logo công nghệ kết nối với nhau, mô tả vai trò của từng thành phần (Zustand, Three.js, Spring Boot, Java 21, Supabase, Azure SDK, Gemini SDK, Docker) tạo cảm giác chuyên nghiệp.
 
 #### 🎙️ Script thuyết trình:
-> *"Để hiện thực hóa DailyEng, nhóm em đã lựa chọn một hệ sinh thái công nghệ bổ trợ lẫn nhau một cách tối ưu theo hướng **Ứng dụng tích hợp AI (AI-Integrated Web Application)**.
+> *"Để hiện thực hóa DailyEng, nhóm em đã lựa chọn một hệ sinh thái công nghệ bổ trợ lẫn nhau một cách hiệu quả theo hướng **Ứng dụng tích hợp AI (AI-Integrated Web Application)**.
 > 
-> Phía Client sử dụng **Next.js 15** và **React 19** với React Server Components giúp tối ưu giao diện và tốc độ tải. Next.js Server Actions đóng vai trò BFF bảo mật, tích hợp Auth.js để xác thực và ẩn endpoint Backend. Ngoài ra, nhóm em còn dùng WebGL Three.js dựng trợ lý ảo 3D sinh động và Recharts trực quan hóa dữ liệu học tập.
+> Phía Client sử dụng **Next.js 15** và **React 19** với React Server Components giúp cải thiện giao diện và tăng tốc độ tải. Next.js Server Actions đóng vai trò BFF bảo mật, tích hợp Auth.js để xác thực và ẩn endpoint Backend. Ngoài ra, nhóm em còn dùng WebGL Three.js dựng trợ lý ảo 3D sinh động và Recharts trực quan hóa dữ liệu học tập.
 > 
-> Trọng tâm là **Backend Java Spring Boot 3.4** chạy trên **Java 21**. Nhờ Virtual Threads, Backend duy trì hiệu năng cao khi nhiều người dùng gọi AI đồng thời. Cơ sở dữ liệu PostgreSQL được quản lý phiên bản chuyên nghiệp qua Flyway và truy vấn được tối ưu bằng Caffeine Cache.
+> Trọng tâm là **Backend Java Spring Boot 3.4** chạy trên **Java 21**. Nhờ Virtual Threads, Backend duy trì hiệu năng cao khi nhiều người dùng gọi AI đồng thời. Cơ sở dữ liệu PostgreSQL được quản lý phiên bản chuyên nghiệp qua Flyway và hiệu năng truy vấn được cải thiện bằng Caffeine Cache.
 > 
-> Về AI, thay vì tự huấn luyện mô hình tốn kém tài nguyên tính toán, nhóm em áp dụng chiến lược **tích hợp dịch vụ (SaaS Integration)**: sử dụng các SDK chính thức của Microsoft Azure và Google để đạt độ chính xác và chất lượng cao nhất. Backend Java sẽ **điều phối luồng dữ liệu, tiền xử lý và bóc tách kết quả AI** để xử lý nghiệp vụ học tập. Đặc biệt, nhóm em tự lập trình **thuật toán FSRS** bằng Java chạy hoàn toàn local để cá nhân hóa lịch học từ vựng."*
+> Về AI, thay vì tự huấn luyện mô hình tốn kém tài nguyên tính toán, nhóm em áp dụng chiến lược **tích hợp dịch vụ (SaaS Integration)**: sử dụng các SDK chính thức của Microsoft Azure và Google để đạt độ chính xác và chất lượng cao nhất. Backend Java sẽ **điều phối luồng dữ liệu, tiền xử lý và trích xuất kết quả AI** để xử lý nghiệp vụ học tập. Đặc biệt, nhóm em tự lập trình **thuật toán FSRS** bằng Java chạy hoàn toàn local để cá nhân hóa lịch học từ vựng."*
 
 ---
 
@@ -94,16 +94,12 @@
 ### Yêu cầu hệ thống: Sơ đồ Use Case & Sitemap Figma (3.2.1, 3.2.2, 3.8.1)
 #### 📌 Nội dung Slide:
 * **Sơ đồ trang web (Sitemap) & Wireframe Figma:**
-  * Tổ chức cấu trúc và điều hướng hệ thống xoay quanh Dashboard trung tâm dẫn đến các phân hệ chính giúp định hình trải nghiệm người dùng (UX) tối ưu trước khi lập trình.
+  * Tổ chức cấu trúc và điều hướng hệ thống xoay quanh Dashboard trung tâm dẫn đến các phân hệ chính giúp định hình trải nghiệm người dùng (UX) phù hợp trước khi lập trình.
   * Phác thảo cấu trúc giao diện thô (Wireframe) trên Figma cho Homepage, Speaking Room (luồng trò chuyện và màn hình phản hồi), Vocabulary Hub, và Notebook.
 * **Phân quyền người dùng rõ ràng:**
   * **Khách:** Đăng ký, đăng nhập tài khoản, làm bài kiểm tra trình độ đầu vào (Placement Test).
   * **Người học:** Thực hiện đầy đủ các chức năng học từ vựng, ngữ pháp, luyện nói với AI, quản lý sổ tay cá nhân, theo dõi tiến độ và tham gia gamification.
-* **Bốn Use Case cốt lõi thiết kế chi tiết (Mục 3.2.2):**
-  * **Use Case 1 (Đăng ký tài khoản):** Xác thực an toàn qua form hoặc OAuth2, đồng bộ dữ liệu.
-  * **Use Case 2 (Luyện nói với AI):** Đàm thoại phản xạ 2 chiều qua microphone, chấm điểm phát âm chi tiết.
-  * **Use Case 3 (Học từ vựng với Flashcards):** Đánh giá thẻ học, gọi thuật toán FSRS để tự động cập nhật lịch ôn tập.
-  * **Use Case 4 (Chat với Dorara AI):** Giao tiếp thời gian thực, stream văn bản giải đáp kiến thức học tập.
+* **Nêu tượng trưng một số Use Case tiêu biểu (Mục 3.2.2):** Để mô tả luồng vận hành mẫu, kịch bản nghiệp vụ của hệ thống được minh họa tượng trưng qua một số Use Case tiêu biểu như: Đăng ký tài khoản, Luyện nói phản xạ với AI, Học từ vựng Flashcard (FSRS) và Chat trợ lý ảo.
 
 #### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
@@ -111,9 +107,9 @@
 > *(Hiển thị sơ đồ Use Case vẽ bằng Mermaid từ Chương 3 - Mục 3.2.1 kết hợp sơ đồ sitemap điều hướng để thầy/cô đánh giá tính chuẩn hóa trong quy trình thiết kế phần mềm).*
 
 #### 🎙️ Script thuyết trình:
-> *"Xin mời thầy/cô và các bạn quan sát **Sơ đồ Use Case tổng quát và cấu trúc Sitemap của DailyEng**. Hệ thống được nhóm em thiết kế dựa trên trải nghiệm UX tối ưu phác thảo từ Figma với cấu trúc sitemap xoay quanh Dashboard trung tâm, chia làm hai nhóm đối tượng là Khách và Người học. 
+> *"Xin mời thầy/cô và các bạn quan sát **Sơ đồ Use Case tổng quát và cấu trúc Sitemap của DailyEng**. Hệ thống được nhóm em thiết kế dựa trên cấu trúc Sitemap rõ ràng xoay quanh Dashboard trung tâm, phân chia người dùng thành hai nhóm đối tượng chính là Khách và Người học. 
 > 
-> Trong đó, nhóm em đặc tả chi tiết 4 Use Case cốt lõi bao gồm: Đăng ký tài khoản, Luyện nói với AI, Học từ vựng với Flashcard, và Chat với trợ lý ảo Dorara. Ở mỗi Use Case, nhóm em đều phân tích kỹ lưỡng luồng sự kiện chính (Basic Flow), các luồng phụ (Alternative Flows) và các kịch bản xử lý lỗi ngoại lệ (Exception Flows) ở Mục 3.2.2 trong báo cáo nhằm đảm bảo tính toàn vẹn và logic khi vận hành thực tế."*
+> Về phần các nghiệp vụ chi tiết, trong báo cáo nhóm em có nêu tượng trưng một số Use Case tiêu biểu như Đăng ký tài khoản, Luyện nói với AI, Học từ vựng với Flashcard và Chat trợ lý ảo để minh họa rõ luồng vận hành chuẩn của hệ thống, giúp dễ dàng hình dung logic chạy thực tế."*
 
 ---
 
@@ -123,7 +119,7 @@
   * **Client Layer:** Next.js 15 kết hợp React 19, sử dụng Zustand quản lý trạng thái toàn cục tinh gọn. Tích hợp thư viện WebGL Three.js cho nhân vật 3D và Recharts để hiển thị biểu đồ học tập trực quan.
   * **BFF Layer (Next.js Server Actions):** Đóng vai trò cổng Facade trung gian, phối hợp với Auth.js để quản lý session và đính kèm JWT Token từ Cookie HttpOnly bảo mật, tránh lộ API endpoint Backend trực tiếp và chống tấn công XSS.
   * **Server Layer (Spring Boot 3.4 & Java 21):** Trung tâm xử lý logic nghiệp vụ và bảo mật. Phân chia package module hóa rõ ràng: `auth`, `vocabulary`, `grammar`, `speaking`, `srs`, `xp`. Tích hợp Caffeine Cache tại tầng Service để giảm tải cho database.
-  * **Data Layer:** PostgreSQL 16 triển khai trên Supabase Cloud, quản lý kết nối qua Connection Pooling HikariCP được cấu hình tối ưu.
+  * **Data Layer:** PostgreSQL 16 triển khai trên Supabase Cloud, quản lý kết nối qua Connection Pooling HikariCP được cấu hình hiệu quả.
 
 #### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
@@ -133,11 +129,11 @@
 #### 🎙️ Script thuyết trình:
 > *"Để đảm bảo tính độc lập, dễ mở rộng và bảo mật, hệ thống được thiết kế theo cấu trúc phân tầng Full-Stack như mô tả trên sơ đồ. 
 > 
-> Ở phía Client, nhóm em phát triển giao diện bằng Next.js 15 để tối ưu hóa tốc độ tải trang, sử dụng Zustand quản lý trạng thái client gọn nhẹ, kết hợp Three.js cho trợ lý 3D và Recharts để vẽ biểu đồ tiến độ học tập.
+> Ở phía Client, nhóm em phát triển giao diện bằng Next.js 15 để tăng tốc độ tải trang, sử dụng Zustand quản lý trạng thái client gọn nhẹ, kết hợp Three.js cho trợ lý 3D và Recharts để vẽ biểu đồ tiến độ học tập.
 > 
 > Lớp trung gian BFF sử dụng Next.js Server Actions tích hợp Auth.js giúp giải quyết vấn đề CORS, hoạt động như một lớp bảo vệ che giấu các địa chỉ endpoint Backend và tự động đính kèm mã JWT Token từ Cookie HttpOnly bảo mật. 
 > 
-> Trọng tâm của đồ án là tầng Backend API được xây dựng bằng **Java Spring Boot 3.4** chạy trên nền **Java 21**. Hệ thống mã nguồn Java được phân chia theo kiến trúc module khoa học. Để tối ưu hóa hiệu năng, nhóm em sử dụng connection pool **HikariCP** kết hợp với bộ nhớ đệm in-memory **Caffeine** tại tầng Service, giúp giảm số lượng truy vấn trực tiếp vào cơ sở dữ liệu PostgreSQL phía dưới khi người dùng yêu cầu các dữ liệu tĩnh như chủ đề hay bài học."*
+> Trọng tâm của đồ án là tầng Backend API được xây dựng bằng **Java Spring Boot 3.4** chạy trên nền **Java 21**. Hệ thống mã nguồn Java được phân chia theo kiến trúc module khoa học. Để cải thiện hiệu năng, nhóm em sử dụng connection pool **HikariCP** kết hợp với bộ nhớ đệm in-memory **Caffeine** tại tầng Service, giúp giảm số lượng truy vấn trực tiếp vào cơ sở dữ liệu PostgreSQL phía dưới khi người dùng yêu cầu các dữ liệu tĩnh như chủ đề hay bài học."*
 
 ---
 
@@ -149,7 +145,7 @@
   * Thiết kế lớp cha trừu tượng `BaseEntity` để tự động hóa các trường auditing như ngày tạo và ngày cập nhật.
 * **Định danh CUID2 thay thế cho UUID:**
   * CUID2 dài 25 ký tự, được tạo tự động tại sự kiện `@PrePersist` bằng thư viện CUID cho Java.
-  * **Hiệu suất chỉ mục:** Có tính chất k-sortable giúp duy trì thứ tự sắp xếp vật lý khi chèn bản ghi mới, tối ưu hiệu suất cây chỉ mục B-Tree trong PostgreSQL.
+  * **Hiệu suất chỉ mục:** Có tính chất k-sortable giúp duy trì thứ tự sắp xếp vật lý khi chèn bản ghi mới, nâng cao hiệu suất hoạt động của cây chỉ mục B-Tree trong PostgreSQL.
   * **Bảo mật hệ thống:** Ngăn chặn các lỗ hổng rò rỉ dữ liệu thông qua việc dò đoán ID tài nguyên trên đường dẫn URL.
 * **Quản lý phiên bản Database với Flyway (Mục 2.3.2):**
   * Quản lý sự thay đổi cấu trúc DB thông qua các file migration SQL có đánh số phiên bản (`V1__init.sql`, `V2__add_index.sql`).
@@ -165,7 +161,7 @@
 > 
 > Trong cấu trúc này, bảng User đóng vai trò trung tâm, liên kết với thông tin học tập ProfileStats, kế hoạch StudyPlan, các phiên luyện nói SpeakingSession và tiến trình từ vựng UserVocabProgress. 
 > 
-> Để quản lý định danh an toàn, tất cả các thực thể đều kế thừa lớp `BaseEntity` và tự động sở hữu cơ chế sinh khóa chính sử dụng chuỗi **CUID2**. CUID2 giúp PostgreSQL tối ưu hóa hiệu năng khi chèn dữ liệu mới, đồng thời giúp bảo vệ an toàn cho đường dẫn URL, ngăn ngừa các lỗ hổng rò rỉ thông tin. 
+> Để quản lý định danh an toàn, tất cả các thực thể đều kế thừa lớp `BaseEntity` và tự động sở hữu cơ chế sinh khóa chính sử dụng chuỗi **CUID2**. CUID2 giúp PostgreSQL tăng hiệu năng khi chèn dữ liệu mới, đồng thời giúp bảo vệ an toàn cho đường dẫn URL, ngăn ngừa các lỗ hổng rò rỉ thông tin. 
 > 
 > Đặc biệt, để quản lý thay đổi cấu trúc cơ sở dữ liệu một cách nhất quán, nhóm em tích hợp **Flyway Migration**. Mọi thay đổi cấu trúc bảng đều được ghi nhận dưới dạng file SQL có đánh số phiên bản, tự động chạy khi start server, giúp đồng bộ DB tức thời giữa local và đám mây Supabase mà không gặp xung đột."*
 
@@ -193,34 +189,34 @@
 > 
 > Về bảo mật, nhóm em cấu hình kiến trúc xác thực không trạng thái sử dụng **Spring Security** kết hợp **JWT** lưu trong Cookie HttpOnly. Toàn bộ API Backend được thiết kế chuẩn RESTful và xử lý lỗi tập trung qua `@ControllerAdvice`.
 > 
-> Đặc biệt, để xử lý đàm thoại thời gian thực với AI, nhóm em áp dụng giao thức **Server-Sent Events (SSE)**. Thay vì bắt người học chờ vài giây để nhận toàn bộ câu trả lời từ trợ lý ảo Dorara, SSE cho phép server đẩy từng từ ngay khi AI sinh ra, tạo hiệu ứng chữ chạy thời gian thực cực kỳ mượt mà, tối ưu hóa trải nghiệm."*
+> Đặc biệt, để xử lý đàm thoại thời gian thực với AI, nhóm em áp dụng giao thức **Server-Sent Events (SSE)**. Thay vì bắt người học chờ vài giây để nhận toàn bộ câu trả lời từ trợ lý ảo Dorara, SSE cho phép server đẩy từng từ ngay khi AI sinh ra, tạo hiệu ứng hiển thị chữ chạy thời gian thực liên tục, cải thiện trải nghiệm học tập."*
 
 ---
 
 ## Phần 3: Triển khai và kiểm thử hệ thống (~3 slides)
 
-### Tích hợp AI SDKs & Tối ưu hiệu năng bằng Java 21 Virtual Threads (2.1.1.1, 2.4, 3.7.2)
+### Tích hợp AI SDKs & Tăng cường hiệu năng bằng Java 21 Virtual Threads (2.1.1.1, 2.4, 3.7.2)
 #### 📌 Nội dung Slide:
 * **Đặc thù I/O mạng của các cuộc gọi API AI:**
   * Quá trình Backend Java gọi Azure Speech (chấm điểm phát âm) và Google Gemini (giáo viên AI phản xạ đàm thoại) mất từ 1.5 đến 4 giây do phải chờ xử lý âm thanh hoặc sinh văn bản từ đám mây.
   * Mô hình Platform Thread OS truyền thống dễ gây cạn kiệt luồng và nghẽn hệ thống khi có nhiều người dùng đồng thời.
 * **Giải pháp Java 21 Virtual Threads (Project Loom):**
-  * Luồng ảo siêu nhẹ do JVM quản lý. Khi luồng ảo gặp tắc nghẽn I/O mạng khi chờ API AI, JVM tự động tháo luồng ảo đó ra khỏi luồng vật lý OS và nhường luồng vật lý OS cho yêu cầu xử lý khác.
-* **Chiến lược tích hợp dịch vụ đám mây tối ưu (SaaS Integration):**
+  * Luồng ảo siêu nhẹ do JVM quản lý. Khi luồng ảo gặp tắc nghẽn I/O mạng khi chờ API AI, JVM tự động chuyển luồng ảo sang trạng thái chờ, giải phóng luồng vật lý OS cho các yêu cầu xử lý khác.
+* **Phương án tích hợp dịch vụ đám mây (SaaS Integration):**
   * Tích hợp Azure Speech, Translator (dịch thuật), Vision OCR (SmartLens) và Gemini 2.5 flash qua các SDK chính thức để đảm bảo độ chính xác thương mại.
-  * Backend Java làm nhiệm vụ điều phối luồng dữ liệu, tiền xử lý và bóc tách kết quả AI, giúp giải phóng tài nguyên CPU/RAM cục bộ cho server.
+  * Backend Java làm nhiệm vụ điều phối luồng dữ liệu, tiền xử lý và trích xuất thông tin từ kết quả AI, giúp giải phóng tài nguyên CPU/RAM cục bộ cho server.
 
 #### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
 > **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Sơ đồ cơ chế Virtual Threads (nằm ở mục 4.3.2.2) & Luồng tuần tự tương tác gọi API AI (nằm ở mục 3.6)**  
-> *(So sánh trực quan cơ chế Platform Threads nghẽn I/O và Virtual Threads tháo lắp linh hoạt, kết hợp luồng tuần tự tương tác giữa Next.js -> Spring Boot -> Azure/Gemini SDKs).*
+> *(So sánh trực quan cơ chế Platform Threads nghẽn I/O và Virtual Threads chuyển đổi trạng thái linh hoạt, kết hợp luồng tuần tự tương tác giữa Next.js -> Spring Boot -> Azure/Gemini SDKs).*
 
 #### 🎙️ Script thuyết trình:
 > *"Một điểm nhấn công nghệ rất quan trọng ở Backend là việc ứng dụng tính năng **Virtual Threads của Java 21** kết hợp với **Chiến lược tích hợp AI đám mây**. 
 > 
 > Dạ thưa thầy/cô, các chức năng đàm thoại và chấm điểm giọng nói đòi hỏi Backend phải gọi API đến Azure và Google. Các tác vụ này tiêu tốn thời gian chờ phản hồi mạng từ 1.5 đến 4 giây. Ở mô hình platform thread truyền thống, mỗi request chiếm dụng hoàn toàn một luồng OS, dễ gây nghẽn khi có nhiều người dùng đồng thời. 
 > 
-> Bằng cách cấu hình Spring Boot 3.4 chạy trên **Virtual Threads**, JVM sẽ tự động giải phóng luồng vật lý OS đang chờ phản hồi AI để xử lý request khác. Cơ chế này giúp Backend duy trì hiệu suất xử lý ổn định, phục vụ đồng thời số lượng lớn phiên đàm thoại AI đám mây chất lượng cao mà tốn cực kỳ ít tài nguyên RAM và CPU máy chủ. Về AI, nhóm em sử dụng các SDK chính thức thay vì tự huấn luyện mô hình tốn kém tài nguyên, để Backend Java tập trung tiền xử lý, bóc tách dữ liệu và chạy thuật toán FSRS."*
+> Bằng cách cấu hình Spring Boot 3.4 chạy trên **Virtual Threads**, JVM sẽ tự động giải phóng luồng vật lý OS đang chờ phản hồi AI để xử lý request khác. Cơ chế này giúp Backend duy trì hiệu suất xử lý ổn định, phục vụ đồng thời số lượng lớn phiên đàm thoại AI đám mây chất lượng cao với mức độ tiêu thụ tài nguyên RAM và CPU máy chủ thấp. Về AI, nhóm em sử dụng các SDK chính thức thay vì tự huấn luyện mô hình tốn kém tài nguyên, để Backend Java tập trung tiền xử lý, trích xuất dữ liệu và chạy thuật toán FSRS."*
 
 ---
 
@@ -254,8 +250,8 @@
 * **Thiết kế Backend cho Gamification (Mục 4.2.5):**
   * **Nhiệm vụ hàng ngày (`DailyMission`):** Spring Boot tự động đồng bộ tiến độ qua bảng trung gian `UserDailyMission` khi người học hoàn thành bài học từ vựng, ngữ pháp hoặc luyện nói.
   * **Hệ thống XP và Streak:** Cộng điểm XP và cập nhật chuỗi ngày học liên tục (Streak) lưu trữ tập trung tại bảng `ProfileStats`.
-* **Tối ưu hóa hiệu năng Database & Caching:**
-  * **Leaderboard Entry Caching:** Dữ liệu xếp hạng bảng xếp hạng thi đua thời gian thực được lưu sẵn trong thực thể `LeaderboardEntry` kết hợp sử dụng bộ nhớ đệm **Caffeine Cache** tại tầng Service giúp giảm tối đa I/O nghẽn và tải PostgreSQL.
+* **Cải thiện hiệu năng Database & Caching:**
+  * **Leaderboard Entry Caching:** Dữ liệu xếp hạng bảng xếp hạng thi đua thời gian thực được lưu sẵn trong thực thể `LeaderboardEntry` kết hợp sử dụng bộ nhớ đệm **Caffeine Cache** tại tầng Service giúp giảm thiểu nghẽn I/O và tải PostgreSQL.
 * **Chiến lược kiểm thử tự động (Unit Testing):**
   * Lập trình bộ **55 kiểm thử tự động** sử dụng **JUnit 5** và **Mockito** trên Java Backend để kiểm chứng logic nghiệp vụ lõi (`AuthServiceTest`, `FsrsAlgorithmTest`). Vitest được áp dụng trên Frontend.
   * Toàn bộ 55 test cases đạt tỷ lệ vượt qua tuyệt đối **100%**, đảm bảo tính ổn định tối đa của mã nguồn.
@@ -266,7 +262,7 @@
 > **Giao diện Leaderboard & Bảng kết quả kiểm thử tự động (nằm ở mục 4.4.2.4):** Chèn hình ảnh trực quan của bảng xếp hạng thi đua và ô lưới Heatmap thực tế từ UI, kết hợp bảng thống kê chi tiết số lượng test cases hoàn thành thành công 100% để slide thêm sinh động và chân thực.
 
 #### 🎙️ Script thuyết trình:
-> *"Để duy trì động lực học tập cho người học, nhóm em đã xây dựng hệ thống **Gamification** tự động theo dõi nhiệm vụ hàng ngày, tích lũy điểm XP và duy trì chuỗi Streak. Để tối ưu hiệu năng khi có nhiều người học cùng lúc, dữ liệu bảng xếp hạng Leaderboard được lưu sẵn và tăng tốc truy vấn bằng bộ đệm in-memory **Caffeine Cache** ở tầng Service, giúp giảm thiểu tối đa các truy vấn nặng vào database PostgreSQL phía dưới.
+> *"Để duy trì động lực học tập cho người học, nhóm em đã xây dựng hệ thống **Gamification** tự động theo dõi nhiệm vụ hàng ngày, tích lũy điểm XP và duy trì chuỗi Streak. Để đảm bảo hiệu năng ổn định khi có nhiều người học cùng lúc, dữ liệu bảng xếp hạng Leaderboard được lưu sẵn và tăng tốc truy vấn bằng bộ đệm in-memory **Caffeine Cache** ở tầng Service, giúp giảm thiểu tối đa các truy vấn nặng vào database PostgreSQL phía dưới.
 > 
 > Bên cạnh đó, để đảm bảo hệ thống luôn vận hành ổn định và không gặp lỗi logic khi cập nhật code, nhóm em đã tiến hành viết kiểm thử tự động. Backend Java đã xây dựng bộ **55 kịch bản kiểm thử tự động (Unit Test)** sử dụng JUnit 5 và Mockito, bao phủ các logic cốt lõi từ Xác thực, Từ vựng cho đến thuật toán FSRS và đạt tỷ lệ chạy thành công tuyệt đối 100%. Ngoài ra, nhóm em còn tích hợp Sentry để phát hiện lỗi runtime tức thời và dùng Spring Boot Actuator để kiểm soát sức khỏe hệ thống."*
 
@@ -331,9 +327,9 @@
 #### 📌 Nội dung Slide:
 * **Mức độ hoàn thiện đề tài (Mục 5.2):** Đồ án đã hoàn thành toàn bộ các mục tiêu đề ra: Xây dựng thành công các phân hệ chức năng cốt lõi và hỗ trợ trên nền tảng Backend Java Spring Boot vững chắc kết hợp Frontend Next.js bảo mật.
 * **Ưu điểm thực tế (Mục 5.3.1):** 
-  * Tiếp cận theo hướng tích hợp AI (AI Integration) tối ưu, ứng dụng công nghệ đám mây thương mại hiệu quả.
+  * Tiếp cận theo hướng tích hợp dịch vụ AI (AI Integration), khai thác các dịch vụ đám mây thương mại.
   * Tự làm chủ và hiện thực hóa thuật toán toán học ôn tập FSRS bằng Java chạy local không phụ thuộc API ngoài.
-  * Kiến trúc phân tầng Full-Stack bảo mật an toàn, tối ưu tải tốt (Virtual Threads) và CD đám mây tự động.
+  * Kiến trúc phân tầng Full-Stack bảo mật, có khả năng chịu tải hiệu quả nhờ Virtual Threads và tự động hóa CD trên đám mây.
 * **Hạn chế hiện tại (Mục 5.3.2):**
   * Hiện tượng khởi động nguội (Cold Start) khi khởi chạy container do Backend sử dụng gói máy chủ Render miễn phí.
   * Phụ thuộc vào kết nối Internet liên tục và tính sẵn sàng của các nhà cung cấp đám mây API.
@@ -347,7 +343,7 @@
 > **Sơ đồ Lộ trình nâng cấp (Roadmap):** Infographic biểu diễn hướng phát triển tiếp theo ở mục 5.4, đặc biệt là bước tích hợp mô hình ngôn ngữ lớn cục bộ (Local LLM - Gemma/Llama) và chế độ học ngoại tuyến (Offline Mode) để kết thúc bài thuyết trình thật ấn tượng.
 
 #### 🎙️ Script thuyết trình:
-> *"Tổng kết lại, đồ án DailyEng đã hoàn thành đầy đủ các mục tiêu đề ra: xây dựng thành công ứng dụng học tiếng Anh tích hợp AI chạy trên Backend Java Spring Boot vững chắc kết hợp Frontend Next.js. 
+> *"Tổng kết lại, đồ án DailyEng đã hoàn thành đầy đủ các mục tiêu đề ra: xây dựng thành công ứng dụng học tiếng Anh tích hợp dịch vụ AI chạy trên Backend Java Spring Boot kết hợp với Frontend Next.js. 
 > 
 > Bên cạnh các điểm sáng về luyện nói phản xạ với AI và tự lập trình thuật toán ôn tập ngắt quãng FSRS, hệ thống vẫn còn một số điểm cần cải thiện như hiện tượng khởi động nguội do Backend chạy trên server Render gói free, và việc phụ thuộc hoàn toàn vào kết nối mạng để gọi API AI. 
 > 
