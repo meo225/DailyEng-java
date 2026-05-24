@@ -1,9 +1,9 @@
-# KỊCH BẢN THUYẾT TRÌNH ĐỒ ÁN: DAILYENG
+﻿# KỊCH BẢN THUYẾT TRÌNH ĐỒ ÁN: DAILYENG
 **Thời lượng thuyết trình dự kiến:** 20 phút | **Trọng tâm công nghệ:** Tích hợp AI trên nền Backend Java Spring Boot 3.4 và Java 21 kết hợp Frontend Next.js 15
 
----
-
 ## SLIDE 1: GIỚI THIỆU ĐỀ TÀI & BỐI CẢNH
+* **Phần:** 1. Tổng quan đề tài & Công nghệ sử dụng
+* **Nội dung:** Giới thiệu đề tài & Bối cảnh thực tiễn
 ### 📌 Nội dung Slide (Bullet points):
 * **Tên đề tài đồ án:** Nghiên cứu và xây dựng DailyEng - Ứng dụng học tiếng Anh tích hợp Trí tuệ nhân tạo AI và Thuật toán lặp lại ngắt quãng FSRS.
 * **Bối cảnh thực tiễn:** 
@@ -15,7 +15,7 @@
   * Triển khai thuật toán ôn tập ngắt quãng FSRS bằng ngôn ngữ Java để cá nhân hóa lịch ôn tập từ vựng của người dùng.
 
 ### 🎙️ Script thuyết trình (1.5 phút):
-> *"Kính chào các thầy cô trong Hội đồng chấm đồ án. Em xin phép được đại diện nhóm trình bày báo cáo về đề tài: **'Nghiên cứu và xây dựng DailyEng - Ứng dụng học tiếng Anh tích hợp Trí tuệ nhân tạo và Thuật toán lặp lại ngắt quãng'**. 
+> *"Kính chào các thầy cô trong Hội đồng chấm đồ án. Em xin phép được đại diện nhóm trình bày báo cáo về đề tài: **'... (lấy trong file docs)'**. 
 > 
 > Trong quá trình tìm hiểu thực tiễn học ngoại ngữ, nhóm chúng em nhận thấy người học tại Việt Nam thường gặp khó khăn ở hai khía cạnh: thiếu môi trường thực hành phản xạ nói tự nhiên và chưa có phương pháp để ghi nhớ từ vựng dài hạn. 
 > 
@@ -23,9 +23,26 @@
 
 ---
 
-## SLIDE 2: ĐẶT VẤN ĐỀ & KHẢO SÁT THỰC TIỄN
+## SLIDE 1B: MỤC LỤC NỘI DUNG BÁO CÁO
+* **Phần:** Mục lục nội dung báo cáo
+* **Nội dung:** Mục lục báo cáo
 ### 📌 Nội dung Slide (Bullet points):
-* **Khó khăn thực tế của người học:**
+* **Phần 1: Tổng quan đề tài & Công nghệ sử dụng** (Slide 1 - 4)
+* **Phần 2: Phân tích yêu cầu & Thiết kế hệ thống** (Slide 5 - 10)
+* **Phần 3: Hiện thực hóa & Kiểm thử hệ thống** (Slide 11 - 15)
+* **Phần 4: Triển khai & Demo sản phẩm** (Slide 16 - 17)
+* **Phần 5: Kết luận & Định hướng phát triển** (Slide 18)
+
+### 🎙️ Script thuyết trình (0.5 phút):
+> *"Sau đây, em xin phép tóm tắt bố cục nội dung báo cáo ngày hôm nay gồm 5 phần chính: Phần đầu tiên giới thiệu về bối cảnh đề tài, thực trạng và giới thiệu sơ lược về hệ sinh thái công nghệ sử dụng; phần 2 đi sâu vào phân tích yêu cầu từ use case, sitemap giao diện Figma đến thiết kế cơ sở dữ liệu ERD và cấu trúc OOP trong Spring Boot; phần 3 là trọng tâm hiện thực hóa code backend Virtual Threads, tích hợp AI SDK, thuật toán FSRS và luồng bảo mật cùng kết quả kiểm thử tự động; phần 4 trình bày việc đóng gói container Docker, triển khai đám mây và live demo các tính năng; và cuối cùng phần 5 tổng kết ưu/nhược điểm và định hướng phát triển trong tương lai."*
+
+---
+
+## SLIDE 2: ĐẶT VẤN ĐỀ & KHẢO SÁT THỰC TIỄN
+* **Phần:** 1. Tổng quan đề tài & Công nghệ sử dụng
+* **Nội dung:** Đặt vấn đề & Khảo sát thực tiễn
+### 📌 Nội dung Slide (Bullet points):
+* **Khó khăn thực tế của người học: (lấy ở file docs sẽ chính xác và cụ thể hơn, nội dung dưới đây đọc mùi AI)**
   * **Tâm lý e ngại:** Người học thường lo lắng khi luyện nói trực tiếp do sợ phát âm sai hoặc chưa vững ngữ pháp.
   * **Hạn chế tài chính:** Chi phí để học luyện nói 1-1 với giáo viên bản xứ tương đối cao đối với phần lớn học sinh và sinh viên.
   * **Độ bền trí nhớ giảm nhanh:** Theo lý thuyết đường cong quên lãng, nếu từ vựng mới không được nhắc lại kịp thời, khả năng ghi nhớ sẽ suy giảm nhanh chóng theo thời gian.
@@ -43,6 +60,8 @@
 ---
 
 ## SLIDE 3: GIẢI PHÁP & CÁC PHÂN HỆ CỐT LÕI CỦA DAILYENG
+* **Phần:** 1. Tổng quan đề tài & Công nghệ sử dụng
+* **Nội dung:** Giải pháp & Phân hệ cốt lõi
 ### 📌 Nội dung Slide (Bullet points):
 * **Giải pháp tổng thể:** Xây dựng nền tảng học tiếng Anh tích hợp AI hỗ trợ học viên từ lý thuyết, lưu trữ đến thực hành phản xạ.
 * **Sáu phân hệ cốt lõi:**
@@ -62,7 +81,35 @@
 > 
 > Để tăng tính tương tác trực quan, chúng em phát triển trợ lý ảo **Dorara** giao tiếp thời gian thực, và tính năng **SmartLens** giúp người học tải ảnh lên, nhận diện chữ viết bằng công nghệ OCR của Azure AI Vision và dịch thuật trực tiếp đè lên ảnh gốc."*
 
-## SLIDE 4: SƠ ĐỒ USE CASE TỔNG QUÁT HỆ THỐNG
+---
+
+## SLIDE 4: CÔNG NGHỆ SỬ DỤNG (TECH STACK)
+* **Phần:** 1. Tổng quan đề tài & Công nghệ sử dụng
+* **Nội dung:** Giới thiệu công nghệ sử dụng
+### 📌 Nội dung Slide (Bullet points):
+* **Kiến trúc phân tách Client - Server:**
+  * **Frontend (Next.js 15):** Sử dụng React Server Components (RSC) tối ưu hóa kết xuất trang, Zustand quản lý trạng thái client tinh gọn, kết hợp Next.js Server Actions đóng vai trò BFF (Backend-For-Frontend) che giấu API endpoint, tăng tính bảo mật.
+  * **Backend (Spring Boot 3.4 & Java 21):** Trung tâm điều phối, xử lý logic nghiệp vụ và bảo mật. Java 21 Virtual Threads (Project Loom) giúp xử lý đồng thời hiệu năng cao với chi phí tài nguyên tối thiểu.
+* **Tích hợp các dịch vụ Trí tuệ nhân tạo (AI):**
+  * **Azure Speech Service (Microsoft):** Đảm nhiệm Speech-to-Text (STT) và chấm điểm phát âm (Pronunciation Assessment) chi tiết đến cấp độ âm vị.
+  * **Gemini 2.5 Flash (Google):** Trợ lý ảo phản xạ 2 chiều thông minh, hỗ trợ đàm thoại tự do và sửa lỗi ngữ pháp.
+* **Thuật toán ôn tập khoa học FSRS-4.5:**
+  * Thuật toán lặp lại ngắt quãng (Free Spaced Repetition Scheduler) được tự cài đặt bằng ngôn ngữ Java nhằm cá nhân hóa lịch ôn từ vựng theo đường quên lãng của người học.
+
+### 🎙️ Script thuyết trình (1.5 phút):
+> *"Để hiện thực hóa DailyEng, chúng em đã lựa chọn một hệ sinh thái công nghệ bổ trợ lẫn nhau một cách tối ưu. 
+> 
+> Phía Client sử dụng **Next.js 15** để tận dụng lợi thế về tốc độ kết xuất và SEO vượt trội của React Server Components. Next.js đóng vai trò BFF giúp quản lý xác thực và ẩn đi các endpoint Backend. 
+> 
+> Trọng tâm là Backend xây dựng trên **Java Spring Boot 3.4** và chạy trên nền **Java 21**. Spring Boot đóng vai trò cốt lõi trong việc quản lý cơ sở dữ liệu, phân quyền bảo mật và thực hiện các logic nghiệp vụ nặng. Nhờ Virtual Threads của Java 21, Backend có hiệu năng vượt trội khi xử lý các cuộc gọi API AI nghẽn. 
+> 
+> Hệ thống tích hợp trực tiếp **Azure Speech SDK** để chấm điểm phát âm chi tiết ở mức độ âm vị và **Google Gemini API** để đàm thoại phản xạ thông minh. Cuối cùng, chúng em tự cài đặt thuật toán ngắt quãng **FSRS** bằng Java để cá nhân hóa lịch học từ vựng cho từng học viên."*
+
+---
+
+## SLIDE 5: SƠ ĐỒ USE CASE TỔNG QUÁT HỆ THỐNG
+* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
+* **Nội dung:** Sơ đồ Use Case tổng quát
 ### 📌 Nội dung Slide (Bullet points):
 * **Phân quyền người dùng rõ ràng:**
   * **Khách:** Thực hiện đăng ký, đăng nhập tài khoản, làm bài kiểm tra trình độ đầu vào để nhận gợi ý lộ trình phù hợp.
@@ -73,11 +120,11 @@
 
 ### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
-> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Hình 3.1. Biểu đồ Use Case tổng quát của hệ thống DailyEng**  
+> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **hình: Biểu đồ Use Case tổng quát của hệ thống DailyEng (nằm ở mục 3.2.1)**  
 > *(Hiển thị sơ đồ Use Case vẽ bằng Mermaid từ Chương 3 - Mục 3.2.1. Đảm bảo cấu trúc rõ ràng với 3 phân vùng subgraph màu sắc Pastel nhã nhặn: Phân hệ tài khoản, Phân hệ học tập và đánh giá, Phân hệ trợ lý và tiện ích).*
 
 ### 🎙️ Script thuyết trình (1.5 phút):
-> *"Xin mời các thầy cô quan sát **Hình 3.1 - Sơ đồ Use Case tổng quát** mô tả các tác vụ tương tác trong DailyEng. Hệ thống được chia thành hai nhóm Actor chính là Khách và Người học. Khách chưa đăng nhập có thể thực hiện kiểm tra trình độ đầu vào để hệ thống gợi ý lộ trình học tương ứng. 
+> *"Xin mời các thầy cô quan sát **hình: Biểu đồ Use Case tổng quát của hệ thống DailyEng (nằm ở mục 3.2.1)** mô tả các tác vụ tương tác trong DailyEng. Hệ thống được chia thành hai nhóm Actor chính là Khách và Người học. Khách chưa đăng nhập có thể thực hiện kiểm tra trình độ đầu vào để hệ thống gợi ý lộ trình học tương ứng. 
 > 
 > Đối với Người học, hệ thống mở khóa toàn bộ các chức năng chuyên sâu nằm trong ba phân vùng nghiệp vụ. 
 > 
@@ -85,7 +132,9 @@
 
 ---
 
-## SLIDE 5: KIẾN TRÚC HỆ THỐNG TỔNG QUAN & VAI TRÒ CỦA JAVA BACKEND
+## SLIDE 6: SƠ ĐỒ KIẾN TRÚC PHẦN TẦNG LOGIC (FULL-STACK)
+* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
+* **Nội dung:** Kiến trúc hệ thống tổng quan & Vai trò của Java Backend
 ### 📌 Nội dung Slide (Bullet points):
 * **Kiến trúc phân tầng chuẩn hóa:**
   * **Client Layer:** Next.js 15 kết hợp React 19, sử dụng Zustand quản lý trạng thái toàn cục tinh gọn.
@@ -97,11 +146,11 @@
 
 ### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
-> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Hình 3.4. Sơ đồ kiến trúc phân tầng logic (Full-Stack) và luồng giao tiếp**  
+> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **hình: Sơ đồ kiến trúc phân tầng logic (Full-Stack) và luồng giao tiếp (nằm ở mục 3.4)**  
 > *(Vẽ lại sơ đồ kiến trúc ở Chương 3 - Mục 3.4 mô tả 4 tầng chính: Client Layer, BFF Layer, Server Layer, và Database Layer).*
 
 ### 🎙️ Script thuyết trình (2 phút):
-> *"Để đảm bảo tính độc lập, dễ mở rộng và bảo mật, hệ thống được thiết kế theo cấu trúc phân tầng Full-Stack như mô tả trong **Hình 3.4**. 
+> *"Để đảm bảo tính độc lập, dễ mở rộng và bảo mật, hệ thống được thiết kế theo cấu trúc phân tầng Full-Stack như mô tả trong **hình: Sơ đồ kiến trúc phân tầng logic (Full-Stack) và luồng giao tiếp (nằm ở mục 3.4)**. 
 > 
 > Tại phía Client, chúng em phát triển giao diện bằng Next.js 15 để tối ưu hóa thời gian hiển thị ban đầu, sử dụng thư viện Zustand quản lý trạng thái client gọn nhẹ. 
 > 
@@ -111,36 +160,14 @@
 
 ---
 
-## SLIDE 6: JAVA 21 VIRTUAL THREADS - TỐI ƯU CHO CÁC LUỒNG XỬ LÝ AI
-### 📌 Nội dung Slide (Bullet points):
-* **Đặc thù của các tác vụ gọi dịch vụ AI:**
-  * Quá trình Backend Java gọi các API trí tuệ nhân tạo như Azure Speech và Google Gemini thường mất từ 1.5 đến 4 giây để nhận phản hồi do phải chờ xử lý âm thanh hoặc sinh văn bản.
-  * Mô hình Thread-per-request truyền thống của Spring Boot sử dụng platform threads của hệ điều hành dễ gây cạn kiệt luồng và nghẽn hệ thống khi có nhiều người dùng đồng thời.
-* **Giải pháp ứng dụng Java 21 Virtual Threads:**
-  * Virtual Threads là các luồng siêu nhẹ do máy ảo JVM quản lý trực tiếp, không ánh xạ 1-1 với luồng của hệ điều hành.
-  * Khi luồng Java chờ phản hồi API AI từ Azure hay Gemini, JVM tự động giải phóng luồng vật lý OS để nhường tài nguyên cho yêu cầu khác.
-  * **Hiệu quả thực nghiệm:** Giúp Spring Boot Backend duy trì hiệu suất xử lý ổn định, tiết kiệm bộ nhớ máy chủ khi xử lý đồng thời nhiều phiên luyện nói và chat AI.
-
-### 🖼️ Sơ đồ trình bày trên Slide:
-> [!NOTE]  
-> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Hình 4.2. Sơ đồ cơ chế hoạt động của Virtual Threads khi xử lý các cuộc gọi API AI nghẽn I/O**  
-> *(Vẽ sơ đồ mô tả JVM điều phối Virtual Threads: Khi gặp tác vụ chờ API từ Azure/Gemini, Virtual Thread chuyển sang trạng thái Blocked, JVM giải phóng Platform Thread vật lý để xử lý các Task khác, khi có dữ liệu phản hồi, Virtual Thread được kết nối trở lại để chạy tiếp).*
-
-### 🎙️ Script thuyết trình (2 phút):
-> *"Một trong những điểm nhấn kỹ thuật quan trọng trong phần Backend Java của đồ án này là việc ứng dụng tính năng **Virtual Threads** mới của Java 21. 
-> 
-> Thưa các thầy cô, các chức năng tương tác như luyện đàm thoại hay chấm điểm giọng nói đòi hỏi Backend Java phải thực hiện các cuộc gọi API đến dịch vụ đám mây của Azure và Google. Các tác vụ này có đặc thù là tiêu tốn nhiều thời gian chờ đợi phản hồi từ mạng, thường dao động từ 1.5 đến 4 giây. 
-> 
-> Trong mô hình Spring Boot truyền thống, mỗi yêu cầu của người dùng sẽ chiếm dụng hoàn toàn một luồng vật lý của hệ điều hành. Nếu có nhiều người dùng cùng đàm thoại AI một lúc, hệ thống sẽ nhanh chóng cạn kiệt luồng và dẫn đến nghẽn mạng. 
-> 
-> Bằng cách cấu hình Spring Boot 3.4 chạy trên nền **Java 21 Virtual Threads**, JVM sẽ tự động giải phóng luồng vật lý đang chờ phản hồi AI để phục vụ các yêu cầu khác. Khi có tín hiệu dữ liệu trả về từ Azure hoặc Google, luồng ảo được kích hoạt trở lại để tiếp tục xử lý. Cơ chế này giúp Backend xử lý đồng thời số lượng lớn phiên hội thoại AI với mức tiêu hao tài nguyên máy chủ thấp."*
-
----
-
 ## SLIDE 7: THIẾT KẾ CƠ SỞ DỮ LIỆU & ĐỊNH DANH CUID2
+* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
+* **Nội dung:** Thiết kế cơ sở dữ liệu & Định danh CUID2
 ### 📌 Nội dung Slide (Bullet points):
 * **Thiết kế thực thể JPA và Cấu trúc cơ sở dữ liệu:**
   * Cơ sở dữ liệu PostgreSQL gồm 35 bảng, được ánh xạ chặt chẽ thông qua Spring Data JPA.
+  * Chi tiết thuộc tính các thực thể chính như bảng User (id, name, email, level, v.v.), Topic, SpeakingSession, NotebookItem.
+  * Mối quan hệ chặt chẽ giữa các thực thể: User kết nối 1-1 với ProfileStats và StudyPlan; quan hệ 1-N với các buổi luyện nói (SpeakingSession) và tiến trình ôn tập FSRS (UserVocabProgress).
   * Định nghĩa lớp cha trừu tượng BaseEntity để tự động hóa các trường auditing như ngày tạo và ngày cập nhật.
 * **Định danh CUID2 thay thế cho UUID:**
   * CUID2 dài 25 ký tự, được tạo tự động tại sự kiện prePersist bằng thư viện CUID cho Java.
@@ -150,19 +177,21 @@
 
 ### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
-> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Hình 3.2. Sơ đồ thực thể kết hợp ERD chi tiết của hệ thống DailyEng**  
+> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **hình: Sơ đồ thực thể kết hợp ERD chi tiết của hệ thống DailyEng (nằm ở mục 3.3.1)**  
 > *(Hiển thị sơ đồ ERD chi tiết từ mục 3.3.1 biểu diễn mối quan hệ giữa User, UserVocabProgress, VocabItem, SpeakingSession, và NotebookItem).*
 
 ### 🎙️ Script thuyết trình (1.5 phút):
-> *"Em xin phép trình bày về cấu trúc dữ liệu được quản lý ở Backend. Toàn bộ 35 bảng trong cơ sở dữ liệu PostgreSQL được ánh xạ sang các thực thể Java thông qua **Spring Data JPA**. 
+> *"Em xin phép trình bày về cấu trúc dữ liệu được quản lý ở Backend. Toàn bộ 35 bảng trong cơ sở dữ liệu PostgreSQL được ánh xạ sang các thực thể Java thông qua **Spring Data JPA** như mô tả trên **hình: Sơ đồ thực thể kết hợp ERD chi tiết của hệ thống DailyEng (nằm ở mục 3.3.1)**. 
 > 
-> Để quản lý định danh và đồng bộ hóa các trường thông tin kiểm toán hệ thống, chúng em thiết kế lớp cha trừu tượng BaseEntity. Tất cả các Entity con đều kế thừa lớp này và tự động sở hữu cơ chế sinh khóa chính sử dụng chuỗi **CUID2** thay vì số nguyên tự tăng hay UUID truyền thống. 
+> Trong cấu trúc cơ sở dữ liệu này, thực thể User đóng vai trò trung tâm liên kết với thông tin học tập ProfileStats, kế hoạch StudyPlan, các phiên luyện nói SpeakingSession, và tiến trình từ vựng UserVocabProgress. 
 > 
-> CUID2 là một giải pháp định danh ổn định. Về khía cạnh bảo mật, do mang tính ngẫu nhiên cao, nó giúp ngăn chặn việc người dùng dò tìm ID trên đường dẫn API để xem thông tin của người khác. Về khía cạnh hiệu năng, CUID2 có tính chất sắp xếp được theo thời gian sinh. Khi chèn các bản ghi tiến độ học tập mới liên tục, cơ sở dữ liệu PostgreSQL không phải sắp xếp lại toàn bộ cây chỉ mục B-Tree như khi dùng UUID v4 thông thường, giúp đảm bảo tốc độ ghi dữ liệu ở mức ổn định."*
+> Để quản lý định danh và đồng bộ hóa các trường thông tin kiểm toán hệ thống, chúng em thiết kế lớp cha trừu tượng BaseEntity chứa các trường dùng chung như ngày tạo, ngày cập nhật. Tất cả các Entity con đều kế thừa lớp này và tự động sở hữu cơ chế sinh khóa chính sử dụng chuỗi **CUID2** thay vì số nguyên tự tăng hay UUID truyền thống. CUID2 có tính chất k-sortable giúp PostgreSQL tối ưu hóa hiệu năng chèn bản ghi mới mà không cần sắp xếp lại toàn bộ cây chỉ mục B-Tree, đồng thời ngăn chặn các lỗ hổng rò rỉ dữ liệu qua đường dẫn API."*
 
 ---
 
 ## SLIDE 8: THIẾT KẾ HƯỚNG ĐỐI TƯỢNG & DESIGN PATTERNS TRONG CODE JAVA
+* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
+* **Nội dung:** Thiết kế hướng đối tượng & Design Patterns
 ### 📌 Nội dung Slide (Bullet points):
 * **Tính chất OOP trong cấu trúc mã nguồn Java:**
   * **Đóng gói:** Các thuộc tính Entity và DTO được bảo vệ bằng phạm vi truy cập `private`, chỉ truy xuất qua các phương thức Getter/Setter an toàn.
@@ -178,47 +207,24 @@
 ### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
 > **TÊN CÁC SƠ ĐỒ TRÊN SLIDE:**  
-> 1. **Hình 3.6. Sơ đồ quan hệ kế thừa các thực thể trong phân hệ luyện nói (Speaking Module):** *(Biểu diễn cấu trúc ClassDiagram thể hiện tính Kế thừa từ BaseEntity cha).*  
-> 2. **Hình 3.5. Luồng ánh xạ và chuyển đổi dữ liệu giữa Entity và DTO:** *(Mô tả quá trình ánh xạ Entity sang DTO tại tầng Service trước khi gửi phản hồi).*  
-> 3. **Hình 3.7. Sơ đồ tổng hợp các Design Pattern được áp dụng trong hệ thống DailyEng.**
+> 1. **hình: Sơ đồ quan hệ kế thừa các thực thể trong phân hệ luyện nói (Speaking Module) (nằm ở mục 3.6)** *(Biểu diễn cấu trúc ClassDiagram thể hiện tính Kế thừa từ BaseEntity cha).*  
+> 2. **hình: Luồng ánh xạ và chuyển đổi dữ liệu giữa Entity và DTO (nằm ở mục 3.5)** *(Mô tả quá trình ánh xạ Entity sang DTO tại tầng Service trước khi gửi phản hồi).*  
+> 3. **hình: Sơ đồ tổng hợp các Design Pattern được áp dụng trong hệ thống DailyEng (nằm ở mục 3.7)**
 
 ### 🎙️ Script thuyết trình (2 phút):
 > *"Để mã nguồn dự án Java có tính cấu trúc tốt, dễ bảo trì và mở rộng, chúng em đã áp dụng các nguyên lý lập trình hướng đối tượng OOP và các Design Patterns tiêu chuẩn. 
 > 
-> Trên slide là **Hình 3.6 - Sơ đồ kế thừa của các thực thể Speaking Module**, thể hiện cách chúng em thiết kế tầng dữ liệu hướng đối tượng một cách nhất quán. 
+> Trên slide là **hình: Sơ đồ quan hệ kế thừa các thực thể trong phân hệ luyện nói (Speaking Module) (nằm ở mục 3.6)**, thể hiện cách chúng em thiết kế tầng dữ liệu hướng đối tượng một cách nhất quán. 
 > 
 > Tại Backend Java, chúng em triển khai mẫu thiết kế **Service Layer** và **Repository Pattern** để đảm bảo tính liên kết linh hoạt. Mọi logic nghiệp vụ từ việc điều phối bài học đến tính điểm đều nằm tại tầng Service, giúp tầng Controller trở nên tinh gọn. 
 > 
-> Ngoài ra, chúng em áp dụng **DTO Pattern** bằng cách sử dụng tính năng **Java Records** của Java 21. Java Records đóng vai trò là những cấu trúc dữ liệu bất biến. Như mô tả ở **Hình 3.5**, khi Client yêu cầu thông tin bài học, tầng Service sẽ truy xuất Entity gốc từ database, lọc bỏ các trường dư thừa hoặc nhạy cảm như ngày khởi tạo hay cấu hình backend, và ánh xạ sang DTO Record tương ứng. Quá trình này giúp bảo mật cấu trúc cơ sở dữ liệu và hạn chế kích thước dữ liệu truyền tải qua mạng."*
+> Ngoài ra, chúng em áp dụng **DTO Pattern** bằng cách sử dụng tính năng **Java Records** của Java 21. Java Records đóng vai trò là những cấu trúc dữ liệu bất biến. Như mô tả ở **hình: Luồng ánh xạ và chuyển đổi dữ liệu giữa Entity và DTO (nằm ở mục 3.5)**, khi Client yêu cầu thông tin bài học, tầng Service sẽ truy xuất Entity gốc từ database, lọc bỏ các trường dư thừa hoặc nhạy cảm như ngày khởi tạo hay cấu hình backend, và ánh xạ sang DTO Record tương ứng. Quá trình này giúp bảo mật cấu trúc cơ sở dữ liệu và hạn chế kích thước dữ liệu truyền tải qua mạng."*
 
 ---
 
-## SLIDE 9: CƠ CHẾ JAVA TÍCH HỢP SPEECH ENGINE & GENERATIVE AI SDK
-### 📌 Nội dung Slide (Bullet points):
-* **Tích hợp Azure Speech SDK tại Backend Java:**
-  * Nạp thư viện client-sdk của Microsoft trong tệp Maven `pom.xml`.
-  * Khởi tạo `PronunciationAssessmentConfig` để thiết lập chấm điểm 100 điểm, chi tiết ở mức độ âm vị để đánh giá ngữ điệu và phát âm chi tiết.
-  * Backend Java tiếp nhận file ghi âm giọng nói từ Client, truyền dữ liệu byte array vào Azure SDK và nhận về đối tượng kết quả phân tích để lưu vào database.
-* **Tích hợp Google Generative AI SDK cho Java:**
-  * Sử dụng thư viện google-genai chính thức của Google để kết nối mô hình `gemini-3.1-flash-lite`.
-  * Áp dụng System Instruction bằng Java code để chỉ định AI đóng vai giáo viên chỉnh sửa ngữ pháp kiên nhẫn.
-  * Phân tích và sửa lỗi: Java Service thu thập toàn bộ lịch sử đàm thoại của phiên học, gửi yêu cầu phân tích lỗi và cách diễn đạt tốt hơn, sau đó lưu kết quả đánh giá vào thực thể SpeakingSession.
-
-### 🖼️ Sơ đồ trình bày trên Slide:
-> [!NOTE]  
-> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Hình 3.8. Sơ đồ tuần tự tương tác gọi API AI thông qua Java Backend**  
-> *(Sequence Diagram mô tả luồng: Client gửi Audio -> Java Controller -> Java Service -> Azure AI Speech SDK -> Nhận kết quả đánh giá -> Java Service gửi lịch sử hội thoại -> Google Gemini Java SDK -> Nhận phản hồi sửa lỗi -> Trả về kết quả tổng hợp cho Client).*
-
-### 🎙️ Script thuyết trình (2 phút):
-> *"Mục tiêu cốt lõi của môn học là tích hợp AI vào hệ thống lập trình Java, và chúng em đã thực hiện điều này bằng việc kết hợp trực tiếp các SDK AI chính thức tại tầng Backend. 
-> 
-> Trước tiên, đối với tính năng luyện nói, tệp cấu hình Maven `pom.xml` nạp thư viện `client-sdk` của Microsoft Azure Speech. Khi người học gửi dữ liệu âm thanh dạng byte array lên, lớp `SpeakingSessionService` bằng Java sẽ thiết lập đối tượng cấu hình `PronunciationAssessmentConfig` ở mức độ âm vị chi tiết. Dữ liệu âm thanh được gửi trực tiếp đến Azure Speech, và kết quả chấm điểm các tiêu chí phát âm sẽ được Java bóc tách từ đối tượng SDK trả về, sau đó lưu trực tiếp vào cơ sở dữ liệu PostgreSQL. 
-> 
-> Song song với đó, chúng em tích hợp **Google Generative AI SDK** cho Java để làm bộ não đàm thoại. Bằng cách sử dụng các đoạn mã Java thiết lập thuộc tính System Instruction, chúng em định hình phong cách phản hồi của AI luôn là một giáo viên bản xứ. Khi kết thúc cuộc đàm thoại, Java Service sẽ thu thập toàn bộ các lượt thoại đã lưu trong bảng `SpeakingTurn`, đóng gói thành một prompt gửi đến Gemini API để nhận về kết quả sửa lỗi và các câu đề xuất thay thế tốt hơn. Toàn bộ luồng kết nối logic này được đảm bảo tính toàn vẹn nhờ sự điều phối chặt chẽ của các lớp Service trong mã nguồn Java."*
-
----
-
-## SLIDE 10: THUẬT TOÁN ÔN TẬP NGẮT QUÃNG FSRS CÀI ĐẶT BẰNG JAVA
+## SLIDE 9: THIẾT KẾ WIREFRAME TRÊN FIGMA & SƠ ĐỒ TRANG WEB (SITEMAP)
+* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
+* **Nội dung:** Thiết kế Wireframe trên Figma & Sơ đồ trang web
 ### 📌 Nội dung Slide (Bullet points):
 * **Lý thuyết Thuật toán FSRS-4.5:**
   * Mô hình toán học giúp lên lịch ôn tập dựa trên mức độ suy giảm trí nhớ của người học.
@@ -231,7 +237,7 @@
 
 ### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
-> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Hình 3.5. Luồng ánh xạ dữ liệu và cập nhật thông số FSRS trong Database**  
+> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **hình: Luồng ánh xạ dữ liệu và cập nhật thông số FSRS trong Database (nằm ở mục 3.5)**  
 > *(Biểu diễn luồng tương tác: Người dùng học Vocabulary Hub -> đánh giá Flashcard -> Next.js gọi Server Action -> Spring Boot nhận yêu cầu -> gọi Class FsrsAlgorithm xử lý -> cập nhật UserVocabProgress và ghi lịch sử vào ReviewLog).*
 
 ### 🎙️ Script thuyết trình (2 phút):
@@ -243,7 +249,9 @@
 
 ---
 
-## SLIDE 11: LUỒNG XÁC THỰC BẢO MẬT & ĐƯỜNG DẪN RESTful API
+## SLIDE 10: QUY ĐỊNH HỆ THỐNG MÀU SẮC (DESIGN SYSTEM) & LUỒNG VẬN HÀNH CÁC HUB
+* **Phần:** 2. Phân tích yêu cầu & Thiết kế hệ thống
+* **Nội dung:** Hệ thống màu sắc (Design System) & Quy trình vận hành các Hub
 ### 📌 Nội dung Slide (Bullet points):
 * **Xác thực không trạng thái:**
   * Spring Security kiểm soát các yêu cầu qua bộ lọc `JwtAuthenticationFilter` để giải mã và kiểm tra chữ ký số của JWT Token.
@@ -255,19 +263,148 @@
 ### 🖼️ Sơ đồ & Bảng biểu trình bày trên Slide:
 > [!NOTE]  
 > **TÊN SƠ ĐỒ & BẢNG BIỂU TRÊN SLIDE:**  
-> 1. **Hình 3.8. Sơ đồ tuần tự Luồng xác thực JWT và lấy danh sách kịch bản trong DailyEng** *(Sequence Diagram mô tả luồng xác thực và kiểm soát JWT của bộ lọc Spring Security).*  
-> 2. **Bảng 3.7. Bảng tổng hợp các API Endpoints hệ thống tiêu biểu:** *(Liệt kê các API chính như `/auth/login`, `/speaking/scenarios`, `/srs/review`, `/dorara/chat` để Hội đồng đánh giá tính chuẩn hóa của thiết kế API RESTful).*
+> 1. **sơ đồ: Tuần tự Luồng xác thực JWT và lấy danh sách kịch bản trong DailyEng (nằm ở mục 3.8)** *(Sequence Diagram mô tả luồng xác thực và kiểm soát JWT của bộ lọc Spring Security).*  
+> 2. **bảng: Bảng tổng hợp các API Endpoints hệ thống tiêu biểu (nằm ở mục 3.7)** *(Liệt kê các API chính như `/auth/login`, `/speaking/scenarios`, `/srs/review`, `/dorara/chat` để Hội đồng đánh giá tính chuẩn hóa của thiết kế API RESTful).*
 
 ### 🎙️ Script thuyết trình (1.5 phút):
 > *"Để bảo vệ tài nguyên hệ thống, chúng em cấu hình kiến trúc bảo mật không trạng thái sử dụng **Spring Security**. 
 > 
-> Như mô tả ở **Hình 3.8**, mọi yêu cầu từ Client gửi lên đều được đi qua bộ lọc `JwtAuthenticationFilter` để giải mã và xác thực token JWT. Quyền hạn của người dùng như Role User hay Role Admin được nhúng trực tiếp vào token và được kiểm soát chặt chẽ ở cấp độ phương thức nhờ chú thích `@PreAuthorize` trên các Java API Controllers. Kỹ thuật này giúp phân tách hoàn toàn logic bảo mật và logic nghiệp vụ. 
+> Như mô tả ở **sơ đồ: Tuần tự Luồng xác thực JWT và lấy danh sách kịch bản trong DailyEng (nằm ở mục 3.8)**, mọi yêu cầu từ Client gửi lên đều được đi qua bộ lọc `JwtAuthenticationFilter` để giải mã và xác thực token JWT. Quyền hạn của người dùng như Role User hay Role Admin được nhúng trực tiếp vào token và được kiểm soát chặt chẽ ở cấp độ phương thức nhờ chú thích `@PreAuthorize` trên các Java API Controllers. Kỹ thuật này giúp phân tách hoàn toàn logic bảo mật và logic nghiệp vụ. 
 > 
-> Toàn bộ hệ thống API Backend được thiết kế tuân thủ nghiêm ngặt chuẩn RESTful như liệt kê ở Bảng 3.7. Các đường dẫn được đặt tên rõ ràng, phân loại theo các module Auth, Speaking, Vocab, SRS và trả về các mã trạng thái HTTP chuẩn hóa kết hợp với cấu trúc JSON đồng nhất từ DTO, giúp Frontend dễ dàng bắt lỗi và hiển thị giao diện phù hợp với trạng thái của hệ thống."*
+> Toàn bộ hệ thống API Backend được thiết kế tuân thủ nghiêm ngặt chuẩn RESTful như liệt kê ở bảng: Bảng tổng hợp các API Endpoints hệ thống tiêu biểu (nằm ở mục 3.7). Các đường dẫn được đặt tên rõ ràng, phân loại theo các module Auth, Speaking, Vocab, SRS và trả về các mã trạng thái HTTP chuẩn hóa kết hợp với cấu trúc JSON đồng nhất từ DTO, giúp Frontend dễ dàng bắt lỗi và hiển thị giao diện phù hợp với trạng thái của hệ thống."*
 
 ---
 
-## SLIDE 12: ĐÓNG GÓI CONTAINER DOCKER & TRIỂN KHAI VẬN HÀNH CD
+## SLIDE 11: JAVA 21 VIRTUAL THREADS - TỐI ƯU CHO CÁC LUỒNG XỬ LÝ AI
+* **Phần:** 3. Hiện thực hóa & Kiểm thử hệ thống
+* **Nội dung:** Java 21 Virtual Threads tối ưu xử lý AI
+### 📌 Nội dung Slide (Bullet points):
+* **Sơ đồ trang web (Sitemap):**
+  * Tổ chức cấu trúc và điều hướng hệ thống xoay quanh Dashboard trung tâm dẫn đến 7 phân hệ chính: Vocabulary Hub, Grammar Hub, Speaking Room, Notebook, Translate/SmartLens, Study Plan, và Profile cá nhân.
+  * Phân nhánh màn hình phòng luyện nói (Speaking Room) trực quan gồm: Topic Selection, Custom Topic, Bookmarks, và History.
+* **Thiết kế Wireframe phác thảo bằng Figma:**
+  * Sử dụng Figma phác thảo cấu trúc giao diện thô (Wireframe) trước khi viết code để định hình trải nghiệm người dùng (UX) và tối ưu hóa bố cục.
+  * Hiện thực hóa wireframe chi tiết cho Homepage, Speaking Room (luồng trò chuyện và màn hình phản hồi), Vocabulary Hub, và Notebook.
+
+### 🖼️ Sơ đồ trình bày trên Slide:
+> [!NOTE]  
+> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:**  
+> 1. **hình: Sơ đồ các giao diện trang chính Sitemap của ứng dụng DailyEng (nằm ở mục 3.8.1.1)** *(Biểu diễn sơ đồ luồng điều hướng các trang web).*  
+> 2. **hình: Bản vẽ Wireframe phác thảo cấu trúc giao diện hệ thống DailyEng trên Figma (nằm ở mục 3.8.2)** *(Hiển thị bản phác thảo wireframe trực quan từ mục 3.8.2).*
+
+### 🎙️ Script thuyết trình (1.5 phút):
+> *"Để hiện thực hóa ứng dụng một cách tối ưu nhất, chúng em bắt đầu bằng việc thiết kế kiến trúc thông tin và phác thảo giao diện người dùng. Đầu tiên là **hình: Sơ đồ các giao diện trang chính Sitemap của ứng dụng DailyEng (nằm ở mục 3.8.1.1)** thể hiện cấu trúc 7 phân hệ giao diện lớn của hệ thống. 
+> 
+> Tiếp theo, để trực quan hóa cách bố trí các thành phần và tối ưu trải nghiệm học tập (UX), nhóm đã tiến hành xây dựng **hình: Bản vẽ Wireframe phác thảo cấu trúc giao diện hệ thống DailyEng trên Figma (nằm ở mục 3.8.2)**. Chúng em thiết kế phác thảo thô cho các màn hình Homepage, phòng đàm thoại Speaking Room, Vocabulary Hub và Notebook. Việc phác thảo wireframe chi tiết trên Figma giúp chúng em nhanh chóng kiểm thử và điều chỉnh bố cục hợp lý, tối ưu trải nghiệm trước khi tiến hành code giao diện thực tế."*
+
+---
+
+## SLIDE 12: CƠ CHẾ JAVA TÍCH HỢP SPEECH ENGINE & GENERATIVE AI SDK
+* **Phần:** 3. Hiện thực hóa & Kiểm thử hệ thống
+* **Nội dung:** Tích hợp các SDK AI ở Backend Java
+### 📌 Nội dung Slide (Bullet points):
+* **Quy định hệ thống màu sắc (Design System):**
+  * Xây dựng bảng mã màu hệ thống nhất quán với 5 nhóm màu chủ đạo đạt chuẩn tương phản thị giác: Primary (Sky 600 - #0284c7), Secondary (Sky 500 - #0ea5e9), Accent (Amber 500 - #f59e0b), Semantic (Emerald 500 - #10b981), và Grayscale (text - #1e293b).
+  * Lựa chọn phông chữ Nunito bo tròn hiện đại làm phông chữ thương hiệu để giảm căng thẳng mắt khi học viên sử dụng ứng dụng trong thời gian dài.
+* **Quy trình vận hành khép kín của các Hub học tập:**
+  * Sơ đồ hóa luồng trải nghiệm người học tại Vocabulary Hub, Grammar Hub và Notebook: tiếp thu lý thuyết song ngữ trực quan -> thực hành làm bài tập củng cố -> tự động đồng bộ hóa tiến độ về database để ôn tập ngắt quãng.
+
+### 🖼️ Sơ đồ & Bảng biểu trình bày trên Slide:
+> [!NOTE]  
+> **TÊN CÁC SƠ ĐỒ & BẢNG BIỂU TRÊN SLIDE:**  
+> 1. **bảng: Bảng quy định hệ thống màu sắc (Design System) (nằm ở mục 3.8.3.1)** *(Bảng mã màu Primary, Secondary, Accent, Semantic và Grayscale).*  
+> 2. **hình: Quy trình vận hành các Hub (nằm ở mục 3.8.1)** *(Chèn sơ đồ luồng vận hành của Vocabulary Hub, Grammar Hub, Notebook và Translate).*
+
+### 🎙️ Script thuyết trình (1.5 phút):
+> *"Song song với kiến trúc trang, giao diện người dùng được đồng bộ hóa dựa trên một hệ thống **Design System** nhất quán được biểu diễn ở **bảng: Bảng quy định hệ thống màu sắc (Design System) (nằm ở mục 3.8.3.1)**. Chúng em lựa chọn bảng màu với tông màu xanh Sky làm chủ đạo, kết hợp phông chữ Nunito bo tròn hiện đại tạo cảm giác học tập thoải mái. 
+> 
+> Đồng thời, các luồng học tập trong hệ thống được vận hành khép kín và nhất quán thông qua **hình: Quy trình vận hành các Hub (nằm ở mục 3.8.1)**. Quy trình này giúp người học tự động hóa việc tiếp nhận kiến thức từ lý thuyết, làm bài tập vận dụng ngay và tự động hóa lưu tiến độ học tập vào PostgreSQL để thuật toán FSRS lập lịch ôn tập đúng thời điểm."*
+
+---
+
+## SLIDE 13: THUẬT TOÁN ÔN TẬP NGẮT QUÃNG FSRS CÀI ĐẶT BẰNG JAVA
+* **Phần:** 3. Hiện thực hóa & Kiểm thử hệ thống
+* **Nội dung:** Thuật toán ôn tập ngắt quãng FSRS cài đặt bằng Java
+### 📌 Nội dung Slide (Bullet points):
+* **Đặc thù của các tác vụ gọi dịch vụ AI:**
+  * Quá trình Backend Java gọi các API trí tuệ nhân tạo như Azure Speech và Google Gemini thường mất từ 1.5 đến 4 giây để nhận phản hồi do phải chờ xử lý âm thanh hoặc sinh văn bản.
+  * Mô hình Thread-per-request truyền thống của Spring Boot sử dụng platform threads của hệ điều hành dễ gây cạn kiệt luồng và nghẽn hệ thống khi có nhiều người dùng đồng thời.
+* **Giải pháp ứng dụng Java 21 Virtual Threads:**
+  * Virtual Threads là các luồng siêu nhẹ do máy ảo JVM quản lý trực tiếp, không ánh xạ 1-1 với luồng của hệ điều hành.
+  * Khi luồng Java chờ phản hồi API AI từ Azure hay Gemini, JVM tự động giải phóng luồng vật lý OS để nhường tài nguyên cho yêu cầu khác.
+  * **Hiệu quả thực nghiệm:** Giúp Spring Boot Backend duy trì hiệu suất xử lý ổn định, tiết kiệm bộ nhớ máy chủ khi xử lý đồng thời nhiều phiên luyện nói và chat AI.
+
+### 🖼️ Sơ đồ trình bày trên Slide:
+> [!NOTE]  
+> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **sơ đồ: Cơ chế hoạt động của Virtual Threads khi xử lý các cuộc gọi API AI nghẽn I/O (nằm ở mục 4.2)**  
+> *(Vẽ sơ đồ mô tả JVM điều phối Virtual Threads: Khi gặp tác vụ chờ API từ Azure/Gemini, Virtual Thread chuyển sang trạng thái Blocked, JVM giải phóng Platform Thread vật lý để xử lý các Task khác, khi có dữ liệu phản hồi, Virtual Thread được kết nối trở lại để chạy tiếp).*
+
+### 🎙️ Script thuyết trình (2 phút):
+> *"Một trong những điểm nhấn kỹ thuật quan trọng trong phần Backend Java của đồ án này là việc ứng dụng tính năng **Virtual Threads** mới của Java 21. 
+> 
+> Thưa các thầy cô, các chức năng tương tác như luyện đàm thoại hay chấm điểm giọng nói đòi hỏi Backend Java phải thực hiện các cuộc gọi API đến dịch vụ đám mây của Azure và Google. Các tác vụ này có đặc thù là tiêu tốn nhiều thời gian chờ đợi phản hồi từ mạng, thường dao động từ 1.5 đến 4 giây. 
+> 
+> Trong mô hình Spring Boot truyền thống, mỗi yêu cầu của người dùng sẽ chiếm dụng hoàn toàn một luồng vật lý của hệ điều hành. Nếu có nhiều người dùng cùng đàm thoại AI một lúc, hệ thống sẽ nhanh chóng cạn kiệt luồng và dẫn đến nghẽn mạng. 
+> 
+> Bằng cách cấu hình Spring Boot 3.4 chạy trên nền **Java 21 Virtual Threads**, JVM sẽ tự động giải phóng luồng vật lý đang chờ phản hồi AI để phục vụ các yêu cầu khác. Khi có tín hiệu dữ liệu trả về từ Azure hoặc Google, luồng ảo được kích hoạt trở lại để tiếp tục xử lý. Cơ chế này giúp Backend xử lý đồng thời số lượng lớn phiên hội thoại AI với mức tiêu hao tài nguyên máy chủ thấp."*
+
+---
+
+## SLIDE 14: LUỒNG XÁC THỰC BẢO MẬT & ĐƯỜNG DẪN RESTful API
+* **Phần:** 3. Hiện thực hóa & Kiểm thử hệ thống
+* **Nội dung:** Luồng xác thực bảo mật & Đường dẫn RESTful API
+### 📌 Nội dung Slide (Bullet points):
+* **Tích hợp Azure Speech SDK tại Backend Java:**
+  * Nạp thư viện client-sdk của Microsoft trong tệp Maven `pom.xml`.
+  * Khởi tạo `PronunciationAssessmentConfig` để thiết lập chấm điểm 100 điểm, chi tiết ở mức độ âm vị để đánh giá ngữ điệu và phát âm chi tiết.
+  * Backend Java tiếp nhận file ghi âm giọng nói từ Client, truyền dữ liệu byte array vào Azure SDK và nhận về đối tượng kết quả phân tích để lưu vào database.
+* **Tích hợp Google Generative AI SDK cho Java:**
+  * Sử dụng thư viện google-genai chính thức của Google để kết nối mô hình `gemini-3.1-flash-lite`.
+  * Áp dụng System Instruction bằng Java code để chỉ định AI đóng vai giáo viên chỉnh sửa ngữ pháp kiên nhẫn.
+  * Phân tích và sửa lỗi: Java Service thu thập toàn bộ lịch sử đàm thoại của phiên học, gửi yêu cầu phân tích lỗi và cách diễn đạt tốt hơn, sau đó lưu kết quả đánh giá vào thực thể SpeakingSession.
+
+### 🖼️ Sơ đồ trình bày trên Slide:
+> [!NOTE]  
+> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **sơ đồ: Sơ đồ tuần tự tương tác gọi API AI thông qua Java Backend (nằm ở mục 3.8)**  
+> *(Sequence Diagram mô tả luồng: Client gửi Audio -> Java Controller -> Java Service -> Azure AI Speech SDK -> Nhận kết quả đánh giá -> Java Service gửi lịch sử hội thoại -> Google Gemini Java SDK -> Nhận phản hồi sửa lỗi -> Trả về kết quả tổng hợp cho Client).*
+
+### 🎙️ Script thuyết trình (2 phút):
+> *"Mục tiêu cốt lõi của môn học là tích hợp AI vào hệ thống lập trình Java, và chúng em đã thực hiện điều này bằng việc kết hợp trực tiếp các SDK AI chính thức tại tầng Backend. 
+> 
+> Trước tiên, đối với tính năng luyện nói, tệp cấu hình Maven `pom.xml` nạp thư viện `client-sdk` của Microsoft Azure Speech. Khi người học gửi dữ liệu âm thanh dạng byte array lên, lớp `SpeakingSessionService` bằng Java sẽ thiết lập đối tượng cấu hình `PronunciationAssessmentConfig` ở mức độ âm vị chi tiết. Dữ liệu âm thanh được gửi trực tiếp đến Azure Speech, và kết quả chấm điểm các tiêu chí phát âm sẽ được Java bóc tách từ đối tượng SDK trả về, sau đó lưu trực tiếp vào cơ sở dữ liệu PostgreSQL. 
+> 
+> Song song với đó, chúng em tích hợp **Google Generative AI SDK** cho Java để làm bộ não đàm thoại. Bằng cách sử dụng các đoạn mã Java thiết lập thuộc tính System Instruction, chúng em định hình phong cách phản hồi của AI luôn là một giáo viên bản xứ. Khi kết thúc cuộc đàm thoại, Java Service sẽ thu thập toàn bộ các lượt thoại đã lưu trong bảng `SpeakingTurn`, đóng gói thành một prompt gửi đến Gemini API để nhận về kết quả sửa lỗi và các câu đề xuất thay thế tốt hơn. Toàn bộ luồng kết nối logic này được đảm bảo tính toàn vẹn nhờ sự điều phối chặt chẽ của các lớp Service trong mã nguồn Java."*
+
+---
+
+## SLIDE 15: KIỂM THỬ TỰ ĐỘNG & ĐẢM BẢO CHẤT LƯỢNG HỆ THỐNG
+* **Phần:** 3. Hiện thực hóa & Kiểm thử hệ thống
+* **Nội dung:** Kiểm thử tự động & Đảm bảo chất lượng hệ thống
+### 📌 Nội dung Slide (Bullet points):
+* **Chiến lược kiểm thử tự động (Unit Testing):**
+  * **Backend Java:** Lập trình bộ **55 kiểm thử tự động** sử dụng **JUnit 5** và **Mockito** để kiểm chứng các logic nghiệp vụ lõi như xác thực (`AuthServiceTest`), từ vựng (`VocabServiceTest`), và thuật toán ngắt quãng (`FsrsAlgorithmTest`).
+  * **Frontend Next.js:** Áp dụng **Vitest** để kiểm thử các thành phần giao diện và các helper chức năng.
+  * **Kết quả thực nghiệm:** Toàn bộ 55 test cases đạt tỷ lệ vượt qua tuyệt đối **100%**, đảm bảo tính ổn định tối đa của mã nguồn khi tái cấu trúc.
+* **Đảm bảo chất lượng tích hợp:**
+  * Giám sát lỗi runtime thời gian thực với **Sentry SDK** và kiểm soát trạng thái hệ thống thông qua **Spring Boot Actuator**.
+
+### 🖼️ Bảng biểu trình bày trên Slide:
+> [!NOTE]  
+> **TÊN BẢNG BIỂU TRÊN SLIDE:** **bảng: Bảng tổng hợp kết quả kiểm thử tự động (nằm ở mục 4.4.2.4)**  
+> *(Bảng thống kê chi tiết số lượng Unit Test Cases hoàn thành thành công 100% của các phân hệ để chứng minh tính ổn định của mã nguồn).*
+
+### 🎙️ Script thuyết trình (1.5 phút):
+> *"Để đảm bảo tính bền vững, tin cậy và không xảy ra lỗi logic khi nâng cấp hệ thống, chúng em đã thực hiện kiểm thử tự động nghiêm ngặt trên toàn bộ mã nguồn. 
+> 
+> Tại Backend Java, chúng em xây dựng bộ **55 kiểm thử tự động (Unit Test)** sử dụng JUnit 5 và Mockito. Các module nghiệp vụ cốt lõi từ Xác thực, Từ vựng cho đến lớp tính toán thuật toán FSRS đều được kiểm thử kỹ lưỡng. Tại phía Frontend, các component cũng được test bằng Vitest. 
+> 
+> Như thống kê tại **bảng: Bảng tổng hợp kết quả kiểm thử tự động (nằm ở mục 4.4.2.4)**, toàn bộ 55 test cases đều hoàn thành chính xác 100%. Bên cạnh đó, hệ thống cũng tích hợp Sentry để giám sát lỗi runtime thời gian thực và Spring Boot Actuator giúp theo dõi sức khỏe hệ thống khi vận hành."*
+
+---
+
+## SLIDE 16: ĐÓNG GÓI CONTAINER DOCKER & TRIỂN KHAI VẬN HÀNH CD
+* **Phần:** 4. Triển khai & Demo sản phẩm
+* **Nội dung:** Đóng gói Container Docker & Triển khai đám mây (CD)
 ### 📌 Nội dung Slide (Bullet points):
 * **Chiến lược đóng gói Dockerfile Multi-stage Build:**
   * **Stage 1 (Build):** Dùng Maven image chạy lệnh `mvn clean package` để biên dịch và tạo file JAR.
@@ -281,73 +418,50 @@
 ### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
 > **TÊN CÁC SƠ ĐỒ TRÊN SLIDE:**  
-> 1. **Hình 4.1. Sơ đồ quy trình đóng gói đa tầng Multi-stage Build và khởi chạy Docker Container:** *(Mô tả quá trình build Maven -> tạo JAR -> copy sang runtime JRE tinh giản -> deploy).*  
-> 2. **Hình 4.2. Sơ đồ kiến trúc triển khai vật lý hệ thống DailyEng trên hạ tầng đám mây:** *(Mô tả luồng tương tác vật lý giữa Vercel, Render Container, Supabase DB và các API ngoại vi).*
+> 1. **sơ đồ: Quy trình đóng gói đa tầng Multi-stage Build và khởi chạy Docker Container (nằm ở mục 4.1)** *(Mô tả quá trình build Maven -> tạo JAR -> copy sang runtime JRE tinh giản -> deploy).*  
+> 2. **sơ đồ: Kiến trúc triển khai vật lý hệ thống DailyEng trên hạ tầng đám mây (nằm ở mục 4.2)** *(Mô tả luồng tương tác vật lý giữa Vercel, Render Container, Supabase DB và các API ngoại vi).*
 
 ### 🎙️ Script thuyết trình (1.5 phút):
 > *"Để triển khai ứng dụng lên môi trường internet một cách thuận tiện, chúng em đã container hóa hoàn toàn ứng dụng bằng Docker. 
 > 
-> Như mô tả ở **Hình 4.1**, nhóm áp dụng chiến lược đóng gói **Multi-stage Build**. Tại giai đoạn Build, hệ thống sử dụng môi trường Maven đầy đủ để biên dịch mã nguồn Java thành file JAR. Ngay sau đó, ở giai đoạn Run, chúng em chỉ sao chép file JAR này sang một môi trường chạy JRE tinh giản dựa trên hệ điều hành Alpine. Phương pháp này giúp rút gọn dung lượng ảnh Docker từ 820MB xuống chỉ còn 180MB, loại bỏ các file thô và giảm thiểu tối đa các nguy cơ bảo mật hệ thống. 
+> Như mô tả ở **sơ đồ: Quy trình đóng gói đa tầng Multi-stage Build và khởi chạy Docker Container (nằm ở mục 4.1)**, nhóm áp dụng chiến lược đóng gói **Multi-stage Build**. Tại giai đoạn Build, hệ thống sử dụng môi trường Maven đầy đủ để biên dịch mã nguồn Java thành file JAR. Ngay sau đó, ở giai đoạn Run, chúng em chỉ sao chép file JAR này sang một môi trường chạy JRE tinh giản dựa trên hệ điều hành Alpine. Phương pháp này giúp rút gọn dung lượng ảnh Docker từ 820MB xuống chỉ còn 180MB, loại bỏ các file thô và giảm thiểu tối đa các nguy cơ bảo mật hệ thống. 
 > 
-> Về mặt triển khai vật lý ở **Hình 4.2**, Frontend được deploy lên Vercel, còn Backend Java được chạy trong Docker Container trên hạ tầng Render PaaS, kết nối trực tiếp đến PostgreSQL trên Supabase. Để đảm bảo hệ thống hoạt động ổn định khi tương tác với các dịch vụ AI bên ngoài, chúng em tích hợp thư viện **Resilience4j Circuit Breaker**. Nếu API của Azure hay Gemini gặp sự cố mạng hoặc phản hồi quá chậm, Circuit Breaker sẽ tự động ngắt kết nối tạm thời để bảo vệ tài nguyên luồng của JVM khỏi bị cạn kiệt."*
+> Về mặt triển khai vật lý ở **sơ đồ: Kiến trúc triển khai vật lý hệ thống DailyEng trên hạ tầng đám mây (nằm ở mục 4.2)**, Frontend được deploy lên Vercel, còn Backend Java được chạy trong Docker Container trên hạ tầng Render PaaS, kết nối trực tiếp đến PostgreSQL trên Supabase. Để đảm bảo hệ thống hoạt động ổn định khi tương tác với các dịch vụ AI bên ngoài, chúng em tích hợp thư viện **Resilience4j Circuit Breaker**. Nếu API của Azure hay Gemini gặp sự cố mạng hoặc phản hồi quá chậm, Circuit Breaker sẽ tự động ngắt kết nối tạm thời để bảo vệ tài nguyên luồng của JVM khỏi bị cạn kiệt."*
 
 ---
 
-## SLIDE 13: THIẾT KẾ LUỒNG GIAO DIỆN HỌC TẬP & DESIGN SYSTEM
+## SLIDE 17: KẾT QUẢ THỰC NGHIỆM - LIVE DEMO CÁC PHÂN HỆ CỐT LÕI
+* **Phần:** 4. Triển khai & Demo sản phẩm
+* **Nội dung:** Live Demo các chức năng chính của hệ thống
 ### 📌 Nội dung Slide (Bullet points):
-* **Thiết kế luồng trải nghiệm người dùng:**
-  * Sắp xếp quy trình học tập logic qua sơ đồ luồng hoạt động của các phân hệ chính:
-    * **Vocabulary Hub Workflow:** Chọn chủ đề -> Học Flashcard SRS ngắt quãng -> Luyện viết hoặc luyện nói phản xạ để ghi nhớ sâu.
-    * **Grammar Hub Workflow:** Học lý thuyết ngữ pháp -> Làm bài tập Quiz trắc nghiệm -> Cập nhật tiến độ thông thạo.
-    * **Notebook Workflow:** Lưu từ hoặc cấu trúc cá nhân -> Tra cứu, quản lý danh sách từ loại và định nghĩa -> Ôn tập củng cố và theo dõi thống kê học tập.
-* **Hệ thống thiết kế giao diện:**
-  * Đồng bộ mã màu Primary, Secondary, Accent, Semantic và Grayscale đạt chuẩn tương phản trực quan, kết hợp font chữ bo tròn Nunito mang lại cảm giác học tập hiện đại, thân thiện.
+* **Môi trường Live Demo các chức năng chính:**
+  * **Speaking Room (Luyện nói với AI):** Chọn kịch bản -> Mở mic thu âm -> Nhận đánh giá phát âm chi tiết (tính điểm trôi chảy, ngữ điệu) từ Azure Speech SDK -> Gemini AI phản hồi và sửa lỗi ngữ pháp.
+  * **Vocabulary Hub & Flashcards:** Trải nghiệm học từ vựng trực quan, lật thẻ Flashcard hai mặt và tự động lên lịch ôn tập ngắt quãng thông qua thuật toán FSRS.
+  * **SmartLens (Dịch ảnh OCR):** Upload ảnh trang sách hoặc hóa đơn tiếng Anh -> Hệ thống quét văn bản bằng OCR của Azure Vision -> Hiển thị bản dịch đè khít lên vị trí chữ gốc.
+  * **Dorara AI Companion:** Trợ lý ảo giao tiếp thời gian thực, hiển thị câu trả lời dạng text streaming qua Server-Sent Events (SSE).
 
-### 🖼️ Sơ đồ & Bảng biểu trình bày trên Slide:
+### 🖼️ Hình ảnh trình bày trên Slide:
 > [!NOTE]  
-> **TÊN CÁC SƠ ĐỒ & BẢNG BIỂU TRÊN SLIDE:**  
-> 1. **Hình 3.11, 3.12, 3.13, 3.14. Quy trình vận hành các Hub:** *(Chèn 4 sơ đồ luồng Mermaid của Vocabulary Hub, Grammar Hub, Notebook và Translate từ báo cáo Mục 3.8.1 để thể hiện tư duy thiết kế luồng trải nghiệm UX).*  
-> 2. **Bảng quy định hệ thống màu sắc (Design System):** *(Chèn bảng màu từ Mục 3.8.3.1 bao gồm các mã màu Primary #0284c7, Secondary #0ea5e9, Accent #f59e0b, Semantic #10b981, và Grayscale #1e293b để minh chứng tính nhất quán của giao diện).*
-
-### 🎙️ Script thuyết trình (1.5 phút):
-> *"Để học viên có thể tiếp thu kiến thức một cách tự nhiên và mạch lạc nhất, chúng em đã thiết kế các luồng trải nghiệm người học vô cùng chi tiết như mô tả trong **Hình 3.11 đến 3.14**. 
-> 
-> Các Hub học tập từ vựng, ngữ pháp hay sổ tay cá nhân đều được thiết kế theo quy trình thống nhất: tiếp thu lý thuyết song ngữ trực quan, làm bài tập vận dụng ngay lập tức và tự động đồng bộ tiến độ ghi nhớ về database. 
-> 
-> Song song với đó, giao diện người dùng được đồng bộ hóa dựa trên một **Design System** nhất quán. Chúng em quy định rõ ràng bảng mã màu hệ thống với tông xanh da trời làm chủ đạo nhằm tạo cảm giác thoải mái khi học tập, kết hợp cùng phông chữ Nunito bo tròn hiện đại giúp giảm bớt căng thẳng trực quan khi học viên tương tác lâu trên màn hình máy tính hoặc điện thoại."*
-
----
-
-## SLIDE 14: KẾT QUẢ THỰC NGHIỆM - DEMO GIAO DIỆN & KẾT QUẢ KIỂM THỬ TỰ ĐỘNG
-### 📌 Nội dung Slide (Bullet points):
-* **Landing Page & Speaking Room Demo:** Giao diện trực quan, hỗ trợ đàm thoại phản xạ nói mượt mà. 
-* **Biểu đồ Pitch Intonation thời gian thực:** Áp dụng thuật toán **Tự tương quan** trong PitchAnalyzer để trích xuất tần số cơ bản F0 giọng nói của người học, vẽ biểu đồ so sánh trực quan với ngữ điệu chuẩn giúp người học tự điều chỉnh giọng nói.
-* **Dorara AI Companion:** Trợ lý ảo hỗ trợ tương tác sinh động, kết nối trực tiếp với Gemini API ở Backend Java để giải thích bài học.
-* **Kiểm thử tự động:**
-  * Lập trình bộ **55 kiểm thử tự động (Unit Test)** sử dụng JUnit 5, Mockito ở Backend Java và Vitest ở Frontend.
-  * **Kết quả kiểm thử:** Toàn bộ 55 test cases đạt tỷ lệ vượt qua tuyệt đối **100%**, đảm bảo chất lượng logic nghiệp vụ vững vàng.
-
-### 🖼️ Hình ảnh & Bảng biểu trình bày trên Slide:
-> [!NOTE]  
-> **TÊN HÌNH ẢNH & BẢNG BIỂU TRÊN SLIDE:**  
-> 1. **Hình 4.5. Giao diện trang chủ Landing page của hệ thống DailyEng.**  
-> 2. **Hình 4.6. Giao diện phòng luyện nói và chấm điểm phát âm AI** *(Hiển thị biểu đồ so sánh cao độ Pitch Intonation).*  
-> 3. **Bảng 4.4.2.4. Bảng tổng hợp kết quả kiểm thử tự động:** *(Bảng thống kê 55 Unit test cases đã hoàn thành thành công 100% của các phân hệ để chứng minh tính ổn định của mã nguồn).*
+> **TÊN CÁC HÌNH ẢNH TRÊN FIGMA/SLIDE:**  
+> 1. **hình: Giao diện trang chủ Landing page của hệ thống DailyEng (nằm ở mục 4.5)**.  
+> 2. **hình: Giao diện phòng luyện nói và chấm điểm phát âm AI (nằm ở mục 4.6)** *(Hiển thị biểu đồ so sánh cao độ Pitch Intonation).*
 
 ### 🎙️ Script thuyết trình (2 phút):
-> *"Sau đây, em xin phép trình bày về kết quả thực nghiệm và giao diện thực tế của DailyEng qua **Hình 4.5** và **Hình 4.6**. 
+> *"Sau đây, em xin phép trình bày về kết quả thực nghiệm và giao diện thực tế của DailyEng qua **hình: Giao diện trang chủ Landing page của hệ thống DailyEng (nằm ở mục 4.5)** và **hình: Giao diện phòng luyện nói và chấm điểm phát âm AI (nằm ở mục 4.6)**. 
 > 
 > Giao diện trang chủ và các phân hệ học tập được thiết kế hiện đại, tương thích hoàn toàn trên thiết bị di động. 
 > 
-> Tại trang kết quả của **Speaking Room**, người học sẽ nhìn thấy một **Biểu đồ Pitch Intonation** độc đáo. Ở phía Client trình duyệt, chúng em viết lớp phân tích âm thanh PitchAnalyzer ứng dụng thuật toán **Tự tương quan Autocorrelation** để tìm ra tần số cơ bản F0 giọng nói người học trong dải tần chuẩn 85Hz - 500Hz. Biểu đồ sẽ so sánh trực quan cao độ giọng nói của người học với giọng nói bản xứ chuẩn để họ tự điều chỉnh ngữ điệu của mình. 
+> Tại phòng luyện nói **Speaking Room**, người học giao tiếp giọng nói tự nhiên với AI. Khi kết thúc nói, hệ thống phản hồi bảng chấm điểm phát âm chi tiết từng từ, chỉ rõ lỗi sai phát âm qua Azure SDK và đưa ra gợi ý sửa lỗi ngữ pháp từ Gemini AI. 
 > 
-> Tại phân hệ **Vocabulary Hub**, giao diện học thẻ Flashcard trực quan thể hiện rõ rệt tiến độ thông thạo từ vựng được tính toán bởi thuật toán FSRS. Đồng thời, giao diện **Notebook** cung cấp danh sách từ vựng cá nhân được tổ chức khoa học dưới dạng bảng, giúp người học dễ dàng quản lý và tra cứu từ loại, nghĩa tiếng Việt cùng các ghi chú cá nhân một cách tiện lợi. 
+> Tại phân hệ **Vocabulary Hub**, giao diện học thẻ Flashcard trực quan thể hiện rõ rệt tiến độ thông thạo từ vựng được tính toán bởi thuật toán FSRS. Đồng thời, giao diện **Notebook** cung cấp danh sách từ vựng cá nhân được tổ chức khoa học dưới dạng bảng, giúp người học dễ dàng quản lý. 
 > 
-> Để đảm bảo tính bền vững và tin cậy của ứng dụng, hệ thống Backend Java và Frontend được kiểm thử tự động nghiêm ngặt. Chúng em đã xây dựng thành công bộ **55 kiểm thử tự động (Unit Test)** sử dụng JUnit 5 và Mockito ở Backend Java, kết hợp Vitest ở Frontend Next.js. Như thống kê tại Bảng 4.4.2.4, toàn bộ 55 test cases đều hoàn thành chính xác 100%, giúp kiểm soát lỗi logic và bảo vệ mã nguồn khi tiến hành tái cấu trúc code."*
+> Tiện ích **SmartLens** giúp người học tải ảnh lên, nhận diện chữ viết bằng công nghệ OCR của Azure AI Vision và dịch thuật trực tiếp đè lên ảnh gốc cực kỳ khớp."*
 
 ---
 
-## SLIDE 15: TỔNG KẾT & HƯỚNG PHÁT TRIỂN
+## SLIDE 18: TỔNG KẾT & HƯỚNG PHÁT TRIỂN
+* **Phần:** 5. Kết luận & Định hướng phát triển
+* **Nội dung:** Tổng kết & Hướng phát triển
 ### 📌 Nội dung Slide (Bullet points):
 * **Kết luận đề tài:** Đồ án đã hoàn thành các phân hệ chức năng cốt lõi đề ra ban đầu, tích hợp thành công các dịch vụ AI chấm điểm phát âm và đàm thoại trên nền tảng Backend Java Spring Boot vững chắc.
 * **Ưu điểm thực tế:** 
