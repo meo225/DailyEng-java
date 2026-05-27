@@ -26,6 +26,7 @@ interface ActiveSessionViewProps {
   isTranscribing: boolean;
   isProcessing: boolean;
   mediaStream: MediaStream | null;
+  interimTranscript?: string;
   hintText: string | null;
   hintTranslation: string | null;
   isLoadingHint: boolean;
@@ -59,6 +60,7 @@ export default function ActiveSessionView({
   isTranscribing,
   isProcessing,
   mediaStream,
+  interimTranscript,
   hintText,
   hintTranslation,
   isLoadingHint,
@@ -144,6 +146,7 @@ export default function ActiveSessionView({
               isTranscribing={isTranscribing}
               mediaStream={mediaStream}
               sessionMode={sessionMode}
+              interimTranscript={interimTranscript}
               onToggleRecording={onToggleRecording}
               onRequestHint={onRequestHint}
               onDismissHint={onDismissHint}
