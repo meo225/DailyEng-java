@@ -125,7 +125,7 @@ class UserServiceTest {
             var request = new UpdateProfileRequest(
                     "New Name", null, "0987654321",
                     LocalDate.of(2000, 1, 1), Gender.FEMALE,
-                    "123 Main St", Level.C1
+                    "123 Main St", Level.C1, "new-avatar.jpg"
             );
             var result = userService.updateUserProfile(USER_ID, request);
 
@@ -135,6 +135,7 @@ class UserServiceTest {
             assertEquals(LocalDate.of(2000, 1, 1), result.dateOfBirth());
             assertEquals("123 Main St", result.address());
             assertEquals(Level.C1, result.level());
+            assertEquals("new-avatar.jpg", result.image());
             // Email should remain unchanged since request.email() is null
             assertEquals(EMAIL, result.email());
             verify(userRepository).save(any());
@@ -148,7 +149,7 @@ class UserServiceTest {
             when(accountRepository.findByUserId(USER_ID)).thenReturn(List.of(createGoogleAccount()));
 
             var request = new UpdateProfileRequest(
-                    null, "new@example.com", null, null, null, null, null
+                    null, "new@example.com", null, null, null, null, null, null
             );
 
             var ex = assertThrows(BadRequestException.class,
@@ -168,7 +169,7 @@ class UserServiceTest {
             when(userRepository.findByEmail("taken@example.com")).thenReturn(Optional.of(otherUser));
 
             var request = new UpdateProfileRequest(
-                    null, "taken@example.com", null, null, null, null, null
+                    null, "taken@example.com", null, null, null, null, null, null
             );
 
             var ex = assertThrows(BadRequestException.class,
@@ -186,7 +187,7 @@ class UserServiceTest {
 
             // Send the same email — should not trigger uniqueness check
             var request = new UpdateProfileRequest(
-                    null, EMAIL, null, null, null, null, null
+                    null, EMAIL, null, null, null, null, null, null
             );
             var result = userService.updateUserProfile(USER_ID, request);
 
@@ -200,7 +201,7 @@ class UserServiceTest {
             when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
             var request = new UpdateProfileRequest(
-                    "Name", null, null, null, null, null, null
+                    "Name", null, null, null, null, null, null, null
             );
             assertThrows(ResourceNotFoundException.class,
                     () -> userService.updateUserProfile(USER_ID, request));
@@ -216,7 +217,7 @@ class UserServiceTest {
 
             // All nulls — nothing should change
             var request = new UpdateProfileRequest(
-                    null, null, null, null, null, null, null
+                    null, null, null, null, null, null, null, null
             );
             var result = userService.updateUserProfile(USER_ID, request);
 
@@ -225,6 +226,7 @@ class UserServiceTest {
             assertEquals("0123456789", result.phoneNumber());
             assertEquals(Gender.MALE, result.gender());
             assertEquals(Level.B1, result.level());
+            assertEquals("https://example.com/avatar.jpg", result.image());
         }
     }
 }
