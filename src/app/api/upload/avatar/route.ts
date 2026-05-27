@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { auth } from "@/lib/auth";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { apiClient } from "@/lib/api-client";
@@ -52,8 +53,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: uploadResult.error }, { status: 500 });
     }
 
-    // Update user's image in database via Spring Boot API
-    await apiClient.put("/user/profile", { image: uploadResult.url });
+    // Update user's image in database via Spring Boot API (PUT /users/me)
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+
+    const API_BASE =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+    const updateRes = await fetch(`${API_BASE}/users/me`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ image: uploadResult.url }),
+    });
+
+    if (!updateRes.ok) {
+      const errText = await updateRes.text().catch(() => "Unknown error");
+      console.error("Failed to update user avatar in Spring Boot:", errText);
+      return NextResponse.json(
+        { error: "Failed to update avatar in database" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,

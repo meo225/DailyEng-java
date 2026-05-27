@@ -304,6 +304,15 @@ public class SpeakingSessionService {
                 int durationMinutes = session.getDuration() != null ? session.getDuration() / 60 : 5;
                 xpService.recordActivity(userId, 1, durationMinutes, totalWords);
 
+                // Tích lũy điểm kỹ năng từ kết quả AI Analysis thực tế
+                int speakingPoints = (pronScore + fluScore + intoScore) / 30; // Max +10
+                int listeningPoints = analysis.relevanceScore() / 10;        // Max +10
+                int vocabPoints = vocabScore / 10;                            // Max +10
+                int grammarPoints = analysis.grammarScore() / 10;            // Max +10
+                int readingPoints = (analysis.relevanceScore() + vocabScore) / 20; // Max +10
+
+                xpService.updateSkillScores(userId, vocabPoints, grammarPoints, speakingPoints, listeningPoints, readingPoints, 0);
+
                 // ── Enhancement #1: Adaptive difficulty ──
                 String newLevel = null;
                 String previousLevel = null;

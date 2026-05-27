@@ -80,7 +80,7 @@ export function SmartLensTab() {
       
       lines.forEach((line, idx) => {
         if (!line.boundingPolygon || line.boundingPolygon.length < 4) {
-          newColors[idx] = { bg: 'rgba(255,255,255,0.95)', text: '#1a56db' };
+          newColors[idx] = { bg: '#ffffff', text: '#1a56db' };
           return;
         }
         const xs = line.boundingPolygon.map(p => p.x);
@@ -91,7 +91,7 @@ export function SmartLensTab() {
         const h = Math.min(img.naturalHeight - y, Math.max(...ys) - y);
         
         if (w <= 0 || h <= 0) {
-          newColors[idx] = { bg: 'rgba(255,255,255,0.95)', text: '#1a56db' };
+          newColors[idx] = { bg: '#ffffff', text: '#1a56db' };
           return;
         }
 
@@ -132,11 +132,11 @@ export function SmartLensTab() {
             }
 
             newColors[idx] = { 
-                bg: `rgba(${bgR}, ${bgG}, ${bgB}, 0.95)`, 
+                bg: `rgb(${bgR}, ${bgG}, ${bgB})`, // 100% opaque to fully hide original text
                 text: `rgb(${textR}, ${textG}, ${textB})` 
             };
         } catch(e) {
-            newColors[idx] = { bg: 'rgba(255,255,255,0.95)', text: '#1a56db' };
+            newColors[idx] = { bg: '#ffffff', text: '#1a56db' };
         }
       });
       setLineColors(newColors);
@@ -357,20 +357,69 @@ export function SmartLensTab() {
                     if (!line.boundingPolygon || line.boundingPolygon.length < 4) return null;
                     const xs = line.boundingPolygon.map((p) => p.x);
                     const ys = line.boundingPolygon.map((p) => p.y);
-                    const left = Math.min(...xs) * scaleX;
-                    const top = Math.min(...ys) * scaleY;
-                    const width = (Math.max(...xs) - Math.min(...xs)) * scaleX;
-                    const height = (Math.max(...ys) - Math.min(...ys)) * scaleY;
+                    const minX = Math.min(...xs);
+                    const minY = Math.min(...ys);
+                    const maxX = Math.max(...xs);
+                    const maxY = Math.max(...ys);
+
+                    const baseWidth = (maxX - minX) * scaleX;
+                    const baseHeight = (maxY - minY) * scaleY;
+
+                    // Add safety padding to ensure we fully cover original text and give breathing room
+                    const padX = Math.max(3, baseWidth * 0.05); // 5% padding (min 3px)
+                    const padY = Math.max(2.5, baseHeight * 0.07); // 7% padding (min 2.5px)
+
+                    const left = (minX * scaleX) - padX;
+                    const top = (minY * scaleY) - padY;
+                    const width = baseWidth + (padX * 2);
+                    const height = baseHeight + (padY * 2);
+
                     const area = width * height;
-                    const textLen = line.translated.length || 1;
-                    const estimatedFontSize = Math.sqrt(area / (textLen * 1.2));
-                    const fontSize = Math.max(10, Math.min(estimatedFontSize, height * 0.85, 48));
-                    const colors = lineColors[idx] || { bg: 'rgba(255,255,255,0.95)', text: '#1a56db' };
+                    const origLen = line.original?.length || 1;
+                    const transLen = line.translated?.length || 1;
+
+                    // Dynamic font size: scale with area and character length ratio
+                    const estimatedFontSize = Math.sqrt(area / (transLen * 1.2));
+                    
+                    let scaleFactor = 1;
+                    if (transLen > origLen) {
+                      const ratio = origLen / transLen;
+                      scaleFactor = Math.max(0.62, ratio); // Shrink up to 38%
+                    }
+                    
+                    const baseFontSize = Math.max(9, Math.min(estimatedFontSize, baseHeight * 0.8, 36));
+                    const fontSize = Math.max(7, baseFontSize * scaleFactor);
+
+                    const colors = lineColors[idx] || { bg: '#ffffff', text: '#1a56db' };
 
                     return (
-                      <motion.div key={idx} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: idx * 0.03 }} className="absolute flex items-center justify-center overflow-hidden rounded-[4px]" style={{ left: `${left}px`, top: `${top}px`, width: `${width}px`, height: `${height}px`, padding: "4px" }}>
-                        <div className="absolute inset-0 backdrop-blur-[2px]" style={{ backgroundColor: colors.bg }} />
-                        <span className="relative z-10 font-bold text-center flex items-center justify-center w-full h-full" style={{ fontSize: `${fontSize}px`, color: colors.text, lineHeight: 1.4, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{line.translated}</span>
+                      <motion.div 
+                        key={idx} 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        transition={{ delay: idx * 0.03 }} 
+                        className="absolute flex items-center justify-center overflow-hidden rounded-[2px]" 
+                        style={{ 
+                          left: `${left}px`, 
+                          top: `${top}px`, 
+                          width: `${width}px`, 
+                          minHeight: `${height}px`, // Use minHeight so it can grow vertically if wrapped
+                          padding: "2px 4px" 
+                        }}
+                      >
+                        <div className="absolute inset-0" style={{ backgroundColor: colors.bg }} />
+                        <span 
+                          className="relative z-10 font-bold text-center flex items-center justify-center w-full h-full" 
+                          style={{ 
+                            fontSize: `${fontSize}px`, 
+                            color: colors.text, 
+                            lineHeight: 1.05, 
+                            whiteSpace: "pre-wrap", 
+                            wordBreak: "break-word" 
+                          }}
+                        >
+                          {line.translated}
+                        </span>
                       </motion.div>
                     );
                   })}

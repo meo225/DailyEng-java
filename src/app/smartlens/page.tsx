@@ -507,13 +507,32 @@ export default function SmartLensPage() {
                         const maxX = Math.max(...xs);
                         const maxY = Math.max(...ys);
 
-                        const left = minX * scaleX;
-                        const top = minY * scaleY;
-                        const width = (maxX - minX) * scaleX;
-                        const height = (maxY - minY) * scaleY;
+                        const baseWidth = (maxX - minX) * scaleX;
+                        const baseHeight = (maxY - minY) * scaleY;
+
+                        // Add safety padding to ensure we fully cover original text and give breathing room
+                        const padX = Math.max(3, baseWidth * 0.05); // 5% padding (min 3px)
+                        const padY = Math.max(2.5, baseHeight * 0.07); // 7% padding (min 2.5px)
+
+                        const left = (minX * scaleX) - padX;
+                        const top = (minY * scaleY) - padY;
+                        const width = baseWidth + (padX * 2);
+                        const height = baseHeight + (padY * 2);
+
+                        // Calculate character length to adjust font size dynamically
+                        const origLen = line.original?.length || 1;
+                        const transLen = line.translated?.length || 1;
+
+                        // Shrink font size if the translated text is longer than the original text
+                        let scaleFactor = 1;
+                        if (transLen > origLen) {
+                          const ratio = origLen / transLen;
+                          scaleFactor = Math.max(0.62, ratio); // Shrink up to 38%
+                        }
 
                         // Dynamic font size: scale with box height, clamp to reasonable range
-                        const fontSize = Math.max(7, Math.min(height * 0.65, 18));
+                        const baseFontSize = Math.max(8, Math.min(baseHeight * 0.62, 18));
+                        const fontSize = Math.max(6.5, baseFontSize * scaleFactor);
 
                         return (
                           <motion.div
@@ -521,29 +540,29 @@ export default function SmartLensPage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: idx * 0.03 }}
-                            className="absolute flex items-start"
+                            className="absolute flex items-center justify-center text-center overflow-hidden rounded-[2px]"
                             style={{
                               left: `${left}px`,
                               top: `${top}px`,
                               width: `${width}px`,
                               minHeight: `${height}px`,
-                              padding: '1px 2px',
+                              padding: '1px 3px',
                             }}
                           >
-                            {/* Background to cover original text */}
+                            {/* Background to fully cover original text (opaque to block peeking) */}
                             <div
-                              className="absolute inset-0 backdrop-blur-[1px]"
+                              className="absolute inset-0"
                               style={{
-                                backgroundColor: 'rgba(255,255,255,0.92)',
+                                backgroundColor: '#ffffff',
                               }}
                             />
                             {/* Translated text */}
                             <span
-                              className="relative z-10 font-semibold leading-tight w-full"
+                              className="relative z-10 font-bold leading-none w-full text-center flex items-center justify-center"
                               style={{
                                 fontSize: `${fontSize}px`,
-                                color: '#1a56db',
-                                lineHeight: 1.2,
+                                color: '#1d4ed8', // Premium blue-700
+                                lineHeight: 1.05,
                                 wordBreak: 'break-word',
                                 overflowWrap: 'break-word',
                               }}
