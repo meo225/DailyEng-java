@@ -42,7 +42,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
                 String userId = jwtTokenProvider.getUserIdFromToken(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(userId);
+                
+                // Stateless optimization: We construct UserDetails directly from the validated JWT
+                // instead of hitting the database on every single API request.
+                UserDetails userDetails = org.springframework.security.core.userdetails.User.withUsername(userId)
+                        .password("")
+                        .authorities("ROLE_USER")
+                        .build();
 
                 var authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
