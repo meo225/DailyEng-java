@@ -73,7 +73,7 @@ public class AppProperties {
     @Setter
     public static class Gemini {
         private String apiKey;
-        private String model = "gemini-2.5-flash";
+        private String model = "gemini-3.1-flash-lite";
         private double temperature = 0.7;
         private int maxTokens = 4096;
     }
