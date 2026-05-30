@@ -72,6 +72,7 @@ public class UserService {
         if (request.gender() != null) user.setGender(request.gender());
         if (request.address() != null) user.setAddress(request.address());
         if (request.level() != null) user.setLevel(request.level());
+        if (request.image() != null) user.setImage(request.image());
 
         userRepository.save(user);
         log.info("Updated profile for user {}", userId);

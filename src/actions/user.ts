@@ -26,6 +26,7 @@ export interface UserProfileUpdateData {
   gender?: string;
   address?: string;
   level?: string;
+  image?: string;
 }
 
 /**
@@ -89,16 +90,25 @@ export async function updateUserProfile(
   data: UserProfileUpdateData
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    let dateStr: string | null = null;
+    if (data.dateOfBirth instanceof Date) {
+      const year = data.dateOfBirth.getFullYear();
+      const month = String(data.dateOfBirth.getMonth() + 1).padStart(2, "0");
+      const day = String(data.dateOfBirth.getDate()).padStart(2, "0");
+      dateStr = `${year}-${month}-${day}`;
+    }
+
     const res = await fetchJava("/users/me", {
       method: "PUT",
       body: JSON.stringify({
         name: data.name,
         email: data.email,
         phoneNumber: data.phoneNumber,
-        dateOfBirth: data.dateOfBirth,
+        dateOfBirth: dateStr,
         gender: data.gender,
         address: data.address,
         level: data.level,
+        image: data.image,
       }),
     });
 

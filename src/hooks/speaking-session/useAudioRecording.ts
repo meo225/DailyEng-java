@@ -42,6 +42,7 @@ export function useAudioRecording({
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [interimTranscript, setInterimTranscript] = useState("");
   const learningLanguage = useAppStore((state) => state.learningLanguage);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -50,6 +51,20 @@ export function useAudioRecording({
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const noSpeechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isTranscribingRef = useRef(false);
+  const recognitionRef = useRef<any>(null);
+
+  const getSpeechLanguageLocale = useCallback((lang: string) => {
+    switch (lang?.toLowerCase()) {
+      case "en":
+        return "en-US";
+      case "ja":
+        return "ja-JP";
+      case "vi":
+        return "vi-VN";
+      default:
+        return "en-US";
+    }
+  }, []);
 
   // Speech metrics refs
   const confidenceScoresRef = useRef<number[]>([]);
@@ -141,6 +156,15 @@ export function useAudioRecording({
   );
 
   const stopMicrophone = useCallback(() => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+      } catch {}
+      recognitionRef.current = null;
+    }
+    setInterimTranscript("");
+
     if (silenceTimeoutRef.current) {
       clearTimeout(silenceTimeoutRef.current);
       silenceTimeoutRef.current = null;
@@ -186,6 +210,15 @@ export function useAudioRecording({
       // STOP recording
       setIsRecording(false);
 
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.onend = null;
+          recognitionRef.current.stop();
+        } catch {}
+        recognitionRef.current = null;
+      }
+      setInterimTranscript("");
+
       if (silenceTimeoutRef.current) {
         clearTimeout(silenceTimeoutRef.current);
         silenceTimeoutRef.current = null;
@@ -224,6 +257,45 @@ export function useAudioRecording({
         setMediaStream(stream);
         audioChunksRef.current = [];
         speechStartTimeRef.current = Date.now();
+
+        // Web Speech API for Real-time Transcript (RTT)
+        try {
+          const SpeechRecognition =
+            (window as any).SpeechRecognition ||
+            (window as any).webkitSpeechRecognition;
+
+          if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = getSpeechLanguageLocale(learningLanguage);
+
+            recognition.onresult = (event: any) => {
+              let interim = "";
+              for (let i = event.resultIndex; i < event.results.length; ++i) {
+                interim += event.results[i][0].transcript;
+              }
+              setInterimTranscript(interim);
+            };
+
+            recognition.onerror = (err: any) => {
+              console.warn("[SpeechRecognition] Error:", err.error);
+            };
+
+            recognition.onend = () => {
+              // Automatically restart if it stops but we are still recording
+              if (isRecording && recognitionRef.current === recognition) {
+                try { recognition.start(); } catch {}
+              }
+            };
+
+            recognitionRef.current = recognition;
+            recognition.start();
+            setInterimTranscript("");
+          }
+        } catch (err) {
+          console.warn("[SpeechRecognition] Failed to initialize:", err);
+        }
 
         const mimeType = MediaRecorder.isTypeSupported("audio/ogg; codecs=opus")
           ? "audio/ogg; codecs=opus"
@@ -286,7 +358,7 @@ export function useAudioRecording({
         }
       }
     }
-  }, [sessionId, isRecording, cancelTts, transcribeAudio]);
+  }, [sessionId, isRecording, cancelTts, transcribeAudio, getSpeechLanguageLocale, learningLanguage]);
 
   /** Returns speech metrics for the current turn and resets refs. */
   const collectSpeechMetrics = useCallback(() => {
@@ -351,6 +423,7 @@ export function useAudioRecording({
     isRecording,
     isTranscribing,
     mediaStream,
+    interimTranscript,
     handleToggleRecording,
     stopMicrophone,
     collectSpeechMetrics,

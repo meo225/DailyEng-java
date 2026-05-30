@@ -29,6 +29,8 @@ interface ProtectedRouteProps {
   pageIcon?: React.ReactNode
 }
 
+export const ProtectedRouteContext = React.createContext(false);
+
 // Feature highlights per page type (used on the right side panel)
 const featureHighlights = [
   { icon: TrendingUp, text: "Track your learning progress" },
@@ -62,6 +64,14 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, status } = useAuth()
   const isAuthenticated = status === "authenticated" && !!user
+
+  const hasParent = React.useContext(ProtectedRouteContext);
+
+  // If this ProtectedRoute is nested inside another, bypass all authentication checks
+  // to avoid unmounting/remounting spinner latency during page transitions.
+  if (hasParent) {
+    return <>{children}</>;
+  }
   
   // Guarantee identical Server / Client HTML during hydration by using a local mount state.
   // This prevents hydration mismatches if children Suspend (e.g. next/dynamic) 
@@ -186,7 +196,11 @@ export function ProtectedRoute({
     )
   }
 
-  return <>{children}</>
+  return (
+    <ProtectedRouteContext.Provider value={true}>
+      {children}
+    </ProtectedRouteContext.Provider>
+  );
 }
 
 // Export common page icons for convenience

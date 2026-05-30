@@ -94,6 +94,10 @@ public class SrsService {
                 if (justMastered) {
                         var xpResult = xpService.awardXp(userId, XpDtos.XP_VOCAB_MASTERY);
                         xpAwarded = xpResult.xpAwarded();
+                        
+                        // Tích lũy điểm Vocab, Reading và Writing khi Master một từ vựng
+                        xpService.updateSkillScores(userId, 5, 0, 0, 0, 2, 1);
+                        
                         log.info("🎓 Vocab item mastered: userId={}, vocabItemId={}", userId, vocabItemId);
                 }
 
