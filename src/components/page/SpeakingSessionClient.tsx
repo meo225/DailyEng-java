@@ -68,6 +68,7 @@ export default function SpeakingSessionClient(
           isRecording={session.recording.isRecording}
           isTranscribing={session.recording.isTranscribing}
           isProcessing={session.isProcessing}
+          interimTranscript={session.recording.interimTranscript}
           mediaStream={session.recording.mediaStream}
           hintText={session.hintText}
           hintTranslation={session.hintTranslation}
@@ -125,6 +126,7 @@ export default function SpeakingSessionClient(
           isRecording={session.recording.isRecording}
           isTranscribing={session.recording.isTranscribing}
           isProcessing={session.isProcessing}
+          interimTranscript={session.recording.interimTranscript}
           mediaStream={session.recording.mediaStream}
           hintText={session.hintText}
           hintTranslation={session.hintTranslation}
