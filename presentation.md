@@ -1,7 +1,7 @@
-# KỊCH BẢN THUYẾT TRÌNH ĐỒ ÁN: DAILYENG
-**Thời lượng thuyết trình dự kiến:** 12 - 15 phút | **Trọng tâm công nghệ:** Tích hợp AI trên nền Backend Java Spring Boot 3.4 và Java 21 kết hợp Frontend Next.js 15
+# SLIDE THUYẾT TRÌNH ĐỒ ÁN: DAILYENG
+**Trọng tâm công nghệ:** Tích hợp AI trên nền Backend Java Spring Boot 3.4 và Java 21 kết hợp Frontend Next.js 15
 
-## Mở đầu (~1 slide)
+## Mở đầu
 
 ### Mục lục nội dung báo cáo (1.5)
 #### 📌 Nội dung Slide:
@@ -11,12 +11,9 @@
 * **Phần 4: CI/CD & Demo sản phẩm**
 * **Phần 5: Kết luận & Định hướng phát triển**
 
-#### 🎙️ Script thuyết trình:
-> *"Em xin chào thầy/cô và các bạn. Hôm nay, em xin phép đại diện nhóm báo cáo về đồ án cuối kỳ môn học của chúng em. Trước khi đi vào chi tiết, em xin tóm tắt bố cục bài thuyết trình hôm nay gồm 5 phần chính: Phần đầu tiên giới thiệu về bối cảnh đề tài, thực trạng và giới thiệu sơ lược về hệ sinh thái công nghệ sử dụng; phần 2 đi sâu vào phân tích yêu cầu từ use case, sitemap giao diện Figma đến thiết kế cơ sở dữ liệu ERD và cấu trúc OOP trong Spring Boot; phần 3 tập trung vào việc triển khai mã nguồn backend, tích hợp các thuật toán và kiểm thử hệ thống; phần 4 trình bày quy trình đóng gói, thiết lập CI/CD và live demo trực tiếp các tính năng; và cuối cùng phần 5 tổng kết ưu/nhược điểm và định hướng phát triển trong tương lai."*
-
 ---
 
-## Phần 1: Tổng quan đề tài & Công nghệ sử dụng (~3 slides)
+## Phần 1: Tổng quan đề tài & Công nghệ sử dụng
 
 ### Bối cảnh, Thực trạng & Mục tiêu đề tài (1.1, 1.2, 1.3, 1.4)
 #### 📌 Nội dung Slide:
@@ -32,10 +29,21 @@
 > [!TIP]
 > **Đồ thị Đường cong quên lãng (Forgetting Curve) & Sơ đồ chu trình học khép kín:** Biểu diễn trực quan tỷ lệ suy giảm trí nhớ tự nhiên để dẫn dắt lý do cần thuật toán FSRS, kết hợp vòng tròn mô tả quá trình học tập khép kín kết hợp giữa học lý thuyết, thực hành phản xạ nói với AI để tạo ấn tượng tổng quan đầu tiên cho thầy/cô.
 
-#### 🎙️ Script thuyết trình:
-> *"Đầu tiên, em xin phép đi vào Phần 1: Tổng quan đề tài. Trong quá trình tìm hiểu thực tiễn học ngoại ngữ, nhóm em nhận thấy người học tại Việt Nam thường gặp khó khăn ở hai khía cạnh lớn: thiếu môi trường thực hành phản xạ nói tự nhiên và chưa có phương pháp để ghi nhớ từ vựng dài hạn. Qua khảo sát các website học tiếng Anh phổ biến hiện nay, nhóm em nhận thấy các giải pháp hiện tại đều khá rời rạc: hoặc chỉ mạnh về đàm thoại nhưng chi phí cao, hoặc chỉ học từ vựng tĩnh mà thiếu đi tính tương tác đàm thoại phản xạ hai chiều và chưa tự động hóa lịch ôn tập một cách hiệu quả.
-> 
-> Nhằm giải quyết các vấn đề trên, đồ án DailyEng hướng tới xây dựng một ứng dụng học tập hỗ trợ chu trình học khép kín, lấy kỹ nghệ phần mềm và hiệu năng hệ thống làm trọng tâm. Backend bằng Java Spring Boot sẽ đóng vai trò điều phối, tích hợp các dịch vụ AI đám mây của Azure và Google để đảm bảo chất lượng phản hồi phù hợp, đồng thời tự lập trình thuật toán ôn tập ngắt quãng FSRS trực tiếp bằng Java để cá nhân hóa lịch học từ vựng nội bộ."*
+---
+
+### Khảo sát thực trạng & So sánh giải pháp hiện nay (1.3.1, 1.3.2, 1.3.3)
+#### 📌 Nội dung Slide:
+* **Khảo sát từ dữ liệu thống kê (1.3.1):** Nhu cầu học tiếng Anh giao tiếp tăng vọt nhưng hầu hết người học thiếu môi trường thực hành phản xạ nói tự nhiên.
+* **Khảo sát các website học tiếng Anh hiện nay (1.3.2):**
+  * **PrepTalk luyện nói:** Chi phí cao, tập trung chủ yếu vào đàm thoại tĩnh hoặc trắc nghiệm tiêu chuẩn, thiếu tính cá nhân hóa.
+  * **YouPass:** Chỉ tập trung vào học từ vựng tĩnh, không hỗ trợ nói phản xạ hai chiều.
+  * **Luyennoi:** Nội dung đơn giản, không tích hợp thuật toán ôn tập ngắt quãng thông minh để tối ưu trí nhớ.
+* **Khảo sát người dùng thực tế (1.3.3):** Đa số người học gặp khó khăn lớn trong việc ghi nhớ từ vựng dài hạn và phản xạ giao tiếp tự nhiên.
+* **Sự vượt trội của DailyEng:** Tích hợp đồng bộ 6 phân hệ cốt lõi, kết hợp đàm thoại nói phản xạ AI thời gian thực và thuật toán ôn tập ngắt quãng FSRS chạy local để tạo chu trình học khép kín.
+
+#### 🖼️ Gợi ý hình ảnh trình bày trên Slide:
+> [!TIP]
+> **Bảng so sánh tính năng (Competitor Analysis Table):** Bảng đối chiếu các tiêu chí (Đàm thoại phản xạ AI, Chấm điểm chi tiết, Lịch ôn tập SRS, Học từ vựng/Ngữ pháp tích hợp) giữa PrepTalk, YouPass, Luyennoi và DailyEng để làm nổi bật thế mạnh vượt trội của đề tài.
 
 ---
 
@@ -55,13 +63,6 @@
 > [!TIP]
 > **Collage Mockup giao diện của 6 phân hệ:** Hình ảnh ghép phối cảnh đẹp mắt giao diện thực tế của Speaking Room, Vocabulary Hub, Grammar Hub, Notebook, Dorara và SmartLens để thầy/cô hình dung ngay quy mô và tính đa dạng của sản phẩm.
 
-#### 🎙️ Script thuyết trình:
-> *"Hệ thống DailyEng được thiết kế để tạo nên một chu trình học tập khép kín từ lý thuyết đến thực hành phản xạ. 
-> 
-> Sáu phân hệ cốt lõi bao gồm: **Speaking Room** giúp luyện nói phản xạ và nhận chấm điểm chi tiết từ AI; **Vocabulary Hub** và **Grammar Hub** cung cấp kho kiến thức nền tảng có hệ thống. Khi học viên gặp từ mới hoặc cấu trúc ngữ pháp cần lưu ý, họ có thể lưu vào **Notebook** để ôn tập lại bằng thẻ Flashcard. Để tăng tính tương tác, nhóm em phát triển trợ lý ảo **Dorara** giao tiếp thời gian thực, và tính năng **SmartLens** giúp người học tải ảnh lên, nhận diện chữ viết bằng OCR và dịch thuật trực tiếp đè lên ảnh gốc.
-> 
-> Bên cạnh đó, hệ thống còn hỗ trợ làm bài **Kiểm tra đầu vào** để gợi ý **Kế hoạch học tập**, đồng thời duy trì động lực học bằng cơ chế **Gamification** tích lũy điểm XP, giữ chuỗi Streak học tập và đua bảng xếp hạng Leaderboard."*
-
 ---
 
 ### Giới thiệu công nghệ sử dụng (Tech Stack) (Chương 2)
@@ -78,18 +79,9 @@
 > [!TIP]
 > **Sơ đồ khối Tech Stack (Next.js - Spring Boot):** Mindmap các biểu tượng logo công nghệ kết nối với nhau, mô tả vai trò của từng thành phần (Zustand, Three.js, Spring Boot, Java 21, Supabase, Azure SDK, Gemini SDK, Docker) tạo cảm giác chuyên nghiệp.
 
-#### 🎙️ Script thuyết trình:
-> *"Để hiện thực hóa DailyEng, nhóm em đã lựa chọn một hệ sinh thái công nghệ bổ trợ lẫn nhau một cách hiệu quả theo hướng **Ứng dụng tích hợp AI (AI-Integrated Web Application)**.
-> 
-> Phía Client sử dụng **Next.js 15** và **React 19** với React Server Components giúp cải thiện giao diện và tăng tốc độ tải. Next.js Server Actions đóng vai trò BFF bảo mật, tích hợp Auth.js để xác thực và ẩn endpoint Backend. Ngoài ra, nhóm em còn dùng WebGL Three.js dựng trợ lý ảo 3D sinh động và Recharts trực quan hóa dữ liệu học tập.
-> 
-> Trọng tâm là **Backend Java Spring Boot 3.4** chạy trên **Java 21**. Nhờ Virtual Threads, Backend duy trì hiệu năng cao khi nhiều người dùng gọi AI đồng thời. Cơ sở dữ liệu PostgreSQL được quản lý phiên bản chuyên nghiệp qua Flyway và hiệu năng truy vấn được cải thiện bằng Caffeine Cache.
-> 
-> Về AI, thay vì tự huấn luyện mô hình tốn kém tài nguyên tính toán, nhóm em áp dụng chiến lược **tích hợp dịch vụ (SaaS Integration)**: sử dụng các SDK chính thức của Microsoft Azure và Google để đạt độ chính xác và chất lượng cao nhất. Backend Java sẽ **điều phối luồng dữ liệu, tiền xử lý và trích xuất kết quả AI** để xử lý nghiệp vụ học tập. Đặc biệt, nhóm em tự lập trình **thuật toán FSRS** bằng Java chạy hoàn toàn local để cá nhân hóa lịch học từ vựng."*
-
 ---
 
-## Phần 2: Phân tích yêu cầu & Thiết kế hệ thống (~4 slides)
+## Phần 2: Phân tích yêu cầu & Thiết kế hệ thống
 
 ### Yêu cầu hệ thống: Sơ đồ Use Case & Sitemap Figma (3.2.1, 3.2.2, 3.8.1)
 #### 📌 Nội dung Slide:
@@ -106,10 +98,26 @@
 > **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Biểu đồ Use Case tổng quát (nằm ở mục 3.2.1) & Sitemap Figma (nằm ở mục 3.8.1.1)**  
 > *(Hiển thị sơ đồ Use Case vẽ bằng Mermaid từ Chương 3 - Mục 3.2.1 kết hợp sơ đồ sitemap điều hướng để thầy/cô đánh giá tính chuẩn hóa trong quy trình thiết kế phần mềm).*
 
-#### 🎙️ Script thuyết trình:
-> *"Xin mời thầy/cô và các bạn quan sát **Sơ đồ Use Case tổng quát và cấu trúc Sitemap của DailyEng**. Hệ thống được nhóm em thiết kế dựa trên cấu trúc Sitemap rõ ràng xoay quanh Dashboard trung tâm, phân chia người dùng thành hai nhóm đối tượng chính là Khách và Người học. 
-> 
-> Về phần các nghiệp vụ chi tiết, trong báo cáo nhóm em có nêu tượng trưng một số Use Case tiêu biểu như Đăng ký tài khoản, Luyện nói với AI, Học từ vựng với Flashcard và Chat trợ lý ảo để minh họa rõ luồng vận hành chuẩn của hệ thống, giúp dễ dàng hình dung logic chạy thực tế."*
+---
+
+### Yêu cầu phi chức năng: Hiệu năng, Bảo mật & Khả năng bảo trì (3.1.2)
+#### 📌 Nội dung Slide:
+* **Hiệu năng (Performance) (3.1.2.1):**
+  * Đảm bảo thời gian phản hồi thấp nhờ tích hợp bộ nhớ đệm Caffeine Cache ở tầng Service.
+  * Tinh chỉnh Connection Pool HikariCP trong `application.yml` duy trì kết nối ổn định dưới tải cao.
+  * Xử lý song song hiệu quả, không nghẽn I/O nhờ cấu hình Spring Boot chạy trên Java 21 Virtual Threads.
+* **Bảo mật (Security) (3.1.2.2):**
+  * Cơ chế xác thực không trạng thái (Stateless Authentication) qua JWT (Access Token 24h, Refresh Token 7 ngày).
+  * Lưu trữ JWT an toàn trong Cookie HttpOnly để vô hiệu hóa nguy cơ tấn công XSS đánh cắp phiên.
+  * Phân quyền dựa trên vai trò (RBAC) chặt chẽ bằng cách nhúng role (`ROLE_USER`, `ROLE_ADMIN`) vào JWT payload và kiểm soát bảo mật phương thức thông qua chú thích `@PreAuthorize`.
+  * Sử dụng định danh CUID2 k-sortable để bảo vệ tài nguyên trên URL, ngăn chặn rò rỉ dữ liệu qua việc dò đoán ID tuần tự.
+* **Khả năng bảo trì (Maintainability) (3.1.2.3):**
+  * Phân tách module rõ ràng, phân lớp logic cụ thể: Controller, Service, Repository, DTO & Entity.
+  * Áp dụng các OOP Design Patterns (DTO, Repository, Facade BFF) để mã nguồn lỏng, dễ tái cấu trúc.
+
+#### 🖼️ Sơ đồ trình bày trên Slide:
+> [!NOTE]
+> **Sơ đồ kiến trúc luồng bảo mật & phân quyền:** Mô tả trực quan luồng Client gửi request -> Filter JwtAuthenticationFilter giải mã Cookie HttpOnly -> Spring Security Context thiết lập Granted Authorities -> Method Security `@PreAuthorize` cấp quyền -> Database PostgreSQL.
 
 ---
 
@@ -125,15 +133,6 @@
 > [!NOTE]  
 > **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Sơ đồ kiến trúc phân tầng logic (Full-Stack) và luồng giao tiếp (nằm ở mục 3.4)**  
 > *(Vẽ lại sơ đồ kiến trúc ở Chương 3 - Mục 3.4 mô tả 4 tầng chính: Client Layer, BFF Layer, Server Layer, và Database Layer).*
-
-#### 🎙️ Script thuyết trình:
-> *"Để đảm bảo tính độc lập, dễ mở rộng và bảo mật, hệ thống được thiết kế theo cấu trúc phân tầng Full-Stack như mô tả trên sơ đồ. 
-> 
-> Ở phía Client, nhóm em phát triển giao diện bằng Next.js 15 để tăng tốc độ tải trang, sử dụng Zustand quản lý trạng thái client gọn nhẹ, kết hợp Three.js cho trợ lý 3D và Recharts để vẽ biểu đồ tiến độ học tập.
-> 
-> Lớp trung gian BFF sử dụng Next.js Server Actions tích hợp Auth.js giúp giải quyết vấn đề CORS, hoạt động như một lớp bảo vệ che giấu các địa chỉ endpoint Backend và tự động đính kèm mã JWT Token từ Cookie HttpOnly bảo mật. 
-> 
-> Trọng tâm của đồ án là tầng Backend API được xây dựng bằng **Java Spring Boot 3.4** chạy trên nền **Java 21**. Hệ thống mã nguồn Java được phân chia theo kiến trúc module khoa học. Để cải thiện hiệu năng, nhóm em sử dụng connection pool **HikariCP** kết hợp với bộ nhớ đệm in-memory **Caffeine** tại tầng Service, giúp giảm số lượng truy vấn trực tiếp vào cơ sở dữ liệu PostgreSQL phía dưới khi người dùng yêu cầu các dữ liệu tĩnh như chủ đề hay bài học."*
 
 ---
 
@@ -156,15 +155,6 @@
 > **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Sơ đồ thực thể kết hợp ERD chi tiết của hệ thống DailyEng (nằm ở mục 3.3.1)**  
 > *(Hiển thị sơ đồ ERD chi tiết từ mục 3.3.1 biểu diễn mối quan hệ giữa User, UserVocabProgress, VocabItem, SpeakingSession, và NotebookItem. Có thể chèn thêm hình ảnh chụp migrations của Flyway để minh chứng).*
 
-#### 🎙️ Script thuyết trình:
-> *"Tiếp theo, em xin trình bày về cấu trúc dữ liệu ở Backend. Toàn bộ 35 bảng trong database PostgreSQL được ánh xạ sang các thực thể Java thông qua **Spring Data JPA** như sơ đồ ERD trên slide. 
-> 
-> Trong cấu trúc này, bảng User đóng vai trò trung tâm, liên kết với thông tin học tập ProfileStats, kế hoạch StudyPlan, các phiên luyện nói SpeakingSession và tiến trình từ vựng UserVocabProgress. 
-> 
-> Để quản lý định danh an toàn, tất cả các thực thể đều kế thừa lớp `BaseEntity` và tự động sở hữu cơ chế sinh khóa chính sử dụng chuỗi **CUID2**. CUID2 giúp PostgreSQL tăng hiệu năng khi chèn dữ liệu mới, đồng thời giúp bảo vệ an toàn cho đường dẫn URL, ngăn ngừa các lỗ hổng rò rỉ thông tin. 
-> 
-> Đặc biệt, để quản lý thay đổi cấu trúc cơ sở dữ liệu một cách nhất quán, nhóm em tích hợp **Flyway Migration**. Mọi thay đổi cấu trúc bảng đều được ghi nhận dưới dạng file SQL có đánh số phiên bản, tự động chạy khi start server, giúp đồng bộ DB tức thời giữa local và đám mây Supabase mà không gặp xung đột."*
-
 ---
 
 ### Cấu trúc OOP, Design Patterns & Thiết kế RESTful API/SSE (2.2, 3.5, 3.6)
@@ -182,18 +172,11 @@
 > [!NOTE]  
 > **TÊN SƠ ĐỒ & BẢNG BIỂU TRÊN SLIDE:**  
 > **Sơ đồ quan hệ kế thừa và chuyển đổi Entity - DTO (nằm ở mục 3.4.2.5 & 3.5.1.2) & Sơ đồ tuần tự xác thực JWT (nằm ở mục 3.8.1.2)**  
-> *(Biểu diễn Sequence Diagram mô tả luồng xác thực JWT kết hợp Class Diagram thể hiện quan hệ DTO/Entity).*
-
-#### 🎙️ Script thuyết trình:
-> *"Để mã nguồn dự án Java có cấu trúc tốt, dễ bảo trì và mở rộng, nhóm em đã áp dụng các nguyên lý hướng đối tượng OOP và các Design Patterns tiêu chuẩn. Mọi logic nghiệp vụ từ điều phối bài học đến tính điểm đều nằm tại tầng Service. Nhóm em áp dụng **DTO Pattern** bằng cấu trúc **Java Records** mới của Java 21 giúp lọc bỏ các trường nhạy cảm trước khi gửi về client.
-> 
-> Về bảo mật, nhóm em cấu hình kiến trúc xác thực không trạng thái sử dụng **Spring Security** kết hợp **JWT** lưu trong Cookie HttpOnly. Toàn bộ API Backend được thiết kế chuẩn RESTful và xử lý lỗi tập trung qua `@ControllerAdvice`.
-> 
-> Đặc biệt, để xử lý đàm thoại thời gian thực với AI, nhóm em áp dụng giao thức **Server-Sent Events (SSE)**. Thay vì bắt người học chờ vài giây để nhận toàn bộ câu trả lời từ trợ lý ảo Dorara, SSE cho phép server đẩy từng từ ngay khi AI sinh ra, tạo hiệu ứng hiển thị chữ chạy thời gian thực liên tục, cải thiện trải nghiệm học tập."*
+> *(Biễu diễn Sequence Diagram mô tả luồng xác thực JWT kết hợp Class Diagram thể hiện quan hệ DTO/Entity).*
 
 ---
 
-## Phần 3: Triển khai và kiểm thử hệ thống (~3 slides)
+## Phần 3: Triển khai và kiểm thử hệ thống
 
 ### Tích hợp AI SDKs & Tăng cường hiệu năng bằng Java 21 Virtual Threads (2.1.1.1, 2.4, 3.7.2)
 #### 📌 Nội dung Slide:
@@ -211,12 +194,26 @@
 > **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Sơ đồ cơ chế Virtual Threads (nằm ở mục 4.3.2.2) & Luồng tuần tự tương tác gọi API AI (nằm ở mục 3.6)**  
 > *(So sánh trực quan cơ chế Platform Threads nghẽn I/O và Virtual Threads chuyển đổi trạng thái linh hoạt, kết hợp luồng tuần tự tương tác giữa Next.js -> Spring Boot -> Azure/Gemini SDKs).*
 
-#### 🎙️ Script thuyết trình:
-> *"Một điểm nhấn công nghệ rất quan trọng ở Backend là việc ứng dụng tính năng **Virtual Threads của Java 21** kết hợp với **Chiến lược tích hợp AI đám mây**. 
-> 
-> Dạ thưa thầy/cô, các chức năng đàm thoại và chấm điểm giọng nói đòi hỏi Backend phải gọi API đến Azure và Google. Các tác vụ này tiêu tốn thời gian chờ phản hồi mạng từ 1.5 đến 4 giây. Ở mô hình platform thread truyền thống, mỗi request chiếm dụng hoàn toàn một luồng OS, dễ gây nghẽn khi có nhiều người dùng đồng thời. 
-> 
-> Bằng cách cấu hình Spring Boot 3.4 chạy trên **Virtual Threads**, JVM sẽ tự động giải phóng luồng vật lý OS đang chờ phản hồi AI để xử lý request khác. Cơ chế này giúp Backend duy trì hiệu suất xử lý ổn định, phục vụ đồng thời số lượng lớn phiên đàm thoại AI đám mây chất lượng cao với mức độ tiêu thụ tài nguyên RAM và CPU máy chủ thấp. Về AI, nhóm em sử dụng các SDK chính thức thay vì tự huấn luyện mô hình tốn kém tài nguyên, để Backend Java tập trung tiền xử lý, trích xuất dữ liệu và chạy thuật toán FSRS."*
+---
+
+### Module luyện phát âm AI: Phân tích cao độ & Đánh giá phát âm chuyên sâu (4.2.2)
+#### 📌 Nội dung Slide:
+* **Phân tích cao độ thời gian thực (4.2.2.1):**
+  * Sử dụng **Web Audio API** tích hợp ở Client chạy trên trình duyệt để thu nhận và xử lý tín hiệu âm thanh trực tiếp.
+  * Áp dụng thuật toán **Tự tương quan (Autocorrelation)** trên lớp `PitchAnalyzer` để trích xuất tần số cơ bản F0 của giọng nói trong dải tần số chuẩn từ 85 Hz đến 500 Hz.
+  * Xác định độ biến thiên cao độ để so sánh trực quan với ngữ điệu chuẩn bản xứ qua biểu đồ Pitch Intonation.
+* **Đánh giá phát âm chuyên sâu (4.2.2.2):**
+  * Sử dụng **Azure Speech SDK** để chấm điểm chi tiết giọng nói theo 3 tiêu chí: Accuracy (Độ chính xác từ/âm vị), Fluency (Độ trôi chảy), Prosody (Ngữ điệu và biến thiên cao độ).
+  * Tích hợp **Google Gemini API** đóng vai trò giáo viên chấm lỗi ngữ pháp, lựa chọn từ vựng và đề xuất câu diễn đạt tự nhiên hơn dựa trên ngữ cảnh.
+* **Cơ chế độ khó thích ứng (Adaptive Difficulty):**
+  * Tự động nâng độ khó kịch bản đối thoại lên 1 bậc nếu điểm trung bình 5 phiên gần nhất >= 85.
+  * Tự động hạ trình độ xuống nếu điểm trung bình 3 phiên liên tiếp dưới 45.
+* **Logic tính điểm tổng hợp có trọng số:**
+  * Trọng số được phân bổ linh hoạt theo trình độ CEFR của người học (ví dụ: Trình độ A1/A2 ưu tiên độ trôi chảy và ngữ pháp cơ bản; trình độ C1/C2 ưu tiên vốn từ vựng nâng cao và ngữ điệu tự nhiên).
+
+#### 🖼️ Sơ đồ trình bày trên Slide:
+> [!NOTE]
+> **Sơ đồ cấu trúc Module Luyện nói AI:** Mô tả luồng đi từ Web Audio API (Client) -> Autocorrelation (Pitch) -> Azure Speech SDK (Pronunciation Score) -> Gemini API (Grammar & Vocabulary Feedback) -> Service Layer -> PostgreSQL Database.
 
 ---
 
@@ -236,39 +233,43 @@
 > **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Luồng ánh xạ dữ liệu và cập nhật thông số FSRS trong Database (nằm ở mục 4.2.3 hoặc 3.3.3)**  
 > *(Biểu diễn luồng tương tác: Người học Vocabulary Hub -> Flashcard -> Spring Boot -> Class FsrsAlgorithm xử lý -> cập nhật UserVocabProgress. Nên vẽ đồ thị biểu diễn các đường cong suy giảm khả năng nhớ).*
 
-#### 🎙️ Script thuyết trình:
-> *"Sau đây, em xin trình bày về điểm nổi bật khoa học của đồ án – thuật toán ôn tập ngắt quãng **FSRS-4.5** được nhóm em tự lập trình trên Backend Java. 
-> 
-> Về mặt toán học, FSRS dự đoán khả năng nhớ lại R của một từ vựng dựa trên hai thông số là Độ bền S và Độ khó D. Mục tiêu của FSRS là tự động lên lịch ôn tập đúng vào thời điểm khả năng nhớ lại giảm xuống sát ngưỡng 90%. Đây chính là thời điểm vàng để bộ não ôn tập lại, giúp khắc sâu từ vựng vào trí nhớ dài hạn hiệu quả nhất. 
-> 
-> Nhóm em đã lập trình lớp `FsrsAlgorithm.java` trực tiếp bằng Java. Khi người học đánh giá từ vựng theo các mức độ Again, Hard, Good hay Easy tại Vocabulary Hub, backend sẽ tự động áp dụng công thức toán học FSRS để tính độ bền mới, cập nhật độ khó, tính số ngày ôn tập tiếp theo và lưu vào database. Nhờ vậy, tiến trình học từ vựng được cá nhân hóa hoàn toàn tự động cho từng người học."*
-
 ---
 
-### Phân hệ Gamification, Caffeine Caching & Kiểm thử QA (2.4.6, 4.2.5, 4.3.3, 4.4)
+### Phân hệ Gamification & Tối ưu hóa hiệu năng (2.4.6, 4.2.5)
 #### 📌 Nội dung Slide:
 * **Thiết kế Backend cho Gamification (Mục 4.2.5):**
-  * **Nhiệm vụ hàng ngày (`DailyMission`):** Spring Boot tự động đồng bộ tiến độ qua bảng trung gian `UserDailyMission` khi người học hoàn thành bài học từ vựng, ngữ pháp hoặc luyện nói.
-  * **Hệ thống XP và Streak:** Cộng điểm XP và cập nhật chuỗi ngày học liên tục (Streak) lưu trữ tập trung tại bảng `ProfileStats`.
-* **Cải thiện hiệu năng Database & Caching:**
-  * **Leaderboard Entry Caching:** Dữ liệu xếp hạng bảng xếp hạng thi đua thời gian thực được lưu sẵn trong thực thể `LeaderboardEntry` kết hợp sử dụng bộ nhớ đệm **Caffeine Cache** tại tầng Service giúp giảm thiểu nghẽn I/O và tải PostgreSQL.
-* **Chiến lược kiểm thử tự động (Unit Testing):**
-  * Lập trình bộ **55 kiểm thử tự động** sử dụng **JUnit 5** và **Mockito** trên Java Backend để kiểm chứng logic nghiệp vụ lõi (`AuthServiceTest`, `FsrsAlgorithmTest`). Vitest được áp dụng trên Frontend.
-  * Toàn bộ 55 test cases đạt tỷ lệ vượt qua tuyệt đối **100%**, đảm bảo tính ổn định tối đa của mã nguồn.
-* **Đảm bảo chất lượng tích hợp:** Giám sát lỗi runtime thời gian thực bằng **Sentry SDK** và kiểm soát cấu hình sức khỏe qua cổng **Spring Boot Actuator**.
+  * **Nhiệm vụ hàng ngày (`DailyMission`):** Spring Boot tự động kiểm tra và đồng bộ tiến độ qua bảng trung gian `UserDailyMission` khi người học hoàn thành bài học từ vựng, ngữ pháp hoặc luyện nói.
+  * **Hệ thống XP và Streak:** Cộng điểm XP và cập nhật chuỗi ngày học liên tục (Streak) được lưu trữ tập trung tại bảng `ProfileStats` để thúc đẩy động lực.
+  * **Nhật ký hoạt động:** Ghi nhận hoạt động (`UserActivity`) để vẽ biểu đồ đóng góp (Heatmap) trên giao diện.
+* **Tối ưu hóa hiệu năng & Caching:**
+  * Sử dụng bộ nhớ đệm in-memory **Caffeine Cache** tại tầng Service.
+  * Lưu trữ sẵn dữ liệu xếp hạng thi đua (`LeaderboardEntry`) giúp giảm thiểu số lượng truy vấn PostgreSQL nặng khi đua bảng xếp hạng thời gian thực.
+  * Lưu trữ cache các dữ liệu tĩnh ít biến động: danh sách chủ đề (`Topic`), ghi chú ngữ pháp (`GrammarNote`), và các kịch bản luyện nói mẫu (`SpeakingScenario`).
 
 #### 🖼️ Gợi ý hình ảnh trình bày trên Slide:
 > [!TIP]
-> **Giao diện Leaderboard & Bảng kết quả kiểm thử tự động (nằm ở mục 4.4.2.4):** Chèn hình ảnh trực quan của bảng xếp hạng thi đua và ô lưới Heatmap thực tế từ UI, kết hợp bảng thống kê chi tiết số lượng test cases hoàn thành thành công 100% để slide thêm sinh động và chân thực.
-
-#### 🎙️ Script thuyết trình:
-> *"Để duy trì động lực học tập cho người học, nhóm em đã xây dựng hệ thống **Gamification** tự động theo dõi nhiệm vụ hàng ngày, tích lũy điểm XP và duy trì chuỗi Streak. Để đảm bảo hiệu năng ổn định khi có nhiều người học cùng lúc, dữ liệu bảng xếp hạng Leaderboard được lưu sẵn và tăng tốc truy vấn bằng bộ đệm in-memory **Caffeine Cache** ở tầng Service, giúp giảm thiểu tối đa các truy vấn nặng vào database PostgreSQL phía dưới.
-> 
-> Bên cạnh đó, để đảm bảo hệ thống luôn vận hành ổn định và không gặp lỗi logic khi cập nhật code, nhóm em đã tiến hành viết kiểm thử tự động. Backend Java đã xây dựng bộ **55 kịch bản kiểm thử tự động (Unit Test)** sử dụng JUnit 5 và Mockito, bao phủ các logic cốt lõi từ Xác thực, Từ vựng cho đến thuật toán FSRS và đạt tỷ lệ chạy thành công tuyệt đối 100%. Ngoài ra, nhóm em còn tích hợp Sentry để phát hiện lỗi runtime tức thời và dùng Spring Boot Actuator để kiểm soát sức khỏe hệ thống."*
+> **Giao diện Leaderboard & Heatmap đóng góp:** Chèn hình ảnh trực quan của bảng xếp hạng thi đua và ô lưới hoạt động học tập (Heatmap) thực tế từ UI để slide sinh động và thể hiện được tính năng Gamification hoàn chỉnh.
 
 ---
 
-## Phần 4: CI/CD & Demo sản phẩm (~2 slides)
+### Kiểm thử hệ thống: Unit Testing & Integration Testing (4.4.1, 4.4.2)
+#### 📌 Nội dung Slide:
+* **Kiểm thử tự động Unit Testing (4.4.1):**
+  * **Backend:** Sử dụng **JUnit 5** làm nền tảng kết hợp **Mockito** giả lập (mock) dependencies (như Repositories, External Services) giúp tập trung test logic lớp Service độc lập mà không cần khởi tạo Database. Dùng **AssertJ** để viết assertions trực quan.
+  * **Thuật toán lõi:** Kiểm thử thuật toán `FsrsAlgorithm` với các bộ dữ liệu toán học (Mathematical Test Cases) để đảm bảo các giá trị Stability và Retrievability hoạt động chính xác.
+  * **Frontend:** Sử dụng **Vitest** (hỗ trợ TypeScript) cùng **jsdom** giả lập trình duyệt, **V8 Coverage** đo lường độ bao phủ mã nguồn. Tập trung kiểm thử logic lập lịch ôn tập SRS tại Client (`src/lib/srs.test.ts`).
+* **Kiểm thử REST API và Tích hợp (4.4.2):**
+  * **Module Xác thực (`AuthServiceTest`):** Kiểm thử luồng đăng ký trùng lặp email, cơ chế cấp phát Access/Refresh Token, mã hóa mật khẩu BCrypt, và cơ chế chống dò tìm email (anti-enumeration).
+  * **Module Từ vựng (`VocabServiceTest`):** Kiểm thử phân trang, tìm kiếm chủ đề theo từ khóa và thuật toán hòa trộn tiến độ người dùng (`UserVocabProgress`).
+  * **Bảng tổng hợp kết quả (Bảng 4.4.2.4):** Đạt tỷ lệ vượt qua **100%** trên tổng số **55 test cases** (Xác thực: 12, Từ vựng: 15, Thuật toán FSRS: 20, AI Speaking: 8).
+
+#### 🖼️ Gợi ý hình ảnh trình bày trên Slide:
+> [!NOTE]
+> **Bảng kết quả kiểm thử tự động:** Hiển thị trực quan bảng tổng hợp kết quả kiểm thử 55 test cases của Backend để chứng minh độ ổn định và chất lượng kỹ nghệ phần mềm của hệ thống.
+
+---
+
+## Phần 4: CI/CD & Demo sản phẩm
 
 ### Đóng gói Container Docker Multi-stage & Quy trình CI/CD (4.3.1, 4.3.2, 4.3.4)
 #### 📌 Nội dung Slide:
@@ -290,11 +291,6 @@
 > **Sơ đồ quy trình đóng gói đa tầng Multi-stage Build (mục 4.3.1) & Sơ đồ kiến trúc triển khai vật lý hệ thống trên hạ tầng đám mây (mục 4.3.2.2)**  
 > *(Vẽ sơ đồ mô tả JVM triển khai Docker Container kết nối an toàn với Supabase, Vercel và Render, kèm logo GitHub Actions chạy thành công).*
 
-#### 🎙️ Script thuyết trình:
-> *"Để triển khai ứng dụng lên internet, nhóm em đã container hóa bằng Docker và thiết lập quy trình CI/CD tự động. Nhóm em áp dụng chiến lược đóng gói **Docker Multi-stage Build**. Giai đoạn đầu sẽ compile code Java ra file JAR, sau đó giai đoạn hai chỉ copy duy nhất file JAR này sang một runtime JRE cực kỳ tinh gọn dựa trên Alpine để khởi chạy. Cách làm này giúp giảm dung lượng Docker image từ 820MB xuống chỉ còn 180MB, loại bỏ hoàn toàn mã nguồn thô và tăng tính bảo mật cho hệ thống. 
-> 
-> Quy trình **CI/CD** được tự động hóa qua GitHub Actions. Mỗi khi push code mới lên GitHub, hệ thống CI sẽ tự động kiểm tra cú pháp và chạy toàn bộ unit test. Nếu tất cả đều xanh, code Frontend được tự động deploy lên Vercel, còn Backend được đóng gói Docker deploy lên Render, kết nối an toàn với database Supabase. Nhóm em cũng tích hợp cơ chế ngắt mạch **Resilience4j Circuit Breaker** giúp bảo vệ máy chủ Backend khỏi bị treo nếu các dịch vụ AI bên ngoài gặp sự cố hoặc phản hồi chậm."*
-
 ---
 
 ### Live Demo các chức năng chính của hệ thống (3.8.3, 4.5)
@@ -312,16 +308,9 @@
 > **Giao diện trang chủ Landing page (mục 4.5.1) & Giao diện phòng luyện nói chấm điểm phát âm AI (mục 4.5.3)**  
 > *(Hiển thị giao diện thực tế của ứng dụng, đặc biệt là Speaking Room kèm biểu đồ Pitch Intonation để tăng tính thuyết phục).*
 
-#### 🎙️ Script thuyết trình:
-> *"Sau đây, em xin phép trình bày về kết quả thực nghiệm và giao diện thực tế của ứng dụng. Giao diện của DailyEng được thiết kế theo phong cách hiện đại và responsive mượt mà trên cả máy tính lẫn điện thoại. 
-> 
-> Ở màn hình luyện nói **Speaking Room**, người học sẽ trò chuyện trực tiếp bằng giọng nói với AI. Khi nói xong, hệ thống sẽ trả về bảng điểm chi tiết từng từ và chỉ rõ lỗi sai phát âm, đồng thời Gemini AI sẽ đưa ra phản hồi và sửa lỗi ngữ pháp đi kèm biểu đồ so sánh cao độ giọng nói trực quan. 
-> 
-> Tại phân hệ **Vocabulary Hub**, thẻ Flashcard hai mặt hiển thị rõ ràng tiến độ ghi nhớ từ vựng do thuật toán FSRS tính toán. Tiện ích **SmartLens** cho phép tải ảnh lên, quét chữ bằng OCR và dịch trực tiếp đè khít lên nền ảnh. Cuối cùng là trợ lý ảo **Dorara** tương tác thời gian thực với mô hình 3D sinh động, phản hồi chữ dạng stream chạy chữ mượt mà nhờ giao thức SSE, mang lại trải nghiệm rất tốt cho người dùng."*
-
 ---
 
-## Phần 5: Kết luận & Định hướng phát triển (~1 slide)
+## Phần 5: Kết luận & Định hướng phát triển
 
 ### Tổng kết & Hướng phát triển (Chương 5)
 #### 📌 Nội dung Slide:
@@ -341,12 +330,3 @@
 #### 🖼️ Gợi ý hình ảnh trình bày trên Slide:
 > [!TIP]
 > **Sơ đồ Lộ trình nâng cấp (Roadmap):** Infographic biểu diễn hướng phát triển tiếp theo ở mục 5.4, đặc biệt là bước tích hợp mô hình ngôn ngữ lớn cục bộ (Local LLM - Gemma/Llama) và chế độ học ngoại tuyến (Offline Mode) để kết thúc bài thuyết trình thật ấn tượng.
-
-#### 🎙️ Script thuyết trình:
-> *"Tổng kết lại, đồ án DailyEng đã hoàn thành đầy đủ các mục tiêu đề ra: xây dựng thành công ứng dụng học tiếng Anh tích hợp dịch vụ AI chạy trên Backend Java Spring Boot kết hợp với Frontend Next.js. 
-> 
-> Bên cạnh các điểm sáng về luyện nói phản xạ với AI và tự lập trình thuật toán ôn tập ngắt quãng FSRS, hệ thống vẫn còn một số điểm cần cải thiện như hiện tượng khởi động nguội do Backend chạy trên server Render gói free, và việc phụ thuộc hoàn toàn vào kết nối mạng để gọi API AI. 
-> 
-> Hướng phát triển tiếp theo của nhóm em là nghiên cứu chạy các mô hình AI mã nguồn mở gọn nhẹ như Gemma hoặc Llama trực tiếp trên máy chủ Backend để giảm chi phí API và nâng cao tính độc lập của app, đồng thời làm thêm chế độ Offline để ôn tập Flashcard ngay cả khi không có mạng. 
-> 
-> Chúng em xin chân thành cảm ơn thầy/cô và các bạn đã lắng nghe bài thuyết trình ngày hôm nay. Nhóm em rất mong nhận được những nhận xét, ý kiến đóng góp quý báu từ thầy/cô và các bạn để hoàn thiện đề tài hơn nữa. Em xin cảm ơn ạ!"*
