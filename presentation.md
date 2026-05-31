@@ -77,28 +77,121 @@
 
 #### 🖼️ Gợi ý hình ảnh trình bày trên Slide:
 > [!TIP]
-> **Sơ đồ khối Tech Stack (Next.js - Spring Boot):** Mindmap các biểu tượng logo công nghệ kết nối với nhau, mô tả vai trò của từng thành phần (Zustand, Three.js, Spring Boot, Java 21, Supabase, Azure SDK, Gemini SDK, Docker) tạo cảm giác chuyên nghiệp.
+> **Sơ đồ khối Tech Stack (Next.js - Spring Boot):**
+> 
+> ![Sơ đồ khối Tech Stack](file:///C:/Users/MaiVu/.gemini/antigravity-ide/brain/c4234c68-f5f7-44fc-a12e-ff1ac09c7013/tech_stack_diagram_1780199907620.png)
+> 
+> ```mermaid
+> graph TD
+>     subgraph Client ["Client Tier (Next.js 15 & React 19)"]
+>         UI["UI (React 19 & shadcn/ui)"]
+>         State["State (Zustand)"]
+>         Viz["Data Viz (Recharts)"]
+>         Avatar["3D Avatar (Three.js/WebGL)"]
+>         BFF["BFF Gateway (Next.js Server Actions)"]
+>         UI --> State
+>         UI --> Viz
+>         UI --> Avatar
+>         UI --> BFF
+>     end
+> 
+>     subgraph AuthSaaS ["Auth & Assets"]
+>         AuthJS["Auth.js"]
+>         Cloudinary["Cloudinary"]
+>     end
+>     BFF <--> AuthJS
+>     BFF <--> Cloudinary
+> 
+>     subgraph Server ["Server Tier (Spring Boot 3.4 & Java 21)"]
+>         API["REST / SSE Endpoints"]
+>         Security["Spring Security (JWT & RBAC)"]
+>         VT["Virtual Threads (Project Loom)"]
+>         Cache["Caffeine Cache (In-Memory)"]
+>         FSRS["Local FSRS Algorithm"]
+>         JPA["Spring Data JPA & Hibernate"]
+>         
+>         API --> Security
+>         Security --> VT
+>         VT --> Cache
+>         VT --> FSRS
+>         VT --> JPA
+>     end
+> 
+>     BFF <--> API
+> 
+>     subgraph Database ["Data Tier"]
+>         DB[(PostgreSQL 16 - Supabase)]
+>         Flyway["Flyway Migration"]
+>         JPA <--> DB
+>         Flyway --> DB
+>     end
+> 
+>     subgraph AI_Services ["AI & External Services (SaaS)"]
+>         AzureSpeech["Azure Speech SDK (Pronunciation)"]
+>         AzureTrans["Azure Translator API"]
+>         AzureVision["Azure AI Vision (OCR)"]
+>         Gemini["Google Gemini API (Chat & Feedback)"]
+>         Sentry["Sentry Monitoring"]
+>     end
+> 
+>     VT <--> AzureSpeech
+>     VT <--> AzureTrans
+>     VT <--> AzureVision
+>     VT <--> Gemini
+>     VT <--> Sentry
+> ```
+>
+> ---
+>
+> 📝 **PROMPT CHI TIẾT ĐỂ VẼ TRÊN ERASER.IO:**
+> 
+> * **Cách 1: Sử dụng Eraser AI (Nhập Prompt tự nhiên):**
+>   > *"Create a comprehensive software architecture and tech stack diagram for a modern AI-integrated English learning web application named DailyEng. The diagram should show a clear multi-tiered layout: 1. Client Tier (Next.js 15, React 19, Zustand, Three.js 3D Avatar, Recharts). 2. BFF Layer (Next.js Server Actions, Auth.js). 3. Server Tier (Spring Boot 3.4, Java 21 Virtual Threads, Caffeine Cache, Local FSRS Spaced Repetition engine, Spring Data JPA & Hibernate). 4. Data Tier (PostgreSQL 16 on Supabase, Flyway database migration). 5. Third-Party SaaS & AI Services (Microsoft Azure Speech SDK, Azure AI Translator/Vision OCR, Google Gemini API, Sentry Monitoring, Cloudinary). Show bidirectional connection lines representing data flow: Client talks to BFF, BFF calls Spring Boot REST API using JWT in HttpOnly Cookie, Spring Boot manages DB via JPA, and Spring Boot calls External AI SDKs using Virtual Threads for asynchronous/non-blocking execution. Use a modern, clean tech-themed color palette with icons."*
+> 
+> * **Cách 2: Sử dụng Eraser Diagram-as-Code (Copy & Paste vào tab Code của Eraser):**
+>   ```text
+>   // Copy and paste this into the "Code" tab in Eraser.io
+>   Client [shape: page, color: blue] {
+>     "Next.js 15 / React 19"
+>     "Zustand State"
+>     "Three.js 3D Avatar"
+>     "Recharts Data Viz"
+>   }
+>   
+>   BFF [shape: rectangle, color: light-blue] {
+>     "Server Actions (BFF)"
+>     "Auth.js (Session)"
+>   }
+>   
+>   Spring_Boot [shape: server, color: green] {
+>     "Spring Boot 3.4 API"
+>     "Java 21 Virtual Threads"
+>     "Caffeine Cache"
+>     "Local FSRS Engine"
+>     "Spring Data JPA / Hibernate"
+>   }
+>   
+>   Database [shape: database, color: green] {
+>     "PostgreSQL 16 (Supabase)"
+>     "Flyway Migrations"
+>   }
+>   
+>   AI_SaaS [shape: cloud, color: purple] {
+>     "Azure Speech SDK"
+>     "Azure Translator / Vision"
+>     "Google Gemini API"
+>     "Sentry / Cloudinary"
+>   }
+>   
+>   Client > BFF : React Server Components
+>   BFF > Spring_Boot : REST API & JWT (HttpOnly Cookie)
+>   Spring_Boot > Database : JPA/Hibernate ORM
+>   Spring_Boot > AI_SaaS : SDK / REST Integration
+>   ```
 
 ---
 
 ## Phần 2: Phân tích yêu cầu & Thiết kế hệ thống
-
-### Yêu cầu hệ thống: Sơ đồ Use Case & Sitemap Figma (3.2.1, 3.2.2, 3.8.1)
-#### 📌 Nội dung Slide:
-* **Sơ đồ trang web (Sitemap) & Wireframe Figma:**
-  * Tổ chức cấu trúc và điều hướng hệ thống xoay quanh Dashboard trung tâm dẫn đến các phân hệ chính giúp định hình trải nghiệm người dùng (UX) phù hợp trước khi lập trình.
-  * Phác thảo cấu trúc giao diện thô (Wireframe) trên Figma cho Homepage, Speaking Room (luồng trò chuyện và màn hình phản hồi), Vocabulary Hub, và Notebook.
-* **Phân quyền người dùng rõ ràng:**
-  * **Khách:** Đăng ký, đăng nhập tài khoản, làm bài kiểm tra trình độ đầu vào (Placement Test).
-  * **Người học:** Thực hiện đầy đủ các chức năng học từ vựng, ngữ pháp, luyện nói với AI, quản lý sổ tay cá nhân, theo dõi tiến độ và tham gia gamification.
-* **Nêu tượng trưng một số Use Case tiêu biểu (Mục 3.2.2):** Để mô tả luồng vận hành mẫu, kịch bản nghiệp vụ của hệ thống được minh họa tượng trưng qua một số Use Case tiêu biểu như: Đăng ký tài khoản, Luyện nói phản xạ với AI, Học từ vựng Flashcard (FSRS) và Chat trợ lý ảo.
-
-#### 🖼️ Sơ đồ trình bày trên Slide:
-> [!NOTE]  
-> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Biểu đồ Use Case tổng quát (nằm ở mục 3.2.1) & Sitemap Figma (nằm ở mục 3.8.1.1)**  
-> *(Hiển thị sơ đồ Use Case vẽ bằng Mermaid từ Chương 3 - Mục 3.2.1 kết hợp sơ đồ sitemap điều hướng để thầy/cô đánh giá tính chuẩn hóa trong quy trình thiết kế phần mềm).*
-
----
 
 ### Yêu cầu phi chức năng: Hiệu năng, Bảo mật & Khả năng bảo trì (3.1.2)
 #### 📌 Nội dung Slide:
@@ -121,6 +214,41 @@
 
 ---
 
+### Phân tích Use Case và Thiết kế luồng nghiệp vụ (3.2.1, 3.2.2)
+#### 📌 Nội dung Slide:
+* **Phân quyền người dùng rõ ràng:**
+  * **Khách:** Đăng ký, đăng nhập tài khoản, làm bài kiểm tra trình độ đầu vào (Placement Test).
+  * **Người học:** Thực hiện đầy đủ các chức năng học từ vựng, ngữ pháp, luyện nói với AI, quản lý sổ tay cá nhân, theo dõi tiến độ và tham gia gamification.
+* **Nêu tượng trưng một số Use Case tiêu biểu (Mục 3.2.2):** Để mô tả luồng vận hành mẫu, kịch bản nghiệp vụ của hệ thống được minh họa tượng trưng qua một số Use Case tiêu biểu như: Đăng ký tài khoản, Luyện nói phản xạ với AI, Học từ vựng Flashcard (FSRS) và Chat trợ lý ảo.
+
+#### 🖼️ Sơ đồ trình bày trên Slide:
+> [!NOTE]  
+> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Biểu đồ Use Case tổng quát (nằm ở mục 3.2.1)**  
+> *(Hiển thị sơ đồ Use Case vẽ bằng Mermaid từ Chương 3 - Mục 3.2.1 để thầy/cô đánh giá tính chuẩn hóa trong quy trình thiết kế phần mềm).*
+
+---
+
+### Thiết kế cơ sở dữ liệu, Định danh CUID2 & Flyway Migration (3.3, 2.1.3.3, 2.3.2)
+#### 📌 Nội dung Slide:
+* **Thiết kế thực thể JPA và Cấu trúc cơ sở dữ liệu (3.3):**
+  * Cơ sở dữ liệu PostgreSQL gồm 35 bảng, được ánh xạ chặt chẽ thông qua Spring Data JPA.
+  * Các bảng chính: `User` (trung tâm), `Topic`, `VocabItem`, `SpeakingSession`, `UserVocabProgress`.
+  * Thiết kế lớp cha trừu tượng `BaseEntity` để tự động hóa các trường auditing như ngày tạo và ngày cập nhật.
+* **Định danh CUID2 thay thế cho UUID (2.1.3.3):**
+  * CUID2 dài 25 ký tự, được tạo tự động tại sự kiện `@PrePersist` bằng thư viện CUID cho Java.
+  * **Hiệu suất chỉ mục:** Có tính chất k-sortable giúp duy trì thứ tự sắp xếp vật lý khi chèn bản ghi mới, nâng cao hiệu suất hoạt động của cây chỉ mục B-Tree trong PostgreSQL.
+  * **Bảo mật hệ thống:** Ngăn chặn các lỗ hổng rò rỉ dữ liệu thông qua việc dò đoán ID tài nguyên trên đường dẫn URL.
+* **Quản lý phiên bản Database với Flyway (2.3.2):**
+  * Quản lý sự thay đổi cấu trúc DB thông qua các file migration SQL có đánh số phiên bản (`V1__init.sql`, `V2__add_index.sql`).
+  * Tự động hóa quá trình đồng bộ hóa cơ sở dữ liệu giữa các môi trường phát triển (Local) và triển khai (Supabase Cloud).
+
+#### 🖼️ Sơ đồ trình bày trên Slide:
+> [!NOTE]  
+> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Sơ đồ thực thể kết hợp ERD chi tiết của hệ thống DailyEng (nằm ở mục 3.3.1)**  
+> *(Hiển thị sơ đồ ERD chi tiết từ mục 3.3.1 biểu diễn mối quan hệ giữa User, UserVocabProgress, VocabItem, SpeakingSession, và NotebookItem. Có thể chèn thêm hình ảnh chụp migrations của Flyway để minh chứng).*
+
+---
+
 ### Kiến trúc hệ thống tổng quan & Vai trò của Java Backend (3.4)
 #### 📌 Nội dung Slide:
 * **Kiến trúc phân tầng chuẩn hóa:**
@@ -136,49 +264,57 @@
 
 ---
 
-### Thiết kế cơ sở dữ liệu, Định danh CUID2 & Flyway Migration (2.1.3.3, 2.3.2, 3.3)
+### Thiết kế cấu trúc hướng đối tượng và Design Patterns (3.5)
 #### 📌 Nội dung Slide:
-* **Thiết kế thực thể JPA và Cấu trúc cơ sở dữ liệu:**
-  * Cơ sở dữ liệu PostgreSQL gồm 35 bảng, được ánh xạ chặt chẽ thông qua Spring Data JPA.
-  * Các bảng chính: `User` (trung tâm), `Topic`, `VocabItem`, `SpeakingSession`, `UserVocabProgress`.
-  * Thiết kế lớp cha trừu tượng `BaseEntity` để tự động hóa các trường auditing như ngày tạo và ngày cập nhật.
-* **Định danh CUID2 thay thế cho UUID:**
-  * CUID2 dài 25 ký tự, được tạo tự động tại sự kiện `@PrePersist` bằng thư viện CUID cho Java.
-  * **Hiệu suất chỉ mục:** Có tính chất k-sortable giúp duy trì thứ tự sắp xếp vật lý khi chèn bản ghi mới, nâng cao hiệu suất hoạt động của cây chỉ mục B-Tree trong PostgreSQL.
-  * **Bảo mật hệ thống:** Ngăn chặn các lỗ hổng rò rỉ dữ liệu thông qua việc dò đoán ID tài nguyên trên đường dẫn URL.
-* **Quản lý phiên bản Database với Flyway (Mục 2.3.2):**
-  * Quản lý sự thay đổi cấu trúc DB thông qua các file migration SQL có đánh số phiên bản (`V1__init.sql`, `V2__add_index.sql`).
-  * Tự động hóa quá trình đồng bộ hóa cơ sở dữ liệu giữa các môi trường phát triển (Local) và triển khai (Supabase Cloud).
+* **Tính chất OOP trong cấu trúc mã nguồn Java (3.5.1):**
+  * **Đóng gói & Kế thừa:** Các thuộc tính thực thể được bảo vệ bằng phạm vi truy cập `private`, sử dụng **Java Records** của Java 21 để định nghĩa các DTO bất biến, kế thừa qua thực thể cha `BaseEntity`.
+  * **Đa hình:** Định nghĩa Repository interface kế thừa đa hình từ `JpaRepository` cho các bộ lọc dynamic query.
+* **Các mẫu thiết kế (Design Patterns) áp dụng (3.5.2):** 
+  * Tách biệt logic DB khỏi nghiệp vụ bằng Service Layer & Repository Pattern. 
+  * Phía client sử dụng Server Actions làm cổng BFF (Facade) che giấu API Backend.
+  * Sử dụng Provider Pattern (React Context & Zustand) quản lý trạng thái toàn cục và Custom Hook Pattern để chia sẻ logic giao diện.
 
 #### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
-> **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Sơ đồ thực thể kết hợp ERD chi tiết của hệ thống DailyEng (nằm ở mục 3.3.1)**  
-> *(Hiển thị sơ đồ ERD chi tiết từ mục 3.3.1 biểu diễn mối quan hệ giữa User, UserVocabProgress, VocabItem, SpeakingSession, và NotebookItem. Có thể chèn thêm hình ảnh chụp migrations của Flyway để minh chứng).*
+> **TÊN SƠ ĐỒ TRÊN SLIDE:** **Sơ đồ quan hệ kế thừa và chuyển đổi Entity - DTO (nằm ở mục 3.5.1.2)**  
+> *(Biểu diễn Class Diagram thể hiện mối quan hệ giữa các Entity và DTO).*
 
 ---
 
-### Cấu trúc OOP, Design Patterns & Thiết kế RESTful API/SSE (2.2, 3.5, 3.6)
+### Thiết kế API Protocol, Xác thực bảo mật & Giao thức SSE (3.6, 2.2, 3.7)
 #### 📌 Nội dung Slide:
-* **Tính chất OOP trong cấu trúc mã nguồn Java:**
-  * **Đóng gói & Kế thừa:** Các thuộc tính thực thể được bảo vệ bằng phạm vi truy cập `private`, sử dụng **Java Records** của Java 21 để định nghĩa các DTO bất biến, kế thừa qua thực thể cha `BaseEntity`.
-  * **Đa hình:** Định nghĩa Repository interface kế thừa đa hình từ `JpaRepository` cho các bộ lọc dynamic query.
-* **Các mẫu thiết kế (Design Patterns) áp dụng:** Tách biệt logic DB khỏi nghiệp vụ bằng Service Layer & Repository Pattern. Phía client sử dụng Server Actions làm cổng BFF (Facade) che giấu API Backend.
-* **Xác thực bảo mật JWT & RESTful API:** 
+* **Kiến trúc RESTful API chuẩn hóa (3.6.2):** API Backend trả về dữ liệu định dạng JSON đồng nhất, xử lý lỗi tập trung qua `@ControllerAdvice` và `@ExceptionHandler` (3.6.6).
+* **Giao thức xác thực bảo mật JWT (3.6.3, 2.2):**
   * Spring Security kiểm soát bộ lọc `JwtAuthenticationFilter` sử dụng JWT Token trong HttpOnly Cookie; phân quyền bằng `@PreAuthorize`.
-  * API chuẩn RESTful trả về JSON đồng nhất, xử lý lỗi tập trung qua `@ControllerAdvice` và `@ExceptionHandler`.
-* **Giao thức Server-Sent Events (SSE) (Mục 3.6.4):** Kết nối một chiều thời gian thực push text stream từ Server về Client để hiển thị phản hồi chữ chạy mượt mà của trợ lý Dorara AI.
+* **Giao thức Server-Sent Events (SSE) (3.6.4):** Kết nối một chiều thời gian thực push text stream từ Server về Client để hiển thị phản hồi chữ chạy mượt mà của trợ lý Dorara AI.
+* **Đặc tả Server Actions và tích hợp bên thứ ba (3.7):** Tích hợp Auth.js cho xác thực và Cloudinary để upload hình ảnh thông qua các Server Actions Backend-For-Frontend.
 
-#### 🖼️ Sơ đồ & Bảng biểu trình bày trên Slide:
+#### 🖼️ Bảng biểu & Sơ đồ trình bày trên Slide:
 > [!NOTE]  
-> **TÊN SƠ ĐỒ & BẢNG BIỂU TRÊN SLIDE:**  
-> **Sơ đồ quan hệ kế thừa và chuyển đổi Entity - DTO (nằm ở mục 3.4.2.5 & 3.5.1.2) & Sơ đồ tuần tự xác thực JWT (nằm ở mục 3.8.1.2)**  
-> *(Biễu diễn Sequence Diagram mô tả luồng xác thực JWT kết hợp Class Diagram thể hiện quan hệ DTO/Entity).*
+> **TÊN SƠ ĐỒ TRÊN SLIDE:** **Sơ đồ tuần tự xác thực JWT (nằm ở mục 3.8.1.2) & Bảng tổng hợp các API Endpoints hệ thống (nằm ở mục 3.6.7)**  
+> *(Biểu diễn Sequence Diagram mô tả luồng xác thực JWT từ Client đến Server).*
+
+---
+
+### Sơ đồ trang web & Thiết kế giao diện hoàn chỉnh (3.8)
+#### 📌 Nội dung Slide:
+* **Sơ đồ trang web (Sitemap) (3.8.1):**
+  * Tổ chức cấu trúc và điều hướng hệ thống xoay quanh Dashboard trung tâm dẫn đến các phân hệ chính: Speaking Room, Vocabulary Hub, Grammar Hub, Notebook, Translate, Study Plan, và User Profile.
+* **Wireframe & Thiết kế hoàn chỉnh (3.8.2, 3.8.3):**
+  * Phác thảo wireframe và thiết kế chi tiết trên Figma cho các giao diện chính.
+  * **Hệ thống thiết kế (3.8.3.1):** Quy định hệ thống màu sắc chủ đạo (Sky 600, Indigo 500, pastel) và phông chữ chính (Nunito, Inter, Outfit).
+  * Đảm bảo giao diện hiển thị thích ứng (Responsive) tốt trên cả Web và Mobile.
+
+#### 🖼️ Hình ảnh trình bày trên Slide:
+> [!NOTE]  
+> **TÊN HÌNH ẢNH TRÊN FIGMA/SLIDE:** **Sơ đồ Sitemap điều hướng (nằm ở mục 3.8.1.1) & Giao diện thiết kế hoàn chỉnh Figma (nằm ở mục 3.8.3)**  
+> *(Hiển thị sitemap Figma và các mockup giao diện hoàn chỉnh để minh chứng quy trình thiết kế giao diện bài bản).*
 
 ---
 
 ## Phần 3: Triển khai và kiểm thử hệ thống
 
-### Tích hợp AI SDKs & Tăng cường hiệu năng bằng Java 21 Virtual Threads (2.1.1.1, 2.4, 3.7.2)
+### Backend Java đóng vai trò AI Orchestrator & Tối ưu Virtual Threads (2.1.1.1, 2.4, 3.7.2)
 #### 📌 Nội dung Slide:
 * **Đặc thù I/O mạng của các cuộc gọi API AI:**
   * Quá trình Backend Java gọi Azure Speech (chấm điểm phát âm) và Google Gemini (giáo viên AI phản xạ đàm thoại) mất từ 1.5 đến 4 giây do phải chờ xử lý âm thanh hoặc sinh văn bản từ đám mây.
@@ -193,6 +329,25 @@
 > [!NOTE]  
 > **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Sơ đồ cơ chế Virtual Threads (nằm ở mục 4.3.2.2) & Luồng tuần tự tương tác gọi API AI (nằm ở mục 3.6)**  
 > *(So sánh trực quan cơ chế Platform Threads nghẽn I/O và Virtual Threads chuyển đổi trạng thái linh hoạt, kết hợp luồng tuần tự tương tác giữa Next.js -> Spring Boot -> Azure/Gemini SDKs).*
+
+---
+
+### Hiện thực hóa Module xác thực và phân quyền (4.2.1)
+#### 📌 Nội dung Slide:
+* **Kiến trúc bảo mật và luồng xác thực (4.2.1.1):**
+  * **Phía Client:** Biểu mẫu nhập liệu $\rightarrow$ Server Action (`src/actions/auth.ts`) gọi API bảo mật.
+  * **Phía Backend:** `AuthController` tiếp nhận request -> `AuthService` kiểm tra tài khoản, mã hóa mật khẩu bằng BCrypt.
+  * **Quản lý phiên (Session):** Quản lý danh sách các phiên đăng nhập hoạt động qua thực thể `Session`, hỗ trợ thu hồi token từ xa và đăng xuất an toàn.
+* **Cơ chế Cookie bảo mật (HttpOnly & Secure):**
+  * Backend sinh Access Token (24h) và Refresh Token (7 ngày).
+  * Refresh Token được nhúng vào Cookie trình duyệt với thuộc tính `HttpOnly` và `Secure` giúp chặn đứng các cuộc tấn công XSS đánh cắp phiên qua JavaScript.
+* **Spring Security Filter Chain (4.2.1.2):**
+  * Tích hợp bộ lọc `JwtAuthenticationFilter` giải mã chữ ký số JWT và thiết lập ngữ cảnh bảo mật nếu hợp lệ.
+  * Cấu hình `SecurityConfig.java` kiểm soát phân quyền Endpoint động (permitAll đối với `/auth/**`, `/vocab/**`, `/grammar/**` và yêu cầu xác thực `authenticated()` cho các API nghiệp vụ).
+
+#### 🖼️ Sơ đồ trình bày trên Slide:
+> [!NOTE]
+> **Cấu trúc lớp bảo mật SecurityConfig.java:** Đoạn cấu hình chuỗi lọc bảo mật `SecurityFilterChain` minh họa thiết lập stateless session policy và cấu hình lọc JWT Filter.
 
 ---
 
@@ -271,19 +426,20 @@
 
 ## Phần 4: CI/CD & Demo sản phẩm
 
-### Đóng gói Container Docker Multi-stage & Quy trình CI/CD (4.3.1, 4.3.2, 4.3.4)
+### Đóng gói Container Docker, Quy trình CI/CD & Giám sát hệ thống (4.3.1, 4.3.2, 4.3.3, 4.3.4)
 #### 📌 Nội dung Slide:
-* **Chiến lược đóng gói Dockerfile Multi-stage Build:**
+* **Chiến lược đóng gói Dockerfile Multi-stage Build (4.3.1):**
   * **Stage 1 (Build):** Dùng Maven image chạy lệnh `mvn clean package` để biên dịch và tạo file JAR.
   * **Stage 2 (Run):** Chỉ sao chép duy nhất file JAR sang JRE image tinh giản dựa trên Alpine để khởi chạy ứng dụng.
-  * **Hiệu quả:** Thu gọn kích thước Docker Image từ 820 MB xuống còn 180 MB, loại bỏ toàn bộ mã nguồn thô và công cụ biên dịch thừa, hỗ trợ giảm thiểu bề mặt tấn công bảo mật.
-* **Quy trình Tích hợp và Triển khai tự động CI/CD (Mục 4.3.2):**
-  * **Continuous Integration (CI):** Khi mã nguồn được push lên GitHub, luồng GitHub Actions tự động chạy, dựng Docker container test, và thực thi bộ 55 Unit Tests để kiểm tra chất lượng code.
-  * **Continuous Deployment (CD):**
-    * *Frontend Next.js:* Tự động deploy lên Vercel Edge Network.
-    * *Backend Java:* Tự động đóng gói Docker Container và deploy lên Render PaaS.
-    * *Database:* PostgreSQL vận hành trên Supabase Cloud.
-* **Khả năng tự phục hồi và Quản lý lỗi:** Tích hợp cơ chế ngắt mạch **Resilience4j Circuit Breaker** để tự động ngắt kết nối tạm thời bảo vệ tài nguyên JVM khi các API AI ngoại vi gặp sự cố hoặc phản hồi quá chậm.
+  * **Hiệu quả:** Thu gọn kích thước Docker Image từ 820 MB xuống còn 180 MB, loại bỏ toàn bộ mã nguồn thô và tăng tính bảo mật.
+* **Quy trình Tích hợp và Triển khai tự động CI/CD (4.3.2):**
+  * **Continuous Integration (CI):** GitHub Actions tự động chạy, dựng Docker container, và thực thi bộ 55 Unit Tests khi có code push.
+  * **Continuous Deployment (CD):** Frontend Next.js deploy lên Vercel Edge Network; Backend Java Docker image deploy lên Render PaaS; Database PostgreSQL vận hành trên Supabase Cloud.
+* **Giám sát lỗi & Cổng kiểm soát sức khỏe (4.3.3):**
+  * Tích hợp **Sentry SDK** trên cả Client và Server giúp phát hiện ngoại lệ runtime và truy vấn chậm thời gian thực.
+  * Sử dụng **Spring Boot Actuator** (`/actuator/health`) để giám sát tài nguyên JVM và kiểm tra sức khỏe của server.
+* **Khả năng tự phục hồi và Quản lý lỗi (4.3.4):**
+  * Tích hợp cơ chế ngắt mạch **Resilience4j Circuit Breaker** để tự động ngắt kết nối tạm thời bảo vệ tài nguyên JVM khi các API AI bên ngoài gặp sự cố hoặc phản hồi quá chậm.
 
 #### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
