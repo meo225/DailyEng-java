@@ -443,9 +443,11 @@
 
 #### 🖼️ Sơ đồ trình bày trên Slide:
 > [!NOTE]  
-> **TÊN CÁC SƠ ĐỒ TRÊN SLIDE:**  
-> **Sơ đồ quy trình đóng gói đa tầng Multi-stage Build (mục 4.3.1) & Sơ đồ kiến trúc triển khai vật lý hệ thống trên hạ tầng đám mây (mục 4.3.2.2)**  
-> *(Vẽ sơ đồ mô tả JVM triển khai Docker Container kết nối an toàn với Supabase, Vercel và Render, kèm logo GitHub Actions chạy thành công).*
+> **Sơ đồ quy trình đóng gói đa tầng Multi-stage Build (4.3.1) & Quy trình triển khai trên Render PaaS (4.3.2):**
+> 
+> ![Quy trình Docker Multi-stage Build và Deploy Render](file:///C:/Users/MaiVu/.gemini/antigravity-ide/brain/c4234c68-f5f7-44fc-a12e-ff1ac09c7013/media__1780254119854.png)
+> 
+> *(Sơ đồ mô tả quy trình đóng gói gồm 2 giai đoạn: Build Stage dùng Maven image biên dịch mã nguồn và đóng gói app.jar; Production Stage sao chép app.jar sang JRE Alpine image siêu nhẹ để chạy, tối ưu kích thước image và nâng cao bảo mật trước khi tự động triển khai lên Render PaaS).*
 
 ---
 
