@@ -15,36 +15,7 @@ interface ParsedStructuredResponse {
   quizQuestion?: any | null;
 }
 
-/**
- * Detect if the user's message is about language learning (vocab, grammar, translation, etc.)
- * vs. asking about website navigation/features.
- * Returns true → call enrich API. Returns false → skip enrich.
- */
-function isLanguageLearningIntent(userMessage: string): boolean {
-  const msg = userMessage.toLowerCase().trim();
-
-  // Keywords that signal website/navigation questions — skip enrich
-  const navigationKeywords = [
-    "trang web", "website", "dailyeng", "chức năng", "tính năng",
-    "hướng dẫn", "cách dùng", "cách sử dụng", "làm thế nào để",
-    "mục nào", "vào đâu", "ở đâu", "trang nào", "tab nào",
-    "speaking room", "vocabulary hub", "grammar hub", "notebook",
-    "study plan", "lộ trình", "smartlens", "smart lens",
-    "how to use", "how do i", "where is", "what is this",
-    "what does this", "feature", "navigation",
-  ];
-
-  if (navigationKeywords.some((kw) => msg.includes(kw))) {
-    return false;
-  }
-
-  // If message is very short generic greeting — skip enrich
-  if (msg.split(" ").length <= 3 && !/\b(word|từ|nghĩa|grammar|ngữ pháp|pronounce|phát âm|translate|dịch)\b/.test(msg)) {
-    return false;
-  }
-
-  return true;
-}
+// Client-side intent filtering removed in favor of backend Gemini LLM classification
 
 export function useDoraraStream() {
   const [state, setState] = useState<StreamState>({
@@ -107,10 +78,11 @@ export function useDoraraStream() {
 
         const decoder = new TextDecoder();
         let buffer = "";
+        let streamDoneReceived = false;
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done || streamDoneReceived) break;
 
           buffer += decoder.decode(value, { stream: true });
 
@@ -125,8 +97,8 @@ export function useDoraraStream() {
               let data = line.startsWith("data: ") ? line.slice(6) : line.slice(5);
               
               if (data.trim() === "[DONE]") {
-                setState((prev) => ({ ...prev, isStreaming: false }));
-                return { response: rawAccumulator };
+                streamDoneReceived = true;
+                break;
               }
 
               // BƯỚC 4: Ráp trực tiếp dữ liệu thô (đã vứt bỏ JSON Parsing)
@@ -143,18 +115,13 @@ export function useDoraraStream() {
 
         setState((prev) => ({ ...prev, isStreaming: false }));
 
-        // 'Chia để trị' — gọi API thứ 2 sau khi Stream hoàn tất để lấy Vocab Cards + Quiz
-        // Chỉ gọi enrich khi câu hỏi liên quan đến học ngôn ngữ, không phải hướng dẫn web
-        if (isLanguageLearningIntent(userMessage)) {
-          const enrichment = await fetchEnrichment(rawAccumulator, userMessage, learningLanguage);
-          return {
-            response: rawAccumulator,
-            vocabHighlights: enrichment.vocabHighlights,
-            quizQuestion: enrichment.quizQuestion,
-          };
-        }
-
-        return { response: rawAccumulator };
+        // 'Chia để trị' — luôn gọi API thứ 2 sau khi Stream hoàn tất để lấy Vocab Cards + Quiz (để Backend LLM tự quyết định lọc)
+        const enrichment = await fetchEnrichment(rawAccumulator, userMessage, learningLanguage);
+        return {
+          response: rawAccumulator,
+          vocabHighlights: enrichment.vocabHighlights,
+          quizQuestion: enrichment.quizQuestion,
+        };
       } catch (error: any) {
         if (error.name === "AbortError") {
           setState((prev) => ({ ...prev, isStreaming: false }));

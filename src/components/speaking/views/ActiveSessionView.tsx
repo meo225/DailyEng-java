@@ -126,6 +126,8 @@ export default function ActiveSessionView({
           <ChatMessages
             turns={turns}
             isProcessing={isProcessing}
+            isRecording={isRecording}
+            interimTranscript={interimTranscript}
             conversationRef={conversationRef}
             onSpeakText={onSpeakText}
             t={t}
@@ -327,6 +329,8 @@ function SessionHeader({
 function ChatMessages({
   turns,
   isProcessing,
+  isRecording,
+  interimTranscript,
   conversationRef,
   onSpeakText,
   t,
@@ -339,6 +343,8 @@ function ChatMessages({
 }: {
   turns: Turn[];
   isProcessing: boolean;
+  isRecording: boolean;
+  interimTranscript?: string;
   conversationRef: React.Ref<HTMLDivElement>;
   onSpeakText: (text: string) => void;
   t: (key: string) => string;
@@ -362,6 +368,18 @@ function ChatMessages({
           isComplete={isComplete}
         />
       ))}
+      {isRecording && interimTranscript && (
+        <div className="flex justify-end motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2">
+          <div className="flex gap-3 max-w-2xl">
+            <div className="flex-1">
+              <div className="rounded-2xl px-3 py-2 shadow-md backdrop-blur-sm text-[15px] bg-[#4f46e5]/75 text-white/90 rounded-tr-sm italic animate-pulse flex items-center gap-2">
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-ping shrink-0" />
+                <span>{interimTranscript}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {isProcessing && <TypingIndicator t={t} />}
 
     </div>
@@ -562,6 +580,7 @@ function InputBar({
   isTranscribing,
   mediaStream,
   sessionMode,
+  interimTranscript,
   onToggleRecording,
   onRequestHint,
   onDismissHint,
@@ -575,6 +594,7 @@ function InputBar({
   isTranscribing: boolean;
   mediaStream: MediaStream | null;
   sessionMode: "scripted" | "unscripted";
+  interimTranscript?: string;
   onToggleRecording: () => void;
   onRequestHint: () => void;
   onDismissHint: () => void;
@@ -666,7 +686,7 @@ function InputBar({
           <div className="flex items-center gap-2">
             <VoiceWaveform mediaStream={mediaStream} />
             <span className="text-[11px] text-indigo-500 font-medium select-none">
-              {t("speaking_session.active.tap_stop_recording")}
+              {interimTranscript || t("speaking_session.active.tap_stop_recording")}
             </span>
           </div>
         ) : isTranscribing ? (
