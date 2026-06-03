@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { getStreamConfig, fetchEnrichment, DoraraChatMessage } from "@/actions/dorara";
+import { getStreamConfig, DoraraChatMessage } from "@/actions/dorara";
+import { apiClient } from "@/lib/api-client";
 
 interface StreamState {
   streamedText: string;
@@ -115,8 +116,15 @@ export function useDoraraStream() {
 
         setState((prev) => ({ ...prev, isStreaming: false }));
 
-        // 'Chia để trị' — luôn gọi API thứ 2 sau khi Stream hoàn tất để lấy Vocab Cards + Quiz (để Backend LLM tự quyết định lọc)
-        const enrichment = await fetchEnrichment(rawAccumulator, userMessage, learningLanguage);
+        // 'Chia để trị' — luôn gọi API thứ 2 sau khi Stream hoàn tất để lấy Vocab Cards + Quiz (gọi trực tiếp từ Client để mang theo cookie credentials)
+        const enrichment = await apiClient.post<{
+          vocabHighlights: any[];
+          quizQuestion: any | null;
+        }>("/dorara/enrich", {
+          aiResponse: rawAccumulator,
+          userMessage,
+          targetLanguage: learningLanguage
+        }).catch(() => ({ vocabHighlights: [], quizQuestion: null }));
         return {
           response: rawAccumulator,
           vocabHighlights: enrichment.vocabHighlights,
