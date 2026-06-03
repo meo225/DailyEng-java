@@ -370,6 +370,7 @@
 > [!NOTE]
 > **Sơ đồ cấu trúc Module Luyện nói AI:** Mô tả luồng đi từ Web Audio API (Client) -> Autocorrelation (Pitch) -> Azure Speech SDK (Pronunciation Score) -> Gemini API (Grammar & Vocabulary Feedback) -> Service Layer -> PostgreSQL Database.
 
+
 ---
 
 ### Hiện thực hóa thuật toán ôn tập ngắt quãng FSRS (4.2.3)
@@ -387,6 +388,24 @@
 > [!NOTE]  
 > **TÊN SƠ ĐỒ TRÊN FIGMA/SLIDE:** **Luồng ánh xạ dữ liệu và cập nhật thông số FSRS trong Database (nằm ở mục 4.2.3 hoặc 3.3.3)**  
 > *(Biểu diễn luồng tương tác: Người học Vocabulary Hub -> Flashcard -> Spring Boot -> Class FsrsAlgorithm xử lý -> cập nhật UserVocabProgress. Nên vẽ đồ thị biểu diễn các đường cong suy giảm khả năng nhớ).*
+
+---
+
+### Trợ lý học tập ảo Dorara AI Companion & Giao thức Server-Sent Events (SSE) (4.2.4)
+#### 📌 Nội dung Slide:
+* **Tương tác 3D Avatar sống động (4.2.4.1):**
+  * Tích hợp mô hình nhân vật 3D (Dorara) thông qua **Three.js & WebGL** hiển thị trực tiếp ở Client.
+  * Tự động kích hoạt các hoạt ảnh (animations) tương tác (chào mừng, suy nghĩ, trả lời) khớp với trạng thái phản hồi của trợ lý ảo.
+* **Luồng truyền dữ liệu thời gian thực Server-Sent Events (SSE) (4.2.4.2):**
+  * Sử dụng giao thức **SSE** (kết nối HTTP một chiều, liên tục) đẩy dữ liệu dạng luồng (text stream) từ Backend về Client.
+  * Đảm bảo trải nghiệm phản hồi dạng chữ chạy (typewriter effect) tức thời, loại bỏ độ trễ chờ đợi (latency) khi gọi mô hình ngôn ngữ lớn.
+* **Tích hợp mô hình ngôn ngữ lớn (LLM - Google Gemini API):**
+  * Backend Java tiếp nhận câu hỏi $\rightarrow$ tiền xử lý ngữ cảnh lưu trong session $\rightarrow$ gọi API Gemini để phân tích ngữ pháp, định nghĩa từ vựng hoặc đàm thoại.
+  * Cấu hình tham số sinh văn bản (temperature, topP) để câu trả lời tự nhiên, chính xác và bám sát kiến thức sư phạm.
+
+#### 🖼️ Sơ đồ trình bày trên Slide:
+> [!NOTE]
+> **Sơ đồ luồng tương tác Dorara AI:** Client (Three.js & Event Listener) <-> BFF Next.js (SSE Consumer) <-> Spring Boot Backend (SSE Stream Emitter) <-> Google Gemini API (Stream Response).
 
 ---
 
