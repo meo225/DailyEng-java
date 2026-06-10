@@ -150,6 +150,7 @@ export function useAudioRecording({
         isTranscribingRef.current = false;
         setIsTranscribing(false);
         setIsRecording(false);
+        setInterimTranscript("");
       }
     },
     [sessionMode, hintText, onTranscriptionComplete, learningLanguage]
@@ -217,7 +218,6 @@ export function useAudioRecording({
         } catch {}
         recognitionRef.current = null;
       }
-      setInterimTranscript("");
 
       if (silenceTimeoutRef.current) {
         clearTimeout(silenceTimeoutRef.current);

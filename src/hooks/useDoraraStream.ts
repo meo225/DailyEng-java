@@ -96,7 +96,7 @@ export function useDoraraStream() {
             if (line.startsWith("data:")) {
               // Bỏ đúng chữ "data:" và TỐI ĐA 1 dấu cách đi theo sau nó (Chuẩn SSE). Đoạn đuôi không được Trim để giữ nguyên Dấu Cách của câu rớt lửng chữ!
               let data = line.startsWith("data: ") ? line.slice(6) : line.slice(5);
-              
+
               if (data.trim() === "[DONE]") {
                 streamDoneReceived = true;
                 break;
@@ -106,9 +106,9 @@ export function useDoraraStream() {
               let chunkText = data;
               // Xử lý các dấu xuống dòng nguyên thủy do Backend gởi sang
               chunkText = chunkText.replace(/\\n/g, "\n");
-              
+
               rawAccumulator += chunkText;
-              
+
               setState({ streamedText: rawAccumulator, isStreaming: true });
             }
           }

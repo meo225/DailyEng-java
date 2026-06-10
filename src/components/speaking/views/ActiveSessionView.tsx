@@ -127,6 +127,7 @@ export default function ActiveSessionView({
             turns={turns}
             isProcessing={isProcessing}
             isRecording={isRecording}
+            isTranscribing={isTranscribing}
             interimTranscript={interimTranscript}
             conversationRef={conversationRef}
             onSpeakText={onSpeakText}
@@ -330,6 +331,7 @@ function ChatMessages({
   turns,
   isProcessing,
   isRecording,
+  isTranscribing,
   interimTranscript,
   conversationRef,
   onSpeakText,
@@ -344,6 +346,7 @@ function ChatMessages({
   turns: Turn[];
   isProcessing: boolean;
   isRecording: boolean;
+  isTranscribing?: boolean;
   interimTranscript?: string;
   conversationRef: React.Ref<HTMLDivElement>;
   onSpeakText: (text: string) => void;
@@ -368,12 +371,16 @@ function ChatMessages({
           isComplete={isComplete}
         />
       ))}
-      {isRecording && interimTranscript && (
+      {(isRecording || isTranscribing) && interimTranscript && (
         <div className="flex justify-end motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2">
           <div className="flex gap-3 max-w-2xl">
             <div className="flex-1">
               <div className="rounded-2xl px-3 py-2 shadow-md backdrop-blur-sm text-[15px] bg-[#4f46e5]/75 text-white/90 rounded-tr-sm italic animate-pulse flex items-center gap-2">
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-ping shrink-0" />
+                {isRecording ? (
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-ping shrink-0" />
+                ) : (
+                  <span className="w-2 h-2 bg-slate-300 rounded-full animate-pulse shrink-0" />
+                )}
                 <span>{interimTranscript}</span>
               </div>
             </div>
